@@ -1,36 +1,38 @@
-<!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=6 orderedList=false} -->
+<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
 # Setup
 
 <!-- code_chunk_output -->
 
 - [Setup](#setup)
-  - [HomeBrew Settings](#homebrew-settings)
-    - [Install HomeBrew](#install-homebrew)
-    - [Install required commands](#install-required-commands)
+  - [Homebrew Settings (homebrew)](#homebrew-settings-homebrew)
+    - [install homebrew](#install-homebrew)
+    - [install required commands](#install-required-commands)
   - [Git Settings](#git-settings)
     - [set SSH key to Github](#set-ssh-key-to-github)
     - [clone this repository](#clone-this-repository)
     - [set .gitconfig](#set-gitconfig)
     - [change git user](#change-git-user)
-  - [Fish Settings](#fish-settings)
+  - [Fish Settings (fish)](#fish-settings-fish)
+    - [install fisher (fisher)](#install-fisher-fisher)
+    - [install fish plugins](#install-fish-plugins)
     - [set ~/.zprofile](#set-zprofile)
     - [set ~/.config/fish/config.fish](#set-configfishconfigfish)
 
 <!-- /code_chunk_output -->
 
 
-## HomeBrew Settings
+## Homebrew Settings ([homebrew](https://brew.sh/index_ja))
 
-### Install HomeBrew
+### install homebrew
 
 ```shell
 $ /usr/bin/ruby -e “$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 ```
 
-### Install required commands
+### install required commands
 
 ```shell
-$ brew install fish ghq peco hub
+$ brew install fish ghq peco hub fzf ccat rmtrash terminal-notifier jq tig
 ```
 
 ## Git Settings
@@ -59,7 +61,26 @@ $ ghq get -p nkmr-jp/setup
     email = someone@example.com
 ```
 
-## Fish Settings
+## Fish Settings ([fish](https://fishshell.com/))
+
+### install fisher ([fisher](https://github.com/jorgebucaran/fisher))
+```
+$ curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher.fish
+``` 
+
+### install fish plugins
+```
+$ fisher add \
+jethrokuan/z \
+jethrokuan/fzf \
+decors/fish-ghq \
+b4b4r07/enhancd \
+franciscolourenco/done \
+fishpkg/fish-prompt-mono \
+fishpkg/fish-humanize-duration
+
+$ fisher
+```
 
 ### set ~/.zprofile
 ```shell

@@ -17,6 +17,7 @@
     - [install fish plugins](#install-fish-plugins)
     - [set ~/.zprofile](#set-zprofile)
     - [set ~/.config/fish/config.fish](#set-configfishconfigfish)
+    - [set fish_config](#set-fishconfig)
 
 <!-- /code_chunk_output -->
 
@@ -32,7 +33,7 @@ $ /usr/bin/ruby -e “$(curl -fsSL https://raw.githubusercontent.com/Homebrew/in
 ### install required commands
 
 ```shell
-$ brew install fish ghq peco hub fzf ccat rmtrash terminal-notifier jq tig
+$ brew install fish ghq peco hub fzf ccat rmtrash terminal-notifier jq tig httpie anyenv
 ```
 
 ## Git Settings
@@ -77,7 +78,8 @@ decors/fish-ghq \
 b4b4r07/enhancd \
 franciscolourenco/done \
 fishpkg/fish-prompt-mono \
-fishpkg/fish-humanize-duration
+fishpkg/fish-humanize-duration \
+edc/bass
 
 $ fisher
 ```
@@ -94,4 +96,11 @@ fish
 source $HOME/ghq/github.com/nkmr-jp/setup/config.fish
 
 # write fish scripts here.
+```
+
+### set fish_config
+```shell
+$ fish_config
+
+# setting in browser
 ```

@@ -1,0 +1,10 @@
+[color]
+    ui = auto
+[alias]
+    co = checkout
+    ci = commit
+    st = status
+    br = branch
+[core]
+    excludesfile = ~/ghq/github.com/nkmr-jp/setup/gitignore_global
+    autocrlf = input

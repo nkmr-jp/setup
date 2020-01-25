@@ -26,6 +26,20 @@ $ ghq get -p nkmr-jp/setup
     path = ~/ghq/github.com/nkmr-jp/setup/gitconfig
 ```
 
+## Change git user
+~/ghq/github.com/nkmr-jp/setup/gitconfig
+```
+[user]
+    name = someone
+    email = someone@example.com
+```
+
+## Set .config/fish/config.fish
+```sh
+# ~/.config/fish/config.fish
+source $HOME/ghq/github.com/nkmr-jp/setup/config.fish
+```
+
 ## Set .zprofile
 ```sh
 # ~/.zprofile

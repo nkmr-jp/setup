@@ -6,7 +6,7 @@
 - [Setup](#setup)
   - [Homebrew Settings (homebrew)](#homebrew-settings-homebrew)
     - [install homebrew](#install-homebrew)
-    - [install required commands](#install-required-commands)
+    - [install commands](#install-commands)
   - [Git Settings](#git-settings)
     - [set SSH key to Github](#set-ssh-key-to-github)
     - [clone this repository](#clone-this-repository)
@@ -17,7 +17,10 @@
     - [install fish plugins](#install-fish-plugins)
     - [set ~/.zprofile](#set-zprofile)
     - [set ~/.config/fish/config.fish](#set-configfishconfigfish)
-    - [set fish_config](#set-fishconfig)
+    - [fish_config](#fishconfig)
+  - [Anyenv](#anyenv)
+    - [install env commands](#install-env-commands)
+    - [install langage and global version setting](#install-langage-and-global-version-setting)
 
 <!-- /code_chunk_output -->
 
@@ -30,10 +33,10 @@
 $ /usr/bin/ruby -e “$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 ```
 
-### install required commands
+### install commands
 
 ```shell
-$ brew install fish ghq peco hub fzf ccat rmtrash terminal-notifier jq tig httpie anyenv
+$ brew install fish ghq peco hub fzf ccat rmtrash terminal-notifier jq tig httpie anyenv fx translate-shell tree
 ```
 
 ## Git Settings
@@ -86,7 +89,9 @@ $ fisher
 
 ### set ~/.zprofile
 ```shell
-# write shell scripts here.
+source $HOME/ghq/github.com/nkmr-jp/setup/zprofile.sh
+
+# write bash scripts here.
 
 fish
 ```
@@ -98,9 +103,32 @@ source $HOME/ghq/github.com/nkmr-jp/setup/config.fish
 # write fish scripts here.
 ```
 
-### set fish_config
+### fish_config
 ```shell
 $ fish_config
 
 # setting in browser
+```
+
+## Anyenv
+
+### install env commands
+
+```sh
+$ anyenv install --init
+$ anyenv install rbenv
+$ anyenv install pyenv
+$ anyenv install goenv
+$ anyenv install nodenv
+$ exec $SHELL -l
+```
+
+### install langage and global version setting
+```sh
+$ goenv install 1.13.6
+$ goenv global 1.13.6
+$ go version
+go version go1.13.6 darwin/amd64
+
+...
 ```

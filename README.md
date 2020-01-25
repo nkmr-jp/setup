@@ -36,7 +36,7 @@ $ /usr/bin/ruby -e “$(curl -fsSL https://raw.githubusercontent.com/Homebrew/in
 ### install commands
 
 ```shell
-$ brew install fish ghq peco hub fzf ccat rmtrash terminal-notifier jq tig httpie anyenv fx translate-shell tree
+$ brew install fish ghq peco hub fzf ccat rmtrash terminal-notifier jq tig httpie anyenv fx translate-shell tree bat gitmoji
 ```
 
 ## Git Settings
@@ -93,7 +93,7 @@ source $HOME/ghq/github.com/nkmr-jp/setup/zprofile.sh
 
 # write bash scripts here.
 
-fish
+exec fish
 ```
 
 ### set ~/.config/fish/config.fish

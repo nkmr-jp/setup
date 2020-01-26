@@ -6,6 +6,8 @@ alias rm 'rmtrash'
 alias pecob 'peco --layout bottom-up'
 alias chrome "/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
 alias load 'exec $SHELL -l'
+alias c 'clear'
+alias p 'pwd'
 
 # fish settings
 

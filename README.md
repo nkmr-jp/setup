@@ -36,7 +36,7 @@ $ /usr/bin/ruby -e “$(curl -fsSL https://raw.githubusercontent.com/Homebrew/in
 ### install commands
 
 ```shell
-$ brew install fish ghq peco hub fzf ccat rmtrash terminal-notifier jq tig httpie anyenv fx translate-shell tree bat gitmoji
+$ brew install fish ghq peco hub fzf rmtrash terminal-notifier jq tig httpie anyenv fx translate-shell tree bat gitmoji
 ```
 
 ## Git Settings

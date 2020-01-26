@@ -18,7 +18,7 @@
     - [set ~/.zprofile](#set-zprofile)
     - [set ~/.config/fish/config.fish](#set-configfishconfigfish)
     - [fish_config](#fishconfig)
-  - [Anyenv](#anyenv)
+  - [Anyenv (anyenv)[https://github.com/anyenv/anyenv]](#anyenv-anyenvhttpsgithubcomanyenvanyenv)
     - [install env commands](#install-env-commands)
     - [install programing langages and set global version](#install-programing-langages-and-set-global-version)
 
@@ -108,7 +108,7 @@ $ fish_config
 # setting in browser
 ```
 
-## Anyenv
+## Anyenv (anyenv)[https://github.com/anyenv/anyenv]
 
 ### install env commands
 

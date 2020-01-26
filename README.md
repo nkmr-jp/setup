@@ -81,7 +81,8 @@ b4b4r07/enhancd \
 franciscolourenco/done \
 fishpkg/fish-prompt-mono \
 fishpkg/fish-humanize-duration \
-edc/bass
+edc/bass \
+oh-my-fish/theme-eden
 
 $ fisher
 ```

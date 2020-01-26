@@ -15,10 +15,11 @@
   - [Fish Settings (fish)](#fish-settings-fish)
     - [install fisher (fisher)](#install-fisher-fisher)
     - [install fish plugins](#install-fish-plugins)
+    - [set messages](#set-messages)
     - [set ~/.zprofile](#set-zprofile)
     - [set ~/.config/fish/config.fish](#set-configfishconfigfish)
     - [fish_config](#fishconfig)
-  - [Anyenv](#anyenv)
+  - [Anyenv (anyenv)](#anyenv-anyenv)
     - [install env commands](#install-env-commands)
     - [install programing langages and set global version](#install-programing-langages-and-set-global-version)
 
@@ -36,7 +37,7 @@ $ /usr/bin/ruby -e “$(curl -fsSL https://raw.githubusercontent.com/Homebrew/in
 ### install commands
 
 ```shell
-$ brew install fish ghq peco hub fzf ccat rmtrash terminal-notifier jq tig httpie anyenv fx translate-shell tree bat gitmoji
+$ brew install fish ghq peco hub fzf rmtrash terminal-notifier jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils
 ```
 
 ## Git Settings
@@ -85,6 +86,14 @@ edc/bass
 $ fisher
 ```
 
+### set messages
+```shell
+# A message that is displayed at random when the shell starts.
+echo "hello world!" >> .messages
+echo "shut the fuck up and write some code" >> .messages
+echo "stay hungry stay foolish" >> .messages
+```
+
 ### set ~/.zprofile
 ```shell
 source $HOME/ghq/github.com/nkmr-jp/setup/zprofile.sh
@@ -108,7 +117,7 @@ $ fish_config
 # setting in browser
 ```
 
-## Anyenv
+## Anyenv ([anyenv](https://github.com/anyenv/anyenv))
 
 ### install env commands
 

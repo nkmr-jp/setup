@@ -8,6 +8,9 @@ alias chrome "/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
 alias load 'exec $SHELL -l'
 alias c 'clear'
 alias p 'pwd'
+alias gmoji 'gitmoji'
+alias g 'hub'
+alias m 'code ~/ghq/github.com/nkmr-jp/setup/.messages'
 
 # fish settings
 
@@ -20,7 +23,7 @@ bind \c] enhancd
 
 ## restore path order from zsh
 set PATH $ZSH_PATH
-
+    
 ## messages
 function fish_greeting
     gshuf -n 1 $HOME/ghq/github.com/nkmr-jp/setup/.messages

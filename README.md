@@ -74,15 +74,14 @@ $ curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher
 ### install fish plugins
 ```
 $ fisher add \
-jethrokuan/z \
-jethrokuan/fzf \
-decors/fish-ghq \
 b4b4r07/enhancd \
-franciscolourenco/done \
-fishpkg/fish-prompt-mono \
-fishpkg/fish-humanize-duration \
+decors/fish-ghq \
 edc/bass \
-oh-my-fish/theme-eden
+fishpkg/fish-humanize-duration \
+franciscolourenco/done \
+jethrokuan/fzf \
+jethrokuan/z \
+oh-my-fish/theme-nai
 
 $ fisher
 ```

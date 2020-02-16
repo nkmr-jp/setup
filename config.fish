@@ -11,6 +11,7 @@ alias p 'pwd'
 alias gmoji 'gitmoji'
 alias g 'hub'
 alias m 'code ~/ghq/github.com/nkmr-jp/setup/.messages'
+alias land 'goland'
 
 # fish settings
 

@@ -73,6 +73,8 @@ $ curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher
 
 ### install fish plugins
 ```
+$ fish
+
 $ fisher add \
 b4b4r07/enhancd \
 decors/fish-ghq \

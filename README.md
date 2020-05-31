@@ -147,4 +147,7 @@ go version go1.13.6 darwin/amd64
 ```sh
 $ brew upgrade anyenv
 $ anyenv install --update
+$ anyenv install goenv
+
+# rbenv pyenv nodenv ...
 ```

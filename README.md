@@ -18,10 +18,12 @@
     - [set messages](#set-messages)
     - [set ~/.zprofile](#set-zprofile)
     - [set ~/.config/fish/config.fish](#set-configfishconfigfish)
-    - [fish_config](#fishconfig)
+    - [fish_config](#fish_config)
   - [Anyenv (anyenv)](#anyenv-anyenv)
     - [install env commands](#install-env-commands)
     - [install programing langages and set global version](#install-programing-langages-and-set-global-version)
+    - [To get the latest version](#to-get-the-latest-version)
+  - [install Rust](#install-rust)
 
 <!-- /code_chunk_output -->
 
@@ -150,4 +152,9 @@ $ anyenv install --update
 $ anyenv install goenv
 
 # rbenv pyenv nodenv ...
+```
+
+## install Rust
+```sh
+$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```

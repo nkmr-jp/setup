@@ -12,7 +12,7 @@ alias gmoji='gitmoji'
 alias g='hub'
 alias m='code ~/ghq/github.com/nkmr-jp/setup/.messages'
 alias land='goland'
-alias config='code /Users/nkmr/ghq/github.com/nkmr-jp/setup'
+alias config='code ~/ghq/github.com/nkmr-jp/setup'
 
 # open
 alias help-go-mod='open https://github.com/golang/go/wiki/Modules'

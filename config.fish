@@ -31,7 +31,7 @@ end
 
 # help
 alias help-go-mod='open https://github.com/golang/go/wiki/Modules'
-
+alias help-jq='open https://dev.classmethod.jp/articles/jq-manual-japanese-translation-roughly/'
 
 # fish settings
 

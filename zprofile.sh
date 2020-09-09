@@ -1,5 +1,5 @@
 export PATH="$HOME/.anyenv/bin:$PATH"
-eval "$(anyenv init -)"
+eval "$(anyenv init - zsh)"
 
 # path
 export PATH="$GOPATH/bin:$PATH"

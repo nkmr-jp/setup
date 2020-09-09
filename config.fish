@@ -15,10 +15,13 @@ alias land='goland'
 alias setup='code ~/ghq/github.com/nkmr-jp/setup'
 
 # search
+function s
+    open "https://www.google.com/search?q=$argv"
+end
 function sgo
     open "https://golang.org/search?q=$argv"
 end
-function srepo
+function srep
     open "https://github.com/nkmr-jp?tab=repositories&q=$argv"
 end
 function shub

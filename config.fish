@@ -12,19 +12,22 @@ alias gmoji='gitmoji'
 alias g='hub'
 alias m='code ~/ghq/github.com/nkmr-jp/setup/.messages'
 alias land='goland'
-alias config='code ~/ghq/github.com/nkmr-jp/setup'
+alias setup='code ~/ghq/github.com/nkmr-jp/setup'
 
-# open
-alias help-go-mod='open https://github.com/golang/go/wiki/Modules'
-function s-go
+# search
+function sgo
     open "https://golang.org/search?q=$argv"
 end
-function s-repo
+function srepo
     open "https://github.com/nkmr-jp?tab=repositories&q=$argv"
 end
-function s-github
+function shub
     open "https://github.com/search?q=$argv"
 end
+
+# help
+alias help-go-mod='open https://github.com/golang/go/wiki/Modules'
+
 
 # fish settings
 

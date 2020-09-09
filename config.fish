@@ -13,6 +13,7 @@ alias g='hub'
 alias m='code ~/ghq/github.com/nkmr-jp/setup/.messages'
 alias land='goland'
 alias setup='code ~/ghq/github.com/nkmr-jp/setup'
+alias get='ghq get -p'
 
 # search
 function s

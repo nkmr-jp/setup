@@ -15,6 +15,13 @@ alias land='goland'
 alias setup='code ~/ghq/github.com/nkmr-jp/setup'
 alias get='ghq get -p'
 
+# uitl
+## TODO: project listと使うIDEを設定できるようにする
+function project
+    cd ~/ghq/github.com/$argv[1]
+    goland .
+end
+
 # search
 function s
     open "https://www.google.com/search?q=$argv"
@@ -30,6 +37,7 @@ function shub
 end
 
 # help
+alias help-fish='open https://fishshell.com/docs/current/commands.html'
 alias help-go-mod='open https://github.com/golang/go/wiki/Modules'
 function help-jq
     open https://dev.classmethod.jp/articles/jq-manual-japanese-translation-roughly/;
@@ -37,7 +45,6 @@ function help-jq
 end
 
 # fish settings
-
 ## plugin settings
 ### https://github.com/franciscolourenco/done
 set -U __done_min_cmd_duration 5000
@@ -51,4 +58,9 @@ set PATH $ZSH_PATH
 ## messages
 function fish_greeting
     gshuf -n 1 $HOME/ghq/github.com/nkmr-jp/setup/.messages
+end
+
+## private
+if test -f ~/ghq/github.com/nkmr-jp/setup/.private.fish
+   source ~/ghq/github.com/nkmr-jp/setup/.private.fish
 end

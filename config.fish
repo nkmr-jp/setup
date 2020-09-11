@@ -27,7 +27,7 @@ function s
     open "https://www.google.com/search?q=$argv"
 end
 function sgo
-    open "https://golang.org/search?q=$argv"
+    open "https://pkg.go.dev/search?q=$argv"
 end
 function srep
     open "https://github.com/nkmr-jp?tab=repositories&q=$argv"

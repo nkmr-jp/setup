@@ -16,7 +16,7 @@ alias setup='code ~/ghq/github.com/nkmr-jp/setup'
 alias get='ghq get -p'
 
 # uitl
-## TODO: project listと使うIDEを設定できるようにする
+## TODO: project listと使うIDEを.private.fisで設定できるようにする
 function project
     cd ~/ghq/github.com/$argv[1]
     goland .

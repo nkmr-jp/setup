@@ -22,28 +22,32 @@ function project
     goland .
 end
 
-# search
-function s
+# query
+function query
     open "https://www.google.com/search?q=$argv"
 end
-function sgo
+function query-go
     open "https://pkg.go.dev/search?q=$argv"
 end
-function srep
+function query-repo
     open "https://github.com/nkmr-jp?tab=repositories&q=$argv"
 end
-function shub
+function query-github
     open "https://github.com/search?q=$argv"
 end
 
 # help
 alias help-fish='open https://fishshell.com/docs/current/commands.html'
 alias help-go-mod='open https://github.com/golang/go/wiki/Modules'
-alias help-go-zap='open https://qiita.com/emonuh/items/28dbee9bf2fe51d28153'
 function help-jq
     open https://dev.classmethod.jp/articles/jq-manual-japanese-translation-roughly/;
     open https://stedolan.github.io/jq/manual/;
 end
+function help-go-zap
+    open https://pkg.go.dev/go.uber.org/zap?tab=doc
+    open https://qiita.com/emonuh/items/28dbee9bf2fe51d28153
+end
+
 
 # fish settings
 ## plugin settings

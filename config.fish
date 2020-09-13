@@ -39,6 +39,7 @@ end
 # help
 alias help-fish='open https://fishshell.com/docs/current/commands.html'
 alias help-go-mod='open https://github.com/golang/go/wiki/Modules'
+alias help-go-zap='open https://qiita.com/emonuh/items/28dbee9bf2fe51d28153'
 function help-jq
     open https://dev.classmethod.jp/articles/jq-manual-japanese-translation-roughly/;
     open https://stedolan.github.io/jq/manual/;

@@ -94,9 +94,9 @@ $ fisher
 ### set messages
 ```shell
 # A message that is displayed at random when the shell starts.
-echo "hello world!" >> .messages
-echo "shut the fuck up and write some code" >> .messages
-echo "stay hungry stay foolish" >> .messages
+echo "hello world!" >> ~/ghq/github.com/nkmr-jp/setup/.messages
+echo "shut the fuck up and write some code" >> ~/ghq/github.com/nkmr-jp/setup/.messages
+echo "stay hungry stay foolish" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 ```
 
 ### set ~/.zprofile

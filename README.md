@@ -70,6 +70,7 @@ $ git config --global user.email "mailaddress"
 
 ### install fisher ([fisher](https://github.com/jorgebucaran/fisher))
 ```
+$ mkdir ~/.config/fish/functions
 $ curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher.fish
 ``` 
 

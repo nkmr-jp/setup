@@ -14,6 +14,8 @@ alias m='code ~/ghq/github.com/nkmr-jp/setup/.messages'
 alias land='goland'
 alias setup='code ~/ghq/github.com/nkmr-jp/setup'
 alias get='ghq get -p'
+alias sleepon='sudo pmset -a disablesleep 0'
+alias sleepoff='sudo pmset -a disablesleep 1'
 
 # uitl
 ## TODO: project listと使うIDEを.private.fisで設定できるようにする

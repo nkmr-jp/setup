@@ -70,6 +70,7 @@ $ git config --global user.email "mailaddress"
 
 ### install fisher ([fisher](https://github.com/jorgebucaran/fisher))
 ```
+$ mkdir ~/.config/fish/functions
 $ curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher.fish
 ``` 
 
@@ -93,9 +94,9 @@ $ fisher
 ### set messages
 ```shell
 # A message that is displayed at random when the shell starts.
-echo "hello world!" >> .messages
-echo "shut the fuck up and write some code" >> .messages
-echo "stay hungry stay foolish" >> .messages
+echo "hello world!" >> ~/ghq/github.com/nkmr-jp/setup/.messages
+echo "shut the fuck up and write some code" >> ~/ghq/github.com/nkmr-jp/setup/.messages
+echo "stay hungry stay foolish" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 ```
 
 ### set ~/.zprofile

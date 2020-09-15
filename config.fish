@@ -24,6 +24,26 @@ function project
     goland .
 end
 
+function stats
+    echo ""
+    echo "[ Programing Languages ]"
+    go version 
+    node -v
+    python -V
+    ruby -v
+
+    echo ""
+    echo ""
+    echo "[ macOS ]"
+    system_profiler SPSoftwareDataType 
+    # system_profiler SPHardwareDataType
+
+    echo ""
+    echo ""
+    echo "[ iStats ]"
+    istats
+end
+
 # query
 function query
     open "https://www.google.com/search?q=$argv"

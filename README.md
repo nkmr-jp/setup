@@ -24,6 +24,7 @@
     - [install programing langages and set global version](#install-programing-langages-and-set-global-version)
     - [To get the latest version](#to-get-the-latest-version)
   - [install Rust](#install-rust)
+  - [Install Commands for each language](#install-commands-for-each-language)
 
 <!-- /code_chunk_output -->
 
@@ -39,7 +40,10 @@ $ /usr/bin/ruby -e “$(curl -fsSL https://raw.githubusercontent.com/Homebrew/in
 ### install commands
 
 ```shell
-$ brew install fish ghq peco hub fzf rmtrash terminal-notifier jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils
+$ brew install \ 
+fish ghq peco hub fzf rmtrash terminal-notifier  \ 
+jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \ 
+procs golangci/tap/golangci-lint
 ```
 
 ## Git Settings
@@ -158,4 +162,10 @@ $ anyenv install goenv
 ## install Rust
 ```sh
 $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+## Install Commands for each language
+```sh
+$ gem install iStats
+$ npm install -g fkill-cli
 ```

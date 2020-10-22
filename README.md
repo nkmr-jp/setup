@@ -25,6 +25,7 @@
     - [To get the latest version](#to-get-the-latest-version)
   - [install Rust](#install-rust)
   - [Install Commands for each language](#install-commands-for-each-language)
+  - [Install Commands from Binary](#install-commands-from-binary)
 
 <!-- /code_chunk_output -->
 
@@ -40,10 +41,11 @@ $ /usr/bin/ruby -e “$(curl -fsSL https://raw.githubusercontent.com/Homebrew/in
 ### install commands
 
 ```shell
-$ brew install \ 
-fish ghq peco hub fzf rmtrash terminal-notifier  \ 
-jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \ 
-procs golangci/tap/golangci-lint
+$ brew install \
+fish ghq peco hub fzf rmtrash terminal-notifier  \
+jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
+procs golangci/tap/golangci-lint \
+exa fd
 ```
 
 ## Git Settings
@@ -168,4 +170,15 @@ $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```sh
 $ gem install iStats
 $ npm install -g fkill-cli
+$ pip install yq
+```
+
+## Install Commands from Binary
+```sh
+mkdir -p ~/src ~/src/bin
+cd ~/src
+curl -OL https://github.com/cheat/cheat/releases/download/4.1.0/cheat-darwin-amd64.gz
+gzip -d cheat-darwin-amd64.gz
+mv cheat-darwin-amd64 ./bin/cheat
+chmod 755 ./bin/cheat
 ```

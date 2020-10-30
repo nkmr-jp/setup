@@ -18,6 +18,11 @@ alias sleepon='sudo pmset -a disablesleep 0'
 alias sleepoff='sudo pmset -a disablesleep 1'
 
 # uitl
+function colors
+    # See: https://gist.github.com/rsperl/d2dfe88a520968fbc1f49db0a29345b9
+    bash -c 'for c in {0..255}; do tput setaf $c; tput setaf $c | cat -v; echo =$c; done'
+end
+
 ## TODO: project listと使うIDEを.private.fisで設定できるようにする
 function project
     cd ~/ghq/github.com/$argv[1]

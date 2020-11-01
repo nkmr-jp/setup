@@ -27,10 +27,10 @@ function todo
             echo
             for x in (string split "\n" (echo $ACTIVE_REPO))
                 if test -f ~/ghq/github.com/nkmr-jp/$x/.todo.txt
-                    set_color blue; echo "# $x"; set_color reset; 
+                    set_color blue; echo "▶ $x"; set_color reset; 
                     echo
                     set_color green;
-                    sed  's/^/     /'  ~/ghq/github.com/nkmr-jp/$x/.todo.txt
+                    sed  's/^/     • /'  ~/ghq/github.com/nkmr-jp/$x/.todo.txt
                     set_color reset;
                     echo
                 end

@@ -15,13 +15,10 @@ alias setup='code ~/ghq/github.com/nkmr-jp/setup'
 alias get='ghq get -p'
 alias sleepon='sudo pmset -a disablesleep 0'
 alias sleepoff='sudo pmset -a disablesleep 1'
-alias hb='hub browse'
-alias pull='git pull'
-alias fetch='git fetch'
+alias opg='hub browse'
 
 # uitl
 function ql 
-    # qlmanage -p $argv[1] >& /dev/null
     qlmanage -p $argv[1] > /dev/null ^&1
 end
 

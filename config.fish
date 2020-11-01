@@ -19,7 +19,14 @@ alias opg='hub browse'
 # uitl
 function todo
     if count $argv > /dev/null
-        echo "$argv[1]" >> .todo.txt
+        if test $argv[1] = "all"
+            echo ""
+            echo "All todo in ~/ghq/github.com/nkmr-jp ..."
+            echo ""
+            tail -n +1 ~/ghq/github.com/nkmr-jp/**/.todo.txt
+        else
+            echo "$argv[1]" >> .todo.txt
+        end
     else if test -f .todo.txt
         cat .todo.txt
     end

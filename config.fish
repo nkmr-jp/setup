@@ -9,15 +9,22 @@ alias load='exec $SHELL -l'
 alias c='clear'
 alias p='pwd'
 alias gmoji='gitmoji'
-alias g='hub'
 alias m='code ~/ghq/github.com/nkmr-jp/setup/.messages'
 alias land='goland'
 alias setup='code ~/ghq/github.com/nkmr-jp/setup'
 alias get='ghq get -p'
 alias sleepon='sudo pmset -a disablesleep 0'
 alias sleepoff='sudo pmset -a disablesleep 1'
+alias hb='hub browse'
+alias pull='git pull'
+alias fetch='git fetch'
 
 # uitl
+function ql 
+    # qlmanage -p $argv[1] >& /dev/null
+    qlmanage -p $argv[1] > /dev/null ^&1
+end
+
 function colors
     # See: https://gist.github.com/rsperl/d2dfe88a520968fbc1f49db0a29345b9
     bash -c 'for c in {0..255}; do tput setaf $c; tput setaf $c | cat -v; echo =$c; done'

@@ -7,6 +7,7 @@
   - [Homebrew Settings (homebrew)](#homebrew-settings-homebrew)
     - [install homebrew](#install-homebrew)
     - [install commands](#install-commands)
+    - [install QucickLook Plugins](#install-qucicklook-plugins)
   - [Git Settings](#git-settings)
     - [set ssh key to github](#set-ssh-key-to-github)
     - [clone this repository](#clone-this-repository)
@@ -46,6 +47,15 @@ fish ghq peco hub fzf rmtrash terminal-notifier  \
 jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs golangci/tap/golangci-lint \
 exa fd
+```
+
+### install QucickLook Plugins
+
+```shell
+# https://github.com/sindresorhus/quick-look-plugins
+brew cask install qlcolorcode qlstephen qlmarkdown quicklook-json qlimagesize suspicious-package quicklookase qlvideo
+xattr -r ~/Library/QuickLook
+xattr -d -r com.apple.quarantine ~/Library/QuickLook
 ```
 
 ## Git Settings

@@ -15,6 +15,7 @@ alias get='ghq get -p'
 alias sleepon='sudo pmset -a disablesleep 0'
 alias sleepoff='sudo pmset -a disablesleep 1'
 alias opg='hub browse'
+alias oura='open https://cloud.ouraring.com/dashboard'
 
 # uitl
 function todo

@@ -34,5 +34,8 @@ Temporary Items
 .idea
 
 # VSCode
-.history
 .vscode
+
+# Other
+.history
+.todo.txt

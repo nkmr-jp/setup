@@ -17,11 +17,11 @@ alias sleepoff='sudo pmset -a disablesleep 1'
 alias opg='hub browse'
 
 # uitl
-function i
+function todo
     if count $argv > /dev/null
-        echo $argv[1] >> .issue.txt
-    else if test -f .issue.txt
-        cat .issue.txt   
+        echo "$argv[1]" >> .todo.txt
+    else if test -f .todo.txt
+        cat .todo.txt
     end
 end
 

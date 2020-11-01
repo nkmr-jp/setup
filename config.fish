@@ -29,7 +29,7 @@ function todo
                 if test -f ~/ghq/github.com/nkmr-jp/$x/.todo.txt
                     set_color blue; echo "▶ https://github.com/nkmr-jp/$x"; set_color reset; 
                     echo
-                    set_color green;
+                    set_color yellow;
                     sed  's/^/     • /'  ~/ghq/github.com/nkmr-jp/$x/.todo.txt
                     set_color reset;
                     echo
@@ -39,7 +39,11 @@ function todo
             echo "$argv[1]" >> .todo.txt
         end
     else if test -f .todo.txt
-        cat .todo.txt
+        echo
+        set_color yellow;
+        sed  's/^/     • /' .todo.txt
+        set_color reset;
+        echo
     end
 end
 

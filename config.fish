@@ -7,7 +7,6 @@ alias pecob='peco --layout bottom-up'
 alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
 alias load='exec $SHELL -l'
 alias c='clear'
-alias p='pwd'
 alias gmoji='gitmoji'
 alias m='code ~/ghq/github.com/nkmr-jp/setup/.messages'
 alias land='goland'
@@ -18,6 +17,14 @@ alias sleepoff='sudo pmset -a disablesleep 1'
 alias opg='hub browse'
 
 # uitl
+function i
+    if count $argv > /dev/null
+        echo $argv[1] >> .issue.txt
+    else if test -f .issue.txt
+        cat .issue.txt   
+    end
+end
+
 function ql 
     qlmanage -p $argv[1] > /dev/null ^&1
 end

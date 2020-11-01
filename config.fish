@@ -17,14 +17,23 @@ alias sleepoff='sudo pmset -a disablesleep 1'
 alias opg='hub browse'
 alias oura='open https://cloud.ouraring.com/dashboard'
 
-# uitl
+# util
+
 function todo
     if count $argv > /dev/null
         if test $argv[1] = "all"
-            echo ""
-            echo "All todo in ~/ghq/github.com/nkmr-jp ..."
-            echo ""
-            tail -n +1 ~/ghq/github.com/nkmr-jp/**/.todo.txt
+            echo
+            echo
+            for x in (string split "\n" (echo $ACTIVE_REPO))
+                if test -f ~/ghq/github.com/nkmr-jp/$x/.todo.txt
+                    set_color blue; echo "# $x"; set_color reset; 
+                    echo
+                    set_color green;
+                    sed  's/^/     /'  ~/ghq/github.com/nkmr-jp/$x/.todo.txt
+                    set_color reset;
+                    echo
+                end
+            end
         else
             echo "$argv[1]" >> .todo.txt
         end
@@ -37,15 +46,15 @@ function ql
     qlmanage -p $argv[1] > /dev/null ^&1
 end
 
-function colors
+function bash_colors
     # See: https://gist.github.com/rsperl/d2dfe88a520968fbc1f49db0a29345b9
     bash -c 'for c in {0..255}; do tput setaf $c; tput setaf $c | cat -v; echo =$c; done'
 end
 
-## TODO: project listと使うIDEを.private.fisで設定できるようにする
-function project
-    cd ~/ghq/github.com/$argv[1]
-    goland .
+function colors
+    for x in (string split "\n" (set_color --print-colors))
+        set_color $x; echo $x; set_color reset;
+    end 
 end
 
 function stats

@@ -27,6 +27,8 @@
   - [install Rust](#install-rust)
   - [Install Commands for each language](#install-commands-for-each-language)
   - [Install Commands from Binary](#install-commands-from-binary)
+  - [Settings](#settings)
+    - [tig](#tig)
 
 <!-- /code_chunk_output -->
 
@@ -191,4 +193,16 @@ curl -OL https://github.com/cheat/cheat/releases/download/4.1.0/cheat-darwin-amd
 gzip -d cheat-darwin-amd64.gz
 mv cheat-darwin-amd64 ./bin/cheat
 chmod 755 ./bin/cheat
+```
+
+## Settings
+
+### tig
+
+See: https://qiita.com/numanomanu/items/513d62fb4a7921880085
+
+```sh
+# ~/.tigrc
+bind main    B !git rebase -i %(commit)
+bind diff    B !git rebase -i %(commit)
 ```

@@ -44,7 +44,7 @@ $ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/
 ### install commands
 
 ```shell
-$ brew install \
+brew install \
 fish ghq peco hub fzf trash-cli terminal-notifier  \
 jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs golangci/tap/golangci-lint \
@@ -68,7 +68,7 @@ xattr -d -r com.apple.quarantine ~/Library/QuickLook
 
 ### clone this repository
 ```shell
-$ ghq get -p nkmr-jp/setup
+ghq get -p nkmr-jp/setup
 ```
 
 ### set .gitconfig
@@ -79,26 +79,26 @@ $ ghq get -p nkmr-jp/setup
 ```
 
 ### set git user
-```
-$ git config --global user.name "username"
-$ git config --global user.email "mailaddress"
+```shell
+git config --global user.name "username"
+git config --global user.email "mailaddress"
 ```
 
 ## Fish Settings ([fish](https://fishshell.com/))
 
 ### install fisher ([fisher](https://github.com/jorgebucaran/fisher))
-```sh
-$ mkdir ~/.config
-$ mkdir ~/.config/fish
-$ mkdir ~/.config/fish/functions
-$ curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher.fish
+```shell
+mkdir ~/.config
+mkdir ~/.config/fish
+mkdir ~/.config/fish/functions
+curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher.fish
 ``` 
 
 ### install fish plugins
-```
-$ fish
+```shell
+fish
 
-$ fisher install \
+fisher install \
 b4b4r07/enhancd \
 decors/fish-ghq \
 edc/bass \
@@ -108,7 +108,9 @@ jethrokuan/fzf \
 jethrokuan/z \
 oh-my-fish/theme-nai
 
-$ fisher
+fisher list
+
+exit
 ```
 
 ### set messages
@@ -137,7 +139,8 @@ source $HOME/ghq/github.com/nkmr-jp/setup/config.fish
 
 ### fish_config
 ```shell
-$ fish_config
+fish
+fish_config
 
 # setting in browser
 ```

@@ -38,7 +38,7 @@
 ### install homebrew
 
 ```shell
-$ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
 ### install commands
@@ -88,9 +88,7 @@ git config --global user.email "mailaddress"
 
 ### install fisher ([fisher](https://github.com/jorgebucaran/fisher))
 ```shell
-mkdir ~/.config
-mkdir ~/.config/fish
-mkdir ~/.config/fish/functions
+mkdir -p ~/.config ~/.config/fish ~/.config/fish/functions
 curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher.fish
 ``` 
 
@@ -150,20 +148,20 @@ fish_config
 ### install env commands
 
 ```sh
-$ anyenv install --init
-$ anyenv install rbenv
-$ anyenv install pyenv
-$ anyenv install goenv
-$ anyenv install nodenv
-$ exec $SHELL -l
+anyenv install --init
+anyenv install rbenv
+anyenv install pyenv
+anyenv install goenv
+anyenv install nodenv
+exec $SHELL -l
 ```
 
 ### install programing langages and set global version
 ```sh
-$ goenv install 1.13.6
-$ goenv global 1.13.6
-$ go version
-go version go1.13.6 darwin/amd64
+goenv install 1.16.3
+goenv global 1.16.3
+go version
+# > go version go1.16.3 darwin/amd64
 
 # rbenv pyenv nodenv ...
 
@@ -171,30 +169,34 @@ go version go1.13.6 darwin/amd64
 
 ### To get the latest version
 ```sh
-$ brew upgrade anyenv
-$ anyenv install --update
-$ anyenv install goenv
+brew upgrade anyenv
+anyenv install --update
+anyenv install goenv
 
 # rbenv pyenv nodenv ...
 ```
 
 ## install Rust
 ```sh
-$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup -V
+# > rustup 1.23.1 (3df2264a9 2020-11-30)
+# > info: This is the version for the rustup toolchain manager, not the rustc compiler.
+# > info: The currently active `rustc` version is `rustc 1.51.0 (2fd73fabe 2021-03-23)`
 ```
 
 ## Install Commands for each language
 ```sh
-$ gem install iStats
-$ npm install -g fkill-cli
-$ pip install yq
+gem install iStats
+npm install -g fkill-cli
+pip install yq
 ```
 
 ## Install Commands from Binary
 ```sh
 mkdir -p ~/src ~/src/bin
 cd ~/src
-curl -OL https://github.com/cheat/cheat/releases/download/4.1.0/cheat-darwin-amd64.gz
+curl -OL https://github.com/cheat/cheat/releases/download/4.2.0/cheat-darwin-amd64.gz
 gzip -d cheat-darwin-amd64.gz
 mv cheat-darwin-amd64 ./bin/cheat
 chmod 755 ./bin/cheat

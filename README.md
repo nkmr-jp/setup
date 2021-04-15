@@ -87,7 +87,9 @@ $ git config --global user.email "mailaddress"
 ## Fish Settings ([fish](https://fishshell.com/))
 
 ### install fisher ([fisher](https://github.com/jorgebucaran/fisher))
-```
+```sh
+$ mkdir ~/.config
+$ mkdir ~/.config/fish
 $ mkdir ~/.config/fish/functions
 $ curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher.fish
 ``` 
@@ -96,7 +98,7 @@ $ curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher
 ```
 $ fish
 
-$ fisher add \
+$ fisher install \
 b4b4r07/enhancd \
 decors/fish-ghq \
 edc/bass \

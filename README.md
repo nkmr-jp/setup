@@ -55,7 +55,7 @@ exa fd
 
 ```shell
 # https://github.com/sindresorhus/quick-look-plugins
-brew cask install qlcolorcode qlstephen qlmarkdown quicklook-json qlimagesize suspicious-package quicklookase qlvideo
+brew install qlcolorcode qlstephen qlmarkdown quicklook-json qlimagesize suspicious-package quicklookase qlvideo
 xattr -r ~/Library/QuickLook
 xattr -d -r com.apple.quarantine ~/Library/QuickLook
 ```

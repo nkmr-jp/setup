@@ -174,7 +174,7 @@ brew upgrade anyenv
 anyenv install --update
 anyenv install goenv
 
-# rbenv pyenv nodenv ...
+# rbenv pyenv nodenv jenv ...
 ```
 
 ## Install Rust
@@ -188,11 +188,43 @@ rustup -V
 
 ## Install Java
 ```sh
+/usr/libexec/java_home --request
+# > Unable to find any JVMs matching version "(null)".
+# > No Java runtime present, requesting install.
+
+#
+# Download Java installer and install.
+#
+
+/usr/libexec/java_home -V
+# > Matching Java Virtual Machines (1):
+# >     16, x86_64: "Java SE 16"    /Library/Java/JavaVirtualMachines/jdk-16.jdk/Contents/Home
+
+# > /Library/Java/JavaVirtualMachines/jdk-16.jdk/Contents/Home
+```
+
+```sh
 brew install java
-java --version
-# > openjdk 15.0.2 2021-01-19
-# > OpenJDK Runtime Environment (build 15.0.2+7)
-# > OpenJDK 64-Bit Server VM (build 15.0.2+7, mixed mode, sharing)
+ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk
+
+/usr/libexec/java_home -V
+# > Matching Java Virtual Machines (2):
+# >     16, x86_64: "Java SE 16"    /Library/Java/JavaVirtualMachines/jdk-16.jdk/Contents/Home
+# >     15.0.2, x86_64:     "OpenJDK 15.0.2"        /Library/Java/JavaVirtualMachines/openjdk.jdk/Contents/Home
+```
+
+```sh
+jenv add (/usr/libexec/java_home -v "16")
+jenv add (/usr/libexec/java_home -v "15")
+
+jenv versions
+# > * system (set by /Users/nkmr/.anyenv/envs/jenv/version)
+# >   15
+# >   15.0
+# >   15.0.2
+# >   16
+# >   openjdk64-15.0.2
+# >   oracle64-16
 ```
 
 ## Install Commands for each language

@@ -4,7 +4,7 @@
 <!-- code_chunk_output -->
 
 - [Setup](#setup)
-  - [Homebrew Settings (homebrew)](#homebrew-settings-homebrew)
+  - [Homebrew Settings (homebrew)](#homebrew-settings-homebrewhttpsbrewshindex_ja)
     - [install homebrew](#install-homebrew)
     - [install commands](#install-commands)
     - [install QucickLook Plugins](#install-qucicklook-plugins)
@@ -13,18 +13,19 @@
     - [clone this repository](#clone-this-repository)
     - [set .gitconfig](#set-gitconfig)
     - [set git user](#set-git-user)
-  - [Fish Settings (fish)](#fish-settings-fish)
-    - [install fisher (fisher)](#install-fisher-fisher)
+  - [Fish Settings (fish)](#fish-settings-fishhttpsfishshellcom)
+    - [install fisher (fisher)](#install-fisher-fisherhttpsgithubcomjorgebucaranfisher)
     - [install fish plugins](#install-fish-plugins)
     - [set messages](#set-messages)
-    - [set ~/.zprofile](#set-zprofile)
-    - [set ~/.config/fish/config.fish](#set-configfishconfigfish)
+    - [set ~/.zprofile](#set-~zprofile)
+    - [set ~/.config/fish/config.fish](#set-~configfishconfigfish)
     - [fish_config](#fish_config)
-  - [Anyenv (anyenv)](#anyenv-anyenv)
+  - [Anyenv (anyenv)](#anyenv-anyenvhttpsgithubcomanyenvanyenv)
     - [install env commands](#install-env-commands)
     - [install programing langages and set global version](#install-programing-langages-and-set-global-version)
     - [To get the latest version](#to-get-the-latest-version)
-  - [install Rust](#install-rust)
+  - [Install Rust](#install-rust)
+  - [Install Java](#install-java)
   - [Install Commands for each language](#install-commands-for-each-language)
   - [Install Commands from Binary](#install-commands-from-binary)
   - [Settings](#settings)
@@ -176,13 +177,22 @@ anyenv install goenv
 # rbenv pyenv nodenv ...
 ```
 
-## install Rust
+## Install Rust
 ```sh
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 rustup -V
 # > rustup 1.23.1 (3df2264a9 2020-11-30)
 # > info: This is the version for the rustup toolchain manager, not the rustc compiler.
 # > info: The currently active `rustc` version is `rustc 1.51.0 (2fd73fabe 2021-03-23)`
+```
+
+## Install Java
+```sh
+brew install java
+java --version
+# > openjdk 15.0.2 2021-01-19
+# > OpenJDK Runtime Environment (build 15.0.2+7)
+# > OpenJDK 64-Bit Server VM (build 15.0.2+7, mixed mode, sharing)
 ```
 
 ## Install Commands for each language

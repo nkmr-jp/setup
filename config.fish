@@ -10,12 +10,13 @@ alias c='clear'
 alias m='code ~/ghq/github.com/nkmr-jp/setup/.messages'
 alias land='goland'
 alias setup='code ~/ghq/github.com/nkmr-jp/setup'
-alias get='ghq get -p'
 alias sleepon='sudo pmset -a disablesleep 0'
 alias sleepoff='sudo pmset -a disablesleep 1'
 alias opg='gh repo view --web'
 alias oura='open https://cloud.ouraring.com/dashboard'
 alias e='open /Applications/Effortless.app'
+alias get='ghu get'
+alias init='ghu init'
 
 # util
 
@@ -98,6 +99,7 @@ end
 # help
 alias help-fish='open https://fishshell.com/docs/current/commands.html'
 alias help-go-mod='open https://github.com/golang/go/wiki/Modules'
+alias help-gh='open https://cli.github.com/manual/'
 function help-jq
     open https://dev.classmethod.jp/articles/jq-manual-japanese-translation-roughly/;
     open https://stedolan.github.io/jq/manual/;

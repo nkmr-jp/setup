@@ -46,7 +46,7 @@
 
 ```shell
 brew install \
-fish ghq peco hub fzf trash-cli terminal-notifier  \
+fish ghq peco gh fzf trash-cli terminal-notifier  \
 jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs golangci/tap/golangci-lint \
 exa fd

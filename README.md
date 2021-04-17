@@ -217,9 +217,10 @@ ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMach
 jenv add (/usr/libexec/java_home -v "16")
 jenv add (/usr/libexec/java_home -v "15")
 
+jenv global 15
 jenv versions
-# > * system (set by /Users/nkmr/.anyenv/envs/jenv/version)
-# >   15
+# >   system (set by /Users/nkmr/.anyenv/envs/jenv/version)
+# > * 15
 # >   15.0
 # >   15.0.2
 # >   16

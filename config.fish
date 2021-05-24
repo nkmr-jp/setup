@@ -17,6 +17,7 @@ alias oura='open https://cloud.ouraring.com/dashboard'
 alias e='open /Applications/Effortless.app'
 alias get='ghu get'
 alias init='ghu init'
+alias profile='code ~/.zprofile'
 
 # util
 

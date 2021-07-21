@@ -214,8 +214,21 @@ ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMach
 ```
 
 ```sh
+brew install --cask adoptopenjdk8
+
+/usr/libexec/java_home -V
+Matching Java Virtual Machines (3):
+# >     16.0.1, x86_64:     "OpenJDK 16.0.1"        /Library/Java/JavaVirtualMachines/openjdk.jdk/Contents/Home
+# >     15.0.2, x86_64:     "OpenJDK 15.0.2"        /Library/Java/JavaVirtualMachines/openjdk.jdk/Contents/Home
+# >     1.8.0_292, x86_64:  "AdoptOpenJDK 8"        /Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home
+
+/Library/Java/JavaVirtualMachines/openjdk.jdk/Contents/Home
+```
+
+```sh
 jenv add (/usr/libexec/java_home -v "16")
 jenv add (/usr/libexec/java_home -v "15")
+jenv add (/usr/libexec/java_home -v "1.8")
 
 jenv global 15
 jenv versions

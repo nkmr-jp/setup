@@ -26,11 +26,14 @@
     - [To get the latest version](#to-get-the-latest-version)
   - [Install Rust](#install-rust)
   - [Install Java](#install-java)
+  - [Install AWS CLI v2](#install-aws-cli-v2)
+    - [Install](#install)
+    - [Setup](#setup-1)
   - [Install Commands for each language](#install-commands-for-each-language)
   - [Install Commands from Binary](#install-commands-from-binary)
   - [Settings](#settings)
     - [tig](#tig)
-
+  
 <!-- /code_chunk_output -->
 
 
@@ -239,6 +242,44 @@ jenv versions
 # >   16
 # >   openjdk64-15.0.2
 # >   oracle64-16
+```
+
+## Install AWS CLI v2
+
+### Install
+[Install and update the AWS CLI version 2 using the macOS command line](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-mac.html#cliv2-mac-install-cmd)
+
+```sh
+curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
+sudo installer -pkg AWSCLIV2.pkg -target /
+aws --version
+#> aws-cli/2.2.34 Python/3.8.8 Darwin/19.6.0 exe/x86_64 prompt/off
+```
+
+### Setup
+[Access key ID and secret access key](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html#cli-configure-quickstart-creds)
+```sh
+# Create key https://console.aws.amazon.com/iamv2/home#/users
+
+aws configure
+#> AWS Access Key ID [None]: xxxx
+#> AWS Secret Access Key [None]: xxxx
+#> Default region name [None]: ap-northeast-1
+#> Default output format [None]: json
+
+aws iam list-users --output table
+#> ---------------------------------------------------------------
+#> |                          ListUsers                          |
+#> +-------------------------------------------------------------+
+#> ||                           Users                           ||
+#> |+-------------------+---------------------------------------+|
+#> ||  Arn              |  arn:aws:iam::xxxxxxxxxxxx:user/hoge  ||
+#> ||  CreateDate       |  2019-05-21T13:05:41+00:00            ||
+#> ||  PasswordLastUsed |  2021-09-01T02:07:31+00:00            ||
+#> ||  Path             |  /                                    ||
+#> ||  UserId           |  XXXXXXXXXXXXXXXXXXXXX                ||
+#> ||  UserName         |  hoge                                 ||
+#> |+-------------------+---------------------------------------+|
 ```
 
 ## Install Commands for each language

@@ -8,7 +8,6 @@ alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
 alias load='exec $SHELL -l'
 alias c='clear'
 alias m='code ~/ghq/github.com/nkmr-jp/setup/.messages'
-alias land='goland'
 alias setup='code ~/ghq/github.com/nkmr-jp/setup'
 alias sleepon='sudo pmset -a disablesleep 0'
 alias sleepoff='sudo pmset -a disablesleep 1'

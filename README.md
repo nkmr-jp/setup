@@ -5,25 +5,26 @@
 
 - [Setup](#setup)
   - [Homebrew Settings (homebrew)](#homebrew-settings-homebrewhttpsbrewshindex_ja)
-    - [install homebrew](#install-homebrew)
-    - [install commands](#install-commands)
-    - [install QucickLook Plugins](#install-qucicklook-plugins)
+    - [Install homebrew](#install-homebrew)
+    - [Install commands](#install-commands)
+    - [Install QucickLook Plugins](#install-qucicklook-plugins)
   - [Git Settings](#git-settings)
-    - [set ssh key to github](#set-ssh-key-to-github)
+    - [Set ssh key to github](#set-ssh-key-to-github)
     - [clone this repository](#clone-this-repository)
-    - [set .gitconfig](#set-gitconfig)
-    - [set git user](#set-git-user)
+    - [Set .gitconfig](#set-gitconfig)
+    - [Set git user](#set-git-user)
   - [Fish Settings (fish)](#fish-settings-fishhttpsfishshellcom)
-    - [install fisher (fisher)](#install-fisher-fisherhttpsgithubcomjorgebucaranfisher)
-    - [install fish plugins](#install-fish-plugins)
-    - [set messages](#set-messages)
-    - [set ~/.zprofile](#set-~zprofile)
-    - [set ~/.config/fish/config.fish](#set-~configfishconfigfish)
+    - [Install fisher (fisher)](#install-fisher-fisherhttpsgithubcomjorgebucaranfisher)
+    - [Install fish plugins](#install-fish-plugins)
+    - [Set messages](#set-messages)
+    - [Set ~/.zprofile](#set-~zprofile)
+    - [Set ~/.config/fish/config.fish](#set-~configfishconfigfish)
     - [fish_config](#fish_config)
   - [Anyenv (anyenv)](#anyenv-anyenvhttpsgithubcomanyenvanyenv)
-    - [install env commands](#install-env-commands)
-    - [install programing langages and set global version](#install-programing-langages-and-set-global-version)
+    - [Install env commands](#install-env-commands)
+    - [Install programing langages and set global version](#install-programing-langages-and-set-global-version)
     - [To get the latest version](#to-get-the-latest-version)
+    - [Install Poetry (poetry)](#install-poetry-poetryhttpsgithubcompython-poetrypoetry)
   - [Install Rust](#install-rust)
   - [Install Java](#install-java)
   - [Install AWS CLI v2](#install-aws-cli-v2)
@@ -39,13 +40,13 @@
 
 ## Homebrew Settings ([homebrew](https://brew.sh/index_ja))
 
-### install homebrew
+### Install homebrew
 
 ```shell
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-### install commands
+### Install commands
 
 ```shell
 brew install \
@@ -55,7 +56,7 @@ procs golangci/tap/golangci-lint \
 exa fd tesseract-lang
 ```
 
-### install QucickLook Plugins
+### Install QucickLook Plugins
 
 ```shell
 # https://github.com/sindresorhus/quick-look-plugins
@@ -66,7 +67,7 @@ xattr -d -r com.apple.quarantine ~/Library/QuickLook
 
 ## Git Settings
 
-### set ssh key to github
+### Set ssh key to github
 
 [GitHub Help](https://help.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
 
@@ -75,14 +76,14 @@ xattr -d -r com.apple.quarantine ~/Library/QuickLook
 ghq get -p nkmr-jp/setup
 ```
 
-### set .gitconfig
+### Set .gitconfig
 ```ini
 # ~/.gitconfig
 [include]
     path = ~/ghq/github.com/nkmr-jp/setup/gitconfig
 ```
 
-### set git user
+### Set git user
 ```shell
 git config --global user.name "username"
 git config --global user.email "mailaddress"
@@ -90,13 +91,13 @@ git config --global user.email "mailaddress"
 
 ## Fish Settings ([fish](https://fishshell.com/))
 
-### install fisher ([fisher](https://github.com/jorgebucaran/fisher))
+### Install fisher ([fisher](https://github.com/jorgebucaran/fisher))
 ```shell
 mkdir -p ~/.config ~/.config/fish ~/.config/fish/functions
 curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher.fish
 ``` 
 
-### install fish plugins
+### Install fish plugins
 ```shell
 fish
 
@@ -115,7 +116,7 @@ fisher list
 exit
 ```
 
-### set messages
+### Set messages
 ```shell
 # A message that is displayed at random when the shell starts.
 echo "hello world!" >> ~/ghq/github.com/nkmr-jp/setup/.messages
@@ -123,7 +124,7 @@ echo "shut the fuck up and write some code" >> ~/ghq/github.com/nkmr-jp/setup/.m
 echo "stay hungry stay foolish" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 ```
 
-### set ~/.zprofile
+### Set ~/.zprofile
 ```shell
 source $HOME/ghq/github.com/nkmr-jp/setup/zprofile.sh
 
@@ -132,7 +133,7 @@ source $HOME/ghq/github.com/nkmr-jp/setup/zprofile.sh
 exec fish
 ```
 
-### set ~/.config/fish/config.fish
+### Set ~/.config/fish/config.fish
 ```shell
 source $HOME/ghq/github.com/nkmr-jp/setup/config.fish
 
@@ -144,12 +145,12 @@ source $HOME/ghq/github.com/nkmr-jp/setup/config.fish
 fish
 fish_config
 
-# setting in browser
+# Setting in browser
 ```
 
 ## Anyenv ([anyenv](https://github.com/anyenv/anyenv))
 
-### install env commands
+### Install env commands
 
 ```sh
 anyenv install --init
@@ -160,7 +161,7 @@ anyenv install nodenv
 exec $SHELL -l
 ```
 
-### install programing langages and set global version
+### Install programing langages and set global version
 ```sh
 goenv install 1.16.3
 goenv global 1.16.3
@@ -178,6 +179,14 @@ anyenv install --update
 anyenv install goenv
 
 # rbenv pyenv nodenv jenv ...
+```
+
+### Install Poetry ([poetry](https://github.com/python-poetry/poetry))
+
+```sh
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+poetry --version
+# > Poetry version 1.1.11
 ```
 
 ## Install Rust

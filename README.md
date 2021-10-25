@@ -187,6 +187,14 @@ anyenv install goenv
 curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
 poetry --version
 # > Poetry version 1.1.11
+
+poetry completions fish > ~/.config/fish/completions/poetry.fish
+
+poetry # press tab
+# > about                                                     (Shows information about Poetry.)
+# > add                                              (Adds a new dependency to pyproject.toml.)
+# > build                              (Builds a package, as a tarball and a wheel by default.)
+# > cache                                                        (Interact with Poetry's cache)
 ```
 
 ## Install Rust

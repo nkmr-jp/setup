@@ -318,6 +318,10 @@ chmod 755 ./bin/cheat
 
 ## Settings
 
+### Google Cloud SDK
+
+See: [クイックスタート: Cloud SDK スタートガイド  |  Cloud SDK のドキュメント  |  Google Cloud](https://cloud.google.com/sdk/docs/quickstart?hl=ja)
+
 ### tig
 
 See: https://qiita.com/numanomanu/items/513d62fb4a7921880085

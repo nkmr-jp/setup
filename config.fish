@@ -97,10 +97,12 @@ function query-github
     open "https://github.com/search?q=$argv"
 end
 
-# help
+# help  
 alias help-fish='open https://fishshell.com/docs/current/commands.html'
 alias help-go-mod='open https://github.com/golang/go/wiki/Modules'
 alias help-gh='open https://cli.github.com/manual/'
+alias help-gcloud='open https://cloud.google.com/sdk/docs/cheatsheet'
+alias help-docker='open https://docs.docker.com/engine/reference/commandline/docker/'
 function help-jq
     open https://dev.classmethod.jp/articles/jq-manual-japanese-translation-roughly/;
     open https://stedolan.github.io/jq/manual/;

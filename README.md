@@ -100,7 +100,9 @@ curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher.f
 ### Install fish plugins
 ```shell
 fish
+```
 
+```shell
 fisher install \
 b4b4r07/enhancd \
 decors/fish-ghq \
@@ -110,9 +112,13 @@ franciscolourenco/done \
 jethrokuan/fzf \
 jethrokuan/z \
 oh-my-fish/theme-nai
+```
 
+```shell
 fisher list
+```
 
+```shell
 exit
 ```
 

@@ -231,7 +231,7 @@ rustup -V
 
 ```sh
 brew install java
-ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk
+sudo ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk
 
 /usr/libexec/java_home -V
 # > Matching Java Virtual Machines (2):

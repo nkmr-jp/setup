@@ -240,7 +240,8 @@ ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMach
 ```
 
 ```sh
-brew install --cask adoptopenjdk8
+brew tap AdoptOpenJDK/openjdk
+brew install adoptopenjdk8
 
 /usr/libexec/java_home -V
 Matching Java Virtual Machines (3):

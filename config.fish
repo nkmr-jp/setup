@@ -18,6 +18,7 @@ alias get='ghu get'
 alias init='ghu init'
 alias profile='code ~/.zprofile'
 alias run='go run main.go'
+alias xbar='code "/Users/nkmr/Library/Application Support/xbar/plugins"'
 
 # util
 

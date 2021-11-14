@@ -100,7 +100,9 @@ curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher.f
 ### Install fish plugins
 ```shell
 fish
+```
 
+```shell
 fisher install \
 b4b4r07/enhancd \
 decors/fish-ghq \
@@ -110,9 +112,13 @@ franciscolourenco/done \
 jethrokuan/fzf \
 jethrokuan/z \
 oh-my-fish/theme-nai
+```
 
+```shell
 fisher list
+```
 
+```shell
 exit
 ```
 
@@ -225,7 +231,7 @@ rustup -V
 
 ```sh
 brew install java
-ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk
+sudo ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk
 
 /usr/libexec/java_home -V
 # > Matching Java Virtual Machines (2):
@@ -234,7 +240,8 @@ ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMach
 ```
 
 ```sh
-brew install --cask adoptopenjdk8
+brew tap AdoptOpenJDK/openjdk
+brew install adoptopenjdk8
 
 /usr/libexec/java_home -V
 Matching Java Virtual Machines (3):

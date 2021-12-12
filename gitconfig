@@ -4,11 +4,12 @@
     st = status
     cm = commit -m
     
-    # ref:  https://qiita.com/peccul/items/90dd469e2f72babbc106
-    #       https://qiita.com/yukiarrr/items/9c21d97f6c8ac31de157
-    #       https://gitlab.com/yukiarrr/dotfiles/blob/master/.gitconfig
-    #       https://stackoverflow.com/questions/7853332/how-to-change-git-log-date-formats
-    #       https://stackoverflow.com/questions/5113425/how-to-make-git-log-show-all-of-todays-commits
+    # See:  
+    # https://qiita.com/peccul/items/90dd469e2f72babbc106
+    # https://qiita.com/yukiarrr/items/9c21d97f6c8ac31de157
+    # https://gitlab.com/yukiarrr/dotfiles/blob/master/.gitconfig
+    # https://stackoverflow.com/questions/7853332/how-to-change-git-log-date-formats
+    # https://stackoverflow.com/questions/5113425/how-to-make-git-log-show-all-of-todays-commits
     co = "!f() { args=$@; if [ -z \"$args\" ]; then branch=$(git branch --all | grep -v HEAD | fzf --preview 'echo {} | cut -c 3- | xargs git log --color=always' | cut -c 3-); git checkout $(echo $branch | sed 's#remotes/[^/]*/##'); else git checkout $args; fi }; f"
     l = log --graph --date=short --decorate=short --pretty=format:'%Cgreen%h %Creset%cd %Cblue%cn %Cred%d %Creset%s'  --date=format:'%y%m%d %H:%M:%S %a'
     d = "!f() { args=$@; [ -z \"$args\" ] && args=HEAD; ([ \"$args\" = \"HEAD\" ] && git status --short || git diff --name-status $args | sed 's/\t/  /') | fzf --preview \"echo {} | cut -c 4- | xargs git diff --color=always $args --\" --multi --height 90% | cut -c 4-; }; f"
@@ -17,8 +18,9 @@
     yesterday = l --since='1 days ago midnight' --until='midnight'
     week = l --since='7 day ago midnight'
 
-    # hub
-    op = "browse" 
+    # See:
+    # https://qiita.com/hajimeni/items/73d2155fc59e152630c4
+    delete-merged-branch = "!f () { git checkout $1; git branch --merged|egrep -v '\\*|develop|main'|xargs git branch -d; };f"
 [core]
     excludesfile = ~/ghq/github.com/nkmr-jp/setup/gitignore_global
     autocrlf = input

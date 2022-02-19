@@ -33,6 +33,7 @@
   - [Install Commands for each language](#install-commands-for-each-language)
   - [Install Commands from Binary](#install-commands-from-binary)
   - [Settings](#settings)
+    - [Google Cloud SDK](#google-cloud-sdk)
     - [tig](#tig)
   
 <!-- /code_chunk_output -->
@@ -132,9 +133,9 @@ echo "stay hungry stay foolish" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 
 ### Set ~/.zprofile
 ```shell
+source $HOME/.path.sh
 source $HOME/ghq/github.com/nkmr-jp/setup/zprofile.sh
-
-# write bash scripts here.
+source $HOME/.env.sh
 
 exec fish
 ```
@@ -237,6 +238,9 @@ sudo ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtua
 # > Matching Java Virtual Machines (2):
 # >     16, x86_64: "Java SE 16"    /Library/Java/JavaVirtualMachines/jdk-16.jdk/Contents/Home
 # >     15.0.2, x86_64:     "OpenJDK 15.0.2"        /Library/Java/JavaVirtualMachines/openjdk.jdk/Contents/Home
+
+# Add ~/.path.sh
+# export PATH="/usr/local/opt/openjdk/bin:$PATH"
 ```
 
 ```sh
@@ -321,6 +325,15 @@ curl -OL https://github.com/cheat/cheat/releases/download/4.2.0/cheat-darwin-amd
 gzip -d cheat-darwin-amd64.gz
 mv cheat-darwin-amd64 ./bin/cheat
 chmod 755 ./bin/cheat
+```
+
+```sh
+mkdir -p ~/src ~/src/bin
+cd ~/src
+curl -OL https://github.com/buildkite/terminal-to-html/releases/download/v3.6.1/terminal-to-html-3.6.1-darwin-amd64.gz
+gzip -d terminal-to-html-3.6.1-darwin-amd64.gz
+mv terminal-to-html-3.6.1-darwin-amd64 ./bin/terminal-to-html
+chmod 755 ./bin/terminal-to-html
 ```
 
 ## Settings

@@ -9,8 +9,5 @@ export PATH="$HOME/.local/bin:$PATH"
 # For installing Command binaries
 export PATH="$HOME/src/bin:$PATH"
 
-# export PATH="$HOME/ghq/github.com/nkmr-jp/setup/bin:$PATH"
-# chmod a+x $HOME/ghq/github.com/nkmr-jp/setup/bin/*
-
 # save path order
 export ZSH_PATH=$PATH

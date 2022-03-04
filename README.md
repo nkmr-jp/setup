@@ -50,13 +50,12 @@
 ### Install commands
 
 ```shell
-brew tap hashicorp/tap
 brew install \
 fish ghq peco gh fzf trash-cli terminal-notifier  \
 jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs golangci/tap/golangci-lint \
 exa fd tesseract-lang google-cloud-sdk pre-commit \
-hashicorp/tap/terraform terraformer
+terraformer
 ```
 
 ### Install QucickLook Plugins
@@ -167,6 +166,7 @@ anyenv install rbenv
 anyenv install pyenv
 anyenv install goenv
 anyenv install nodenv
+anyenv install tfenv
 exec $SHELL -l
 ```
 

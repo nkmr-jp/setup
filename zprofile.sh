@@ -1,3 +1,5 @@
+export GOENV_ROOT="$HOME/.anyenv/envs/goenv/"
+export PATH="$GOENV_ROOT/bin:$PATH"
 export PATH="$HOME/.anyenv/bin:$PATH"
 eval "$(anyenv init - zsh)"
 

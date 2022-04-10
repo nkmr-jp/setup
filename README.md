@@ -340,6 +340,14 @@ chmod 755 ./bin/terminal-to-html
 
 ## Settings
 
+### pack
+
+See: https://buildpacks.io/docs/tools/pack/
+
+```sh
+source (pack completion --shell fish)
+```
+
 ### Google Cloud SDK
 
 See: [クイックスタート: Cloud SDK スタートガイド  |  Cloud SDK のドキュメント  |  Google Cloud](https://cloud.google.com/sdk/docs/quickstart?hl=ja)

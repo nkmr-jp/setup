@@ -33,6 +33,7 @@
   - [Install Commands for each language](#install-commands-for-each-language)
   - [Install Commands from Binary](#install-commands-from-binary)
   - [Settings](#settings)
+    - [pack](#pack)
     - [Google Cloud SDK](#google-cloud-sdk)
     - [tig](#tig)
   
@@ -55,7 +56,7 @@ fish ghq peco gh fzf trash-cli terminal-notifier  \
 jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs golangci/tap/golangci-lint \
 exa fd tesseract-lang google-cloud-sdk pre-commit \
-terraformer tflint buildpacks/tap/pack
+terraformer tflint buildpacks/tap/pack terragrunt
 ```
 
 ### Install QucickLook Plugins

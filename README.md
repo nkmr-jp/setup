@@ -55,7 +55,7 @@ fish ghq peco gh fzf trash-cli terminal-notifier  \
 jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs golangci/tap/golangci-lint \
 exa fd tesseract-lang google-cloud-sdk pre-commit \
-terraformer tflint buildpacks/tap/pack
+terraformer tflint buildpacks/tap/pack hashicorp/tap/terraform
 ```
 
 ### Install QucickLook Plugins

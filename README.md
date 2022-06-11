@@ -54,8 +54,7 @@
 brew install \
 fish ghq peco gh fzf trash-cli terminal-notifier  \
 jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
-procs golangci/tap/golangci-lint \
-exa fd tesseract-lang google-cloud-sdk pre-commit \
+procs exa fd tesseract-lang google-cloud-sdk pre-commit \
 terraformer tflint buildpacks/tap/pack terragrunt
 ```
 
@@ -321,6 +320,11 @@ pip install yq jupyterlab notebook voila iplantuml
 ```
 
 ## Install Commands from Binary
+
+```sh
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.46.2
+```
+
 ```sh
 mkdir -p ~/src ~/src/bin
 cd ~/src

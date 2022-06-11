@@ -322,7 +322,7 @@ pip install yq jupyterlab notebook voila iplantuml
 ## Install Commands from Binary
 
 ```sh
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.46.2
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b (go env GOPATH)/bin v1.46.2
 ```
 
 ```sh

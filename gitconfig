@@ -26,3 +26,6 @@
     autocrlf = input
 [ghq]
     root = ~/ghq
+# See: https://go.dev/doc/faq#git_https
+[url "ssh://git@github.com/"]
+	insteadOf = https://github.com/

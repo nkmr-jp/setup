@@ -1,3 +1,10 @@
+# Golang
+# See: https://github.com/golang/go/issues/35164#issuecomment-546503518
+export GO111MODULE=on
+export GOPROXY=direct
+export GOSUMDB=off
+
+# anyenv
 export GOENV_ROOT="$HOME/.anyenv/envs/goenv/"
 export PATH="$GOENV_ROOT/bin:$PATH"
 export PATH="$HOME/.anyenv/bin:$PATH"

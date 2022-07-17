@@ -19,6 +19,10 @@ alias init='ghu init'
 alias profile='code ~/.zprofile'
 alias run='go run main.go'
 alias xbar='code "/Users/nkmr/Library/Application Support/xbar/plugins"'
+alias ops='open https://console.cloud.google.com/storage/browser'
+alias opf='open https://console.cloud.google.com/functions/list'
+alias opb='open https://console.cloud.google.com/bigquery'
+
 
 # util
 

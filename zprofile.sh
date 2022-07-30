@@ -5,10 +5,14 @@ export GOPROXY=direct
 export GOSUMDB=off
 
 # anyenv
+# goenv
+# https://github.com/syndbg/goenv/blob/master/INSTALL.md
 export GOENV_ROOT="$HOME/.anyenv/envs/goenv/"
 export PATH="$GOENV_ROOT/bin:$PATH"
 export PATH="$HOME/.anyenv/bin:$PATH"
 eval "$(anyenv init - zsh)"
+export PATH="$GOROOT/bin:$PATH"
+export PATH="$PATH:$GOPATH/bin"
 
 # path
 export PATH="$HOME/.cargo/bin:$PATH"

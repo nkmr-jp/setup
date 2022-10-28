@@ -22,6 +22,8 @@ alias xbar='code ~/ghq/github.com/nkmr-jp/xbar/plugins'
 alias ops='open https://console.cloud.google.com/storage/browser'
 alias opf='open https://console.cloud.google.com/functions/list'
 alias opb='open https://console.cloud.google.com/bigquery'
+alias opr='open https://console.cloud.google.com/run'
+alias ope='open https://console.cloud.google.com/eventarc/triggers'
 
 
 # util
@@ -138,3 +140,7 @@ end
 if test -f ~/ghq/github.com/nkmr-jp/setup/.private.fish
    source ~/ghq/github.com/nkmr-jp/setup/.private.fish
 end
+
+## pack 
+## See: https://buildpacks.io/docs/tools/pack/
+source (pack completion --shell fish)

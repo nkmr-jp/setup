@@ -17,6 +17,7 @@ export PATH="$PATH:$GOPATH/bin"
 # path
 export PATH="$HOME/.cargo/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
+export PATH="/usr/local/Caskroom/miniconda/base/bin:$PATH"
 
 # For installing Command binaries
 export PATH="$HOME/src/bin:$PATH"

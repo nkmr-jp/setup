@@ -143,4 +143,4 @@ end
 
 ## pack 
 ## See: https://buildpacks.io/docs/tools/pack/
-source (pack completion --shell fish)
+# source (pack completion --shell fish)

@@ -107,7 +107,6 @@ fish
 
 ```shell
 fisher install \
-b4b4r07/enhancd \
 decors/fish-ghq \
 edc/bass \
 fishpkg/fish-humanize-duration \

@@ -97,8 +97,7 @@ git config --global user.email "mailaddress"
 
 ### Install fisher ([fisher](https://github.com/jorgebucaran/fisher))
 ```shell
-mkdir -p ~/.config ~/.config/fish ~/.config/fish/functions
-curl https://git.io/fisher —create-dirs -sLo ~/.config/fish/functions/fisher.fish
+curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
 ``` 
 
 ### Install fish plugins

@@ -136,11 +136,6 @@ function fish_greeting
     gshuf -n 1 $HOME/ghq/github.com/nkmr-jp/setup/.messages
 end
 
-## private
-if test -f ~/ghq/github.com/nkmr-jp/setup/.private.fish
-   source ~/ghq/github.com/nkmr-jp/setup/.private.fish
-end
-
 ## pack 
 ## See: https://buildpacks.io/docs/tools/pack/
 # source (pack completion --shell fish)

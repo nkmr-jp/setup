@@ -57,7 +57,7 @@ jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs exa fd tesseract-lang google-cloud-sdk pre-commit \
 terraformer tflint buildpacks/tap/pack terragrunt
 
-brew install --cask miniconda
+brew install --cask miniconda warp
 ```
 
 ### Install QucickLook Plugins

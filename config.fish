@@ -126,7 +126,7 @@ end
 set -U __done_min_cmd_duration 5000
 
 ## keybind
-bind \c] enhancd
+# bind \c] enhancd
 
 ## restore path order from zsh
 set PATH $ZSH_PATH

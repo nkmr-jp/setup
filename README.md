@@ -55,7 +55,7 @@ brew install \
 fish ghq peco gh fzf trash-cli terminal-notifier  \
 jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs exa fd tesseract-lang google-cloud-sdk pre-commit \
-terraformer tflint buildpacks/tap/pack terragrunt
+tflint buildpacks/tap/pack tgenv grep
 
 brew install --cask miniconda warp
 ```

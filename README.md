@@ -58,6 +58,7 @@ procs exa fd tesseract-lang google-cloud-sdk pre-commit \
 tflint buildpacks/tap/pack tgenv grep
 
 brew install --cask miniconda warp
+brew install --cask rectangle
 ```
 
 ### Install QucickLook Plugins

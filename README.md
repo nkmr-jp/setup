@@ -59,6 +59,8 @@ tflint buildpacks/tap/pack tgenv grep
 
 brew install --cask miniconda warp
 brew install --cask rectangle
+brew tap redis-stack/redis-stack
+brew install redis-stack
 ```
 
 ### Install QucickLook Plugins

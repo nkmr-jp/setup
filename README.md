@@ -55,13 +55,30 @@ brew install \
 fish ghq peco gh fzf trash-cli terminal-notifier  \
 jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs exa fd tesseract-lang google-cloud-sdk pre-commit \
-tflint buildpacks/tap/pack tgenv grep redis
+tflint buildpacks/tap/pack tgenv grep
 
 brew install --cask miniconda warp
 brew install --cask rectangle
 brew tap redis-stack/redis-stack
-brew install redis-stack-redisinsight
+brew install redis-stack
 ```
+
+### set launch agent
+
+```shell
+# add plist
+ln -sfn $HOME/ghq/github.com/nkmr-jp/setup/LaunchAgents/io.redis.stack.server.plist $HOME/Library/LaunchAgents/io.redis.stack.server.plist
+# load
+launchctl load ~/Library/LaunchAgents/io.redis.stack.server.plist
+# list
+launchctl list | grep redis
+# > -       0       com.redisstack.server
+# start
+launchctl start io.redis.stack.server
+```
+
+`redis-stack-server` can't use `brew service`
+see: https://github.com/redis-stack/homebrew-redis-stack/issues/3
 
 ### Install QucickLook Plugins
 

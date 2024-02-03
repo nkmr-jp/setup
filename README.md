@@ -77,7 +77,7 @@ launchctl list | grep redis
 launchctl start io.redis.stack.server
 ```
 
-`redis-stack-server` can't use `brew service`
+`redis-stack-server` can't use `brew service`.
 see: https://github.com/redis-stack/homebrew-redis-stack/issues/3
 
 ### Install QucickLook Plugins

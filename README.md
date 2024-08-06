@@ -63,23 +63,6 @@ brew tap redis-stack/redis-stack
 brew install redis-stack
 ```
 
-### set launch agent
-
-```shell
-# add plist
-ln -sfn $HOME/ghq/github.com/nkmr-jp/setup/LaunchAgents/io.redis.stack.server.plist $HOME/Library/LaunchAgents/io.redis.stack.server.plist
-# load
-launchctl load ~/Library/LaunchAgents/io.redis.stack.server.plist
-# list
-launchctl list | grep redis
-# > -       0       com.redisstack.server
-# start
-launchctl start io.redis.stack.server
-```
-
-`redis-stack-server` can't use `brew service`.
-see: https://github.com/redis-stack/homebrew-redis-stack/issues/3
-
 ### Install QucickLook Plugins
 
 ```shell

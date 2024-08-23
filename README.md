@@ -263,15 +263,16 @@ brew install temurin@8
 jenv add (/usr/libexec/java_home -v "22")
 jenv add (/usr/libexec/java_home -v "1.8")
 
-jenv global 15
+jenv global system
 jenv versions
-# >   system (set by /Users/nkmr/.anyenv/envs/jenv/version)
-# > * 15
-# >   15.0
-# >   15.0.2
-# >   16
-# >   openjdk64-15.0.2
-# >   oracle64-16
+# * system (set by /Users/nkmr/.anyenv/envs/jenv/version)
+#   1.8
+#   1.8.0.422
+#   22
+#   22.0
+#   22.0.2
+#   temurin64-1.8.0.422
+#   temurin64-22.0.2
 ```
 
 ## Install AWS CLI v2

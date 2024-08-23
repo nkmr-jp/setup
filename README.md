@@ -249,21 +249,18 @@ sudo ln -sfn /usr/local/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtua
 ```
 
 ```sh
-brew tap AdoptOpenJDK/openjdk
-brew install adoptopenjdk8
+brew install temurin
+brew install temurin@8
 
 /usr/libexec/java_home -V
-Matching Java Virtual Machines (3):
-# >     16.0.1, x86_64:     "OpenJDK 16.0.1"        /Library/Java/JavaVirtualMachines/openjdk.jdk/Contents/Home
-# >     15.0.2, x86_64:     "OpenJDK 15.0.2"        /Library/Java/JavaVirtualMachines/openjdk.jdk/Contents/Home
-# >     1.8.0_292, x86_64:  "AdoptOpenJDK 8"        /Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home
-
-/Library/Java/JavaVirtualMachines/openjdk.jdk/Contents/Home
+# Matching Java Virtual Machines (2):
+#     22.0.2 (arm64) "Eclipse Adoptium" - "OpenJDK 22.0.2" /Library/Java/JavaVirtualMachines/temurin-22.jdk/Contents/Home
+#     1.8.0_422 (x86_64) "Eclipse Temurin" - "Eclipse Temurin 8" /Library/Java/JavaVirtualMachines/temurin-8.jdk/Contents/Home
+# /Library/Java/JavaVirtualMachines/temurin-22.jdk/Contents/Home
 ```
 
 ```sh
-jenv add (/usr/libexec/java_home -v "16")
-jenv add (/usr/libexec/java_home -v "15")
+jenv add (/usr/libexec/java_home -v "22")
 jenv add (/usr/libexec/java_home -v "1.8")
 
 jenv global 15

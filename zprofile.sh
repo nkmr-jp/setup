@@ -22,5 +22,8 @@ export PATH="/usr/local/Caskroom/miniconda/base/bin:$PATH"
 # For installing Command binaries
 export PATH="$HOME/src/bin:$PATH"
 
+# Added by Windsurf
+export PATH="$HOME/.codeium/windsurf/bin:$PATH"
+
 # save path order
 export ZSH_PATH=$PATH

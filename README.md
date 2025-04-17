@@ -142,6 +142,14 @@ source $HOME/.path.sh
 source $HOME/ghq/github.com/nkmr-jp/setup/zprofile.sh
 source $HOME/.env.sh
 
+if [[ -n "${PROCESS_LAUNCHED_BY_Q}" ]]; then
+  return
+fi
+
+if [[ -n "${PROCESS_LAUNCHED_BY_CW_LAUNCHED_BY_Q}" ]]; then
+  return
+fi
+
 exec fish
 ```
 

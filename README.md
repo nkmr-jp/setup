@@ -56,7 +56,7 @@ fish ghq peco gh fzf trash-cli terminal-notifier  \
 jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs exa fd tesseract-lang google-cloud-sdk pre-commit \
 tflint buildpacks/tap/pack tgenv grep miniserve orbstack helm
-parallel lefthook htop tmux
+parallel lefthook htop tmux duckdb
 
 brew install --cask miniconda warp
 brew install --cask rectangle

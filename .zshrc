@@ -132,6 +132,9 @@ function ghq_finder() {
 zle -N ghq_finder
 bindkey '^G' ghq_finder
 
+# ghu
+source ~/ghq/github.com/nkmr-jp/fish-functions/ghu.zsh
+
 # ===== Tool Integrations =====
 # Add any tool-specific configurations here
 

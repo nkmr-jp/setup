@@ -134,7 +134,7 @@ bindkey '^G' ghq_finder
 
 # 履歴検索 (Ctrl+R)
 function history_search() {
-    local selected_command=$(history -n 1 | fzf --reverse --no-sort --height 40%)
+    local selected_command=$(history -n 1 | fzf --reverse --height 40%)
     if [[ -n "$selected_command" ]]; then
         BUFFER="$selected_command"
         zle end-of-line

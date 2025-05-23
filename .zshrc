@@ -132,6 +132,36 @@ function ghq_finder() {
 zle -N ghq_finder
 bindkey '^G' ghq_finder
 
+# 履歴検索 (Ctrl+R)
+function history_search() {
+    local selected_command=$(history -n 1 | fzf --reverse --no-sort --height 40%)
+    if [[ -n "$selected_command" ]]; then
+        BUFFER="$selected_command"
+        zle end-of-line
+    fi
+    zle reset-prompt
+}
+zle -N history_search
+bindkey '^R' history_search
+
+# 最近アクセスしたディレクトリに移動 (Ctrl+])
+function recent_dirs() {
+    # ディレクトリスタックの操作を有効化
+    setopt AUTO_PUSHD
+    
+    # dirs -pは重複も含むため、ユニークな結果を返すようにする
+    local selected_dir=$(dirs -p | sort -u | fzf --reverse --height 40% --preview 'ls -la {}')
+    if [[ -n "$selected_dir" ]]; then
+        BUFFER="cd ${selected_dir}"
+        zle accept-line
+        cd "$selected_dir"
+    else
+        zle reset-prompt
+    fi
+}
+zle -N recent_dirs
+bindkey '^]' recent_dirs
+
 # ghu
 source ~/ghq/github.com/nkmr-jp/fish-functions/ghu.zsh
 

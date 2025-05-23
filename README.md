@@ -63,6 +63,8 @@ parallel lefthook htop tmux duckdb deno bottom
 
 brew install --cask miniconda warp
 brew install --cask rectangle
+# brew install --cask hyper@canary
+brew install --cask wezterm
 brew tap redis-stack/redis-stack
 brew install redis-stack
 ```

@@ -67,6 +67,7 @@ brew install --cask rectangle
 brew install --cask wezterm
 brew tap redis-stack/redis-stack
 brew install redis-stack
+brew install --cask font-Anonymous-Pro-nerd-font
 ```
 
 ### Install QucickLook Plugins
@@ -372,6 +373,10 @@ curl -OL https://github.com/buildkite/terminal-to-html/releases/download/v3.6.1/
 gzip -d terminal-to-html-3.6.1-darwin-amd64.gz
 mv terminal-to-html-3.6.1-darwin-amd64 ./bin/terminal-to-html
 chmod 755 ./bin/terminal-to-html
+```
+
+```sh
+curl -sS https://starship.rs/install.sh | sh
 ```
 
 ## Settings

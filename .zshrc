@@ -117,6 +117,20 @@ fi
 # Add any key bindings here
 # Note: Fish's bind \c] enhancd would be implemented differently in Zsh
 
+# ghqリポジトリ検索と移動 (Ctrl+G)
+function ghq_finder() {
+    local selected_dir=$(find ~/ghq -mindepth 3 -maxdepth 3 -type d | fzf --reverse --height 40% --preview 'ls -la {}')
+    if [[ -n "$selected_dir" ]]; then
+        BUFFER="cd ${selected_dir}"
+        zle accept-line
+        cd "$selected_dir"
+    else
+        zle reset-prompt
+    fi
+}
+zle -N ghq_finder
+bindkey '^G' ghq_finder
+
 # ===== Tool Integrations =====
 # Add any tool-specific configurations here
 

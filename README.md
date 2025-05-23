@@ -167,7 +167,8 @@ ln -sf ~/ghq/github.com/nkmr-jp/setup/.zshrc ~/.zshrc
 # echo "source ~/ghq/github.com/nkmr-jp/setup/.zshrc" >> ~/.zshrc
 ```
 
-### Set ~/.zprofile
+#### Set ~/.zprofile
+
 ```shell
 source $HOME/.path.sh
 source $HOME/ghq/github.com/nkmr-jp/setup/zprofile.sh
@@ -183,10 +184,7 @@ fi
 
 # Choose your default shell
 # For Fish:
-exec fish
-
-# For Zsh (uncomment the line below and comment out the 'exec fish' line above)
-# exec zsh
+# exec fish
 ```
 
 ## Anyenv ([anyenv](https://github.com/anyenv/anyenv))

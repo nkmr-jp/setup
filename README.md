@@ -13,13 +13,16 @@
     - [clone this repository](#clone-this-repository)
     - [Set .gitconfig](#set-gitconfig)
     - [Set git user](#set-git-user)
-  - [Fish Settings (fish)](#fish-settings-fishhttpsfishshellcom)
-    - [Install fisher (fisher)](#install-fisher-fisherhttpsgithubcomjorgebucaranfisher)
-    - [Install fish plugins](#install-fish-plugins)
-    - [Set messages](#set-messages)
-    - [Set ~/.zprofile](#set-~zprofile)
-    - [Set ~/.config/fish/config.fish](#set-~configfishconfigfish)
-    - [fish_config](#fish_config)
+  - [Shell Settings](#shell-settings)
+    - [Fish Settings (fish)](#fish-settings-fishhttpsfishshellcom)
+      - [Install fisher (fisher)](#install-fisher-fisherhttpsgithubcomjorgebucaranfisher)
+      - [Install fish plugins](#install-fish-plugins)
+      - [Set messages](#set-messages)
+      - [Set ~/.config/fish/config.fish](#set-~configfishconfigfish)
+      - [fish_config](#fish_config)
+    - [Zsh Settings](#zsh-settings)
+      - [Set ~/.zshrc](#set-zshrc)
+    - [Set ~/.zprofile](#set-zprofile)
   - [Anyenv (anyenv)](#anyenv-anyenvhttpsgithubcomanyenvanyenv)
     - [Install env commands](#install-env-commands)
     - [Install programing langages and set global version](#install-programing-langages-and-set-global-version)
@@ -97,14 +100,16 @@ git config --global user.name "username"
 git config --global user.email "mailaddress"
 ```
 
-## Fish Settings ([fish](https://fishshell.com/))
+## Shell Settings
 
-### Install fisher ([fisher](https://github.com/jorgebucaran/fisher))
+### Fish Settings ([fish](https://fishshell.com/))
+
+#### Install fisher ([fisher](https://github.com/jorgebucaran/fisher))
 ```shell
 curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
 ``` 
 
-### Install fish plugins
+#### Install fish plugins
 ```shell
 fish
 ```
@@ -128,12 +133,38 @@ fisher list
 exit
 ```
 
-### Set messages
+#### Set messages
 ```shell
 # A message that is displayed at random when the shell starts.
 echo "hello world!" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 echo "shut the fuck up and write some code" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 echo "stay hungry stay foolish" >> ~/ghq/github.com/nkmr-jp/setup/.messages
+```
+
+#### Set ~/.config/fish/config.fish
+```shell
+source $HOME/ghq/github.com/nkmr-jp/setup/config.fish
+
+# write fish scripts here.
+```
+
+#### fish_config
+```shell
+fish
+fish_config
+
+# Setting in browser
+```
+
+### Zsh Settings
+
+#### Set ~/.zshrc
+```shell
+# Create a symbolic link to the Zsh configuration file
+ln -sf ~/ghq/github.com/nkmr-jp/setup/.zshrc ~/.zshrc
+
+# Or source it directly in your existing .zshrc
+# echo "source ~/ghq/github.com/nkmr-jp/setup/.zshrc" >> ~/.zshrc
 ```
 
 ### Set ~/.zprofile
@@ -150,22 +181,12 @@ if [[ -n "${PROCESS_LAUNCHED_BY_CW_LAUNCHED_BY_Q}" ]]; then
   return
 fi
 
+# Choose your default shell
+# For Fish:
 exec fish
-```
 
-### Set ~/.config/fish/config.fish
-```shell
-source $HOME/ghq/github.com/nkmr-jp/setup/config.fish
-
-# write fish scripts here.
-```
-
-### fish_config
-```shell
-fish
-fish_config
-
-# Setting in browser
+# For Zsh (uncomment the line below and comment out the 'exec fish' line above)
+# exec zsh
 ```
 
 ## Anyenv ([anyenv](https://github.com/anyenv/anyenv))

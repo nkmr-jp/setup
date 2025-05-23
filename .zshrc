@@ -180,3 +180,5 @@ source ~/ghq/github.com/nkmr-jp/fish-functions/ghu.zsh
 if [[ -f ~/.zshrc.local ]]; then
     source ~/.zshrc.local
 fi
+
+eval "$(starship init zsh)"

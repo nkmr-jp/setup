@@ -98,7 +98,8 @@ compinit
 
 # Enable colors
 autoload -Uz colors
-colors
+# colorsコマンドはcolor表示関数と名前が競合するため、関数名を変更
+# colors_fn
 
 # ===== Greeting Message =====
 # Display random message on startup (equivalent to fish_greeting)

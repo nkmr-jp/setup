@@ -68,7 +68,12 @@ brew install --cask rectangle
 brew install --cask wezterm
 brew tap redis-stack/redis-stack
 brew install redis-stack
-brew install --cask font-Anonymous-Pro-nerd-font
+
+```
+
+### Setup Starship preset
+```sh
+starship preset pastel-powerline -o ~/.config/starship.toml
 ```
 
 ### Install QucickLook Plugins

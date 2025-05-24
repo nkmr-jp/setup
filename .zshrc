@@ -3,7 +3,8 @@
 
 # ===== Aliases =====
 alias l='ls'
-alias lla='ll -a'
+alias ll='ls -l'
+alias lla='ls -la'
 alias op='open'
 alias rm='trash-put'
 alias pecob='peco --layout bottom-up'

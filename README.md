@@ -65,9 +65,10 @@ font-fira-code-nerd-font
 brew install --cask miniconda warp
 brew install --cask rectangle
 # brew install --cask hyper@canary
-brew install --cask wezterm
+# brew install --cask wezterm
 brew tap redis-stack/redis-stack
 brew install redis-stack
+brew install --cask iterm2
 
 ```
 

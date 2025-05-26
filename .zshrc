@@ -11,8 +11,8 @@ alias pecob='peco --layout bottom-up'
 alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
 alias load='exec $SHELL -l'
 alias c='clear'
-alias m='windsurf ~/ghq/github.com/nkmr-jp/setup/.messages'
-alias setup='windsurf ~/ghq/github.com/nkmr-jp/setup'
+alias m='code ~/ghq/github.com/nkmr-jp/setup/.messages'
+alias setup='code ~/ghq/github.com/nkmr-jp/setup'
 alias sleepon='sudo pmset -a disablesleep 0'
 alias sleepoff='sudo pmset -a disablesleep 1'
 alias opg='gh repo view --web'
@@ -20,9 +20,9 @@ alias oura='open https://cloud.ouraring.com/dashboard'
 alias e='open /Applications/Effortless.app'
 alias get='ghu get'
 alias init='ghu init'
-alias profile='windsurf ~/.zprofile'
+alias profile='code ~/.zprofile'
 alias run='go run main.go'
-alias xbar='windsurf ~/ghq/github.com/nkmr-jp/xbar/plugins'
+alias xbar='code ~/ghq/github.com/nkmr-jp/xbar/plugins'
 alias ops='open https://console.cloud.google.com/storage/browser'
 alias opf='open https://console.cloud.google.com/functions/list'
 alias opb='open https://console.cloud.google.com/bigquery'
@@ -136,7 +136,7 @@ bindkey '^G' ghq_finder
 
 # 履歴検索 (Ctrl+R)
 function history_search() {
-    local selected_command=$(history -n 1 | fzf --reverse --height 40%)
+    local selected_command=$(history -n 1 | awk '!seen[$0]++' | fzf --reverse --height 40%)
     if [[ -n "$selected_command" ]]; then
         BUFFER="$selected_command"
         zle end-of-line

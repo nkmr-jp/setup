@@ -69,6 +69,7 @@ brew install --cask rectangle
 brew tap redis-stack/redis-stack
 brew install redis-stack
 brew install --cask iterm2
+brew install --cask github
 
 ```
 

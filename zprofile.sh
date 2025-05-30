@@ -7,6 +7,14 @@ export GO111MODULE=on
 export GOPROXY=direct
 export GOSUMDB="sum.golang.org"
 
+# Claude Code
+# https://docs.anthropic.com/ja/docs/claude-code/monitoring-usage
+export CLAUDE_CODE_ENABLE_TELEMETRY=1
+export OTEL_METRICS_EXPORTER=otlp
+export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+export OTEL_METRIC_EXPORT_INTERVAL=10000  # 10秒
+
 # anyenv
 # goenv
 # https://github.com/syndbg/goenv/blob/master/INSTALL.md

@@ -164,6 +164,63 @@ function recent_dirs() {
 zle -N recent_dirs
 bindkey '^]' recent_dirs
 
+
+# Git worktree operations
+function wt() {
+    case "$1" in
+        "add")
+            if [[ -z "$2" ]]; then
+                echo "Usage: wt add <branch_name>"
+                return 1
+            fi
+            git worktree add "../${PWD##*/}-$2" -b "$2"
+            ;;
+        "ls")
+            git worktree list
+            ;;
+        "rm")
+            if [[ -z "$2" ]]; then
+                echo "Usage: wt rm [-f] <worktree_path>"
+                return 1
+            fi
+            if [[ "$2" == "-f" ]]; then
+                if [[ -z "$3" ]]; then
+                    echo "Usage: wt rm -f <worktree_path>"
+                    return 1
+                fi
+                git worktree remove --force "$3"
+            else
+                git worktree remove "$2"
+            fi
+            ;;
+        "rmall")
+            # Get main directory (directory without suffix)
+            local main_dir=$(basename "$PWD")
+            local base_name=$(echo "$main_dir" | sed 's/-[^-]*$//')
+            
+            # Remove all worktrees except the main one
+            git worktree list --porcelain | grep "^worktree" | while read -r line; do
+                local worktree_path=$(echo "$line" | cut -d' ' -f2-)
+                local worktree_name=$(basename "$worktree_path")
+                
+                # Skip if this is the main directory (no suffix)
+                if [[ "$worktree_name" != "$base_name" && "$worktree_path" != "$PWD" ]]; then
+                    echo "Removing worktree: $worktree_path"
+                    git worktree remove --force "$worktree_path"
+                fi
+            done
+            ;;
+        *)
+            echo "Usage: wt {add|ls|rm|rmall}"
+            echo "  add <branch>    - Create new branch and worktree"
+            echo "  ls              - List worktrees"
+            echo "  rm [-f] <path>  - Remove worktree (use -f to force)"
+            echo "  rmall           - Remove all worktrees except main"
+            return 1
+            ;;
+    esac
+}
+
 # ghu
 source ~/ghq/github.com/nkmr-jp/fish-functions/ghu.zsh
 

@@ -43,7 +43,7 @@ function colors() {
     # Zsh equivalent of Fish's set_color --print-colors
     # This is a simplified version that shows basic colors
     local colors=("black" "red" "green" "yellow" "blue" "magenta" "cyan" "white")
-    
+
     for color in "${colors[@]}"; do
         echo -e "\e[$(color_code $color)m$color\e[0m"
     done
@@ -150,7 +150,7 @@ bindkey '^R' history_search
 function recent_dirs() {
     # ディレクトリスタックの操作を有効化
     setopt AUTO_PUSHD
-    
+
     # dirs -pは重複も含むため、ユニークな結果を返すようにする
     local selected_dir=$(dirs -p | sort -u | fzf --reverse --height 40% --preview 'ls -la {}')
     if [[ -n "$selected_dir" ]]; then
@@ -188,25 +188,49 @@ function wt() {
                     echo "Usage: wt rm -f <worktree_path>"
                     return 1
                 fi
+                # Get branch name from worktree path
+                local branch_name=$(git worktree list | grep "$3" | awk '{print $3}' | sed 's/\[//;s/\]//')
                 git worktree remove --force "$3"
+                # Delete the branch if it exists
+                if [[ -n "$branch_name" ]]; then
+                    echo "Deleting branch: $branch_name"
+                    git branch -D "$branch_name"
+                fi
             else
+                # Get branch name from worktree path
+                local branch_name=$(git worktree list | grep "$2" | awk '{print $3}' | sed 's/\[//;s/\]//')
                 git worktree remove "$2"
+                # Delete the branch if it exists
+                if [[ -n "$branch_name" ]]; then
+                    echo "Deleting branch: $branch_name"
+                    git branch -D "$branch_name"
+                fi
             fi
             ;;
         "rmall")
             # Get main directory (directory without suffix)
             local main_dir=$(basename "$PWD")
             local base_name=$(echo "$main_dir" | sed 's/-[^-]*$//')
-            
+
             # Remove all worktrees except the main one
             git worktree list --porcelain | grep "^worktree" | while read -r line; do
                 local worktree_path=$(echo "$line" | cut -d' ' -f2-)
                 local worktree_name=$(basename "$worktree_path")
-                
+
                 # Skip if this is the main directory (no suffix)
                 if [[ "$worktree_name" != "$base_name" && "$worktree_path" != "$PWD" ]]; then
+                    # Get branch name for this worktree
+                    local branch_info=$(git worktree list | grep "$worktree_path")
+                    local branch_name=$(echo "$branch_info" | awk '{print $3}' | sed 's/\[//;s/\]//')
+
                     echo "Removing worktree: $worktree_path"
                     git worktree remove --force "$worktree_path"
+
+                    # Delete the branch if it exists
+                    if [[ -n "$branch_name" ]]; then
+                        echo "Deleting branch: $branch_name"
+                        git branch -D "$branch_name"
+                    fi
                 fi
             done
             ;;
@@ -214,8 +238,8 @@ function wt() {
             echo "Usage: wt {add|ls|rm|rmall}"
             echo "  add <branch>    - Create new branch and worktree"
             echo "  ls              - List worktrees"
-            echo "  rm [-f] <path>  - Remove worktree (use -f to force)"
-            echo "  rmall           - Remove all worktrees except main"
+            echo "  rm [-f] <path>  - Remove worktree and its branch (use -f to force)"
+            echo "  rmall           - Remove all worktrees except main and their branches"
             return 1
             ;;
     esac

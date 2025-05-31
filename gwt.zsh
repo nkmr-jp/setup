@@ -71,7 +71,7 @@ gwt() {
 # ========================================
 _gwt_new() {
     local branch_name="$1"
-    local base_branch="${2:-main}"
+    local base_branch="${2:-master}"
 
     if [[ -z "$branch_name" ]]; then
         echo -e "${RED}Error: ブランチ名を指定してください${RESET}"
@@ -290,7 +290,7 @@ _gwt_info() {
 # ========================================
 _gwt_quick() {
     local prefix="$1"
-    local base_branch="${2:-main}"
+    local base_branch="${2:-master}"
 
     if [[ -z "$prefix" ]]; then
         echo -e "${RED}Error: プレフィックスを指定してください${RESET}"
@@ -321,11 +321,18 @@ _gwt_prune() {
 
     # マージ済みのブランチを確認して削除
     echo -e "\n${YELLOW}=== マージ済みのブランチとworktreeを削除 ===${RESET}"
-    local merged_branches=$(git branch --merged | grep -v '\*\|main\|master\|develop' | tr -d ' ')
     
-    if [[ -n "$merged_branches" ]]; then
+    # マージ済みブランチを取得（+記号とprotected branchesを除外）
+    local -a merged_branches
+    while IFS= read -r branch; do
+        [[ -n "$branch" ]] && merged_branches+=("$branch")
+    done < <(git branch --merged | grep -v '\*\|main\|master\|develop\|+' | tr -d ' ')
+    
+    if [[ ${#merged_branches[@]} -gt 0 ]]; then
+        echo -e "${CYAN}マージ済みブランチ: ${merged_branches[*]}${RESET}"
+        
         # まず、マージ済みブランチに対応するworktreeをすべて削除
-        echo "$merged_branches" | while IFS= read -r branch; do
+        for branch in "${merged_branches[@]}"; do
             [[ -z "$branch" ]] && continue
             
             # 該当するworktreeを検索
@@ -350,7 +357,7 @@ _gwt_prune() {
         done
         
         # 次に、ブランチを削除
-        echo "$merged_branches" | while IFS= read -r branch; do
+        for branch in "${merged_branches[@]}"; do
             [[ -z "$branch" ]] && continue
             
             # ブランチを削除

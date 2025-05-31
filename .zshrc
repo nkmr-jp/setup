@@ -146,7 +146,7 @@ function history_search() {
     zle reset-prompt
 }
 zle -N history_search
-# bindkey '^R' history_search # atuin 使うので不要
+bindkey '^R' history_search
 
 # 最近アクセスしたディレクトリに移動 (Ctrl+])
 function recent_dirs() {
@@ -206,7 +206,6 @@ if [[ -f ~/.zshrc.local ]]; then
 fi
 
 eval "$(starship init zsh)"
-eval "$(atuin init zsh)"
 source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Amazon Q post block. Keep at the bottom of this file.

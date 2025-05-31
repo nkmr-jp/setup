@@ -321,7 +321,14 @@ _gwt_prune() {
 
     # メインブランチを特定
     local main_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
-    [[ -z "$main_branch" ]] && main_branch="master"
+    if [[ -z "$main_branch" ]]; then
+        # mainブランチが存在するかチェック
+        if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
+            main_branch="main"
+        else
+            main_branch="master"
+        fi
+    fi
 
     echo -e "\n${YELLOW}=== マージ済みのworktreeとブランチを削除 ===${RESET}"
     echo -e "${CYAN}メインブランチ: ${main_branch}${RESET}"
@@ -352,8 +359,18 @@ _gwt_prune() {
         done
         [[ "$is_protected" == true ]] && continue
         
-        # マージ済みかチェック
-        if git merge-base --is-ancestor "$branch" "$main_branch" 2>/dev/null; then
+        # マージ済みかチェック（master、main、developにマージ済みの場合）
+        local is_merged=false
+        for check_branch in "master" "main" "develop"; do
+            if git show-ref --verify --quiet "refs/heads/$check_branch" || git show-ref --verify --quiet "refs/remotes/origin/$check_branch"; then
+                if git merge-base --is-ancestor "$branch" "$check_branch" 2>/dev/null; then
+                    is_merged=true
+                    break
+                fi
+            fi
+        done
+        
+        if [[ "$is_merged" == true ]]; then
             echo -e "${YELLOW}マージ済み検出: ${branch} (${wt_path})${RESET}"
             merged_worktrees+=("$wt_path")
             merged_branches+=("$branch")

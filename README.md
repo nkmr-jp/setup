@@ -71,6 +71,9 @@ brew install redis-stack
 brew install --cask iterm2
 brew install --cask github
 
+# Install fzf widget
+# See: https://junegunn.github.io/fzf/
+$(brew --prefix)/opt/fzf/install
 ```
 
 ### Setup Starship preset

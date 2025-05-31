@@ -186,7 +186,7 @@ source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zs
 # Ctrl+R でコマンド履歴検索
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
-bindkey '^T' fzf-cd-widget
+bindkey '^F' fzf-cd-widget
 
 eval "$(zoxide init zsh)"
 
@@ -200,7 +200,7 @@ fzf-cd-enhanced() {
       echo "../.."
       echo "../../.."
       find . -type d -not -path '*/\.*' 2>/dev/null | head -100
-    ) | awk '!seen[$0]++' | fzf --height 40% --reverse --preview 'tree -C {} 2>/dev/null | head -200'
+    ) | awk '!seen[$0]++' | fzf --height 50% --reverse --preview 'tree -C {} 2>/dev/null | head -200'
   ) && cd "$dir"
   zle reset-prompt
 }

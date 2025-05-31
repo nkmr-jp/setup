@@ -324,6 +324,7 @@ _gwt_prune() {
     local merged_branches=$(git branch --merged | grep -v '\*\|main\|master\|develop' | tr -d ' ')
     
     if [[ -n "$merged_branches" ]]; then
+        # まず、マージ済みブランチに対応するworktreeをすべて削除
         echo "$merged_branches" | while IFS= read -r branch; do
             [[ -z "$branch" ]] && continue
             
@@ -340,13 +341,26 @@ _gwt_prune() {
                 fi
                 
                 # worktreeを削除
-                git worktree remove "$wt_path" --force
-                echo -e "${GREEN}✓ Worktreeを削除: ${wt_path}${RESET}"
+                if git worktree remove "$wt_path" --force 2>/dev/null; then
+                    echo -e "${GREEN}✓ Worktreeを削除: ${wt_path}${RESET}"
+                else
+                    echo -e "${RED}! Worktreeの削除に失敗: ${wt_path}${RESET}"
+                fi
             fi
+        done
+        
+        # 次に、ブランチを削除
+        echo "$merged_branches" | while IFS= read -r branch; do
+            [[ -z "$branch" ]] && continue
             
             # ブランチを削除
-            git branch -d "$branch"
-            echo -e "${GREEN}✓ ブランチを削除: ${branch}${RESET}"
+            if git branch -d "$branch" 2>/dev/null; then
+                echo -e "${GREEN}✓ ブランチを削除: ${branch}${RESET}"
+            elif git branch -D "$branch" 2>/dev/null; then
+                echo -e "${GREEN}✓ ブランチを強制削除: ${branch}${RESET}"
+            else
+                echo -e "${RED}! ブランチの削除に失敗: ${branch}${RESET}"
+            fi
         done
     else
         echo -e "${GREEN}マージ済みのブランチはありません${RESET}"

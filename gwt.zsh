@@ -147,7 +147,13 @@ _gwt_remove() {
         --multi)
 
     if [[ -n "$worktree" ]]; then
-        echo "$worktree" | while read -r line; do
+        # パイプラインを避けて配列に格納
+        local -a worktree_lines
+        while IFS= read -r line; do
+            worktree_lines+=("$line")
+        done <<< "$worktree"
+
+        for line in "${worktree_lines[@]}"; do
             local wt_path=$(echo "$line" | awk '{print $1}')
             local branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
 
@@ -155,7 +161,7 @@ _gwt_remove() {
             echo "  Path: $wt_path"
             echo "  Branch: $branch"
             echo -n "続行しますか？ [y/N]: "
-            read -r confirm
+            read -r confirm < /dev/tty
 
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
                 # 現在のディレクトリがworktree内の場合、メインに移動
@@ -168,7 +174,7 @@ _gwt_remove() {
 
                 # ブランチも削除するか確認
                 echo -n "${fg[yellow]}ブランチ '${branch}' も削除しますか？ [y/N]: ${reset_color}"
-                read -r confirm_branch
+                read -r confirm_branch < /dev/tty
                 if [[ "$confirm_branch" =~ ^[Yy]$ ]]; then
                     git branch -D "$branch"
                     echo "${fg[green]}✓ ブランチを削除しました: $branch${reset_color}"

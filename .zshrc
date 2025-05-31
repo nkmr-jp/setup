@@ -1,3 +1,5 @@
+# Amazon Q pre block. Keep at the top of this file.
+[[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh"
 # ~/.zshrc
 # Ported from Fish shell configuration (config.fish)
 
@@ -144,7 +146,7 @@ function history_search() {
     zle reset-prompt
 }
 zle -N history_search
-bindkey '^R' history_search
+# bindkey '^R' history_search
 
 # 最近アクセスしたディレクトリに移動 (Ctrl+])
 function recent_dirs() {
@@ -265,3 +267,6 @@ if [[ -f ~/.zshrc.local ]]; then
 fi
 
 eval "$(starship init zsh)"
+
+# Amazon Q post block. Keep at the bottom of this file.
+[[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"

@@ -3,6 +3,7 @@
 [[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh"
 source ~/ghq/github.com/nkmr-jp/fish-functions/ghu.zsh
 source ~/ghq/github.com/nkmr-jp/setup/zsh_functions.zsh
+source ~/ghq/github.com/nkmr-jp/setup/gwt.zsh
 
 # ===== Aliases =====
 alias l='ls'

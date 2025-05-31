@@ -1,0 +1,400 @@
+#!/usr/bin/env zsh
+
+autoload -Uz compinit && compinit
+
+# Git Worktree Manager - 統合コマンド
+# 複数のworktreeでの並行作業を効率化するユーティリティ
+
+# 設定可能な環境変数
+: ${GIT_WORKTREE_BASE:="$HOME/worktrees"}  # worktreeのベースディレクトリ
+: ${GIT_WORKTREE_PREFIX:="wt-"}           # worktreeディレクトリのプレフィックス
+
+# カラー定義
+#autoload -U colors && colors
+
+# ========================================
+# メインコマンド
+# ========================================
+gwt() {
+    local cmd="$1"
+    shift
+
+    case "$cmd" in
+        new|n)
+            _gwt_new "$@"
+            ;;
+        switch|s)
+            _gwt_switch "$@"
+            ;;
+        remove|rm|r)
+            _gwt_remove "$@"
+            ;;
+        list|ls|l)
+            _gwt_list "$@"
+            ;;
+        status|st)
+            _gwt_status "$@"
+            ;;
+        memo|m)
+            _gwt_memo "$@"
+            ;;
+        info|i)
+            _gwt_info "$@"
+            ;;
+        quick|q)
+            _gwt_quick "$@"
+            ;;
+        prune|p)
+            _gwt_prune "$@"
+            ;;
+        help|h|"")
+            _gwt_help
+            ;;
+        *)
+            echo "${fg[red]}Error: 不明なコマンド '${cmd}'${reset_color}"
+            _gwt_help
+            return 1
+            ;;
+    esac
+}
+
+# ========================================
+# 1. 新しいworktreeを作成してそこに移動
+# ========================================
+_gwt_new() {
+    local branch_name="$1"
+    local base_branch="${2:-main}"
+
+    if [[ -z "$branch_name" ]]; then
+        echo "${fg[red]}Error: ブランチ名を指定してください${reset_color}"
+        echo "Usage: gwt new <branch-name> [base-branch]"
+        return 1
+    fi
+
+    # Gitリポジトリかチェック
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        echo "${fg[red]}Error: Gitリポジトリではありません${reset_color}"
+        return 1
+    fi
+
+    # worktreeベースディレクトリを作成
+    local repo_name=$(basename $(git rev-parse --show-toplevel))
+    local worktree_base="${GIT_WORKTREE_BASE}/${repo_name}"
+    mkdir -p "$worktree_base"
+
+    # worktreeパスを生成
+    local worktree_path="${worktree_base}/${GIT_WORKTREE_PREFIX}${branch_name}"
+
+    # ブランチが既に存在するかチェック
+    if git show-ref --verify --quiet "refs/heads/${branch_name}"; then
+        echo "${fg[yellow]}ブランチ '${branch_name}' は既に存在します。worktreeを作成します...${reset_color}"
+        git worktree add "$worktree_path" "$branch_name"
+    else
+        echo "${fg[green]}新しいブランチ '${branch_name}' を '${base_branch}' から作成します...${reset_color}"
+        git worktree add -b "$branch_name" "$worktree_path" "$base_branch"
+    fi
+
+    if [[ $? -eq 0 ]]; then
+        echo "${fg[green]}✓ Worktreeを作成しました: ${worktree_path}${reset_color}"
+        cd "$worktree_path"
+        echo "${fg[blue]}→ 移動しました: $(pwd)${reset_color}"
+    else
+        echo "${fg[red]}Error: Worktreeの作成に失敗しました${reset_color}"
+        return 1
+    fi
+}
+
+# ========================================
+# 2. fzfを使用してworktreeを切り替え
+# ========================================
+_gwt_switch() {
+    # fzfがインストールされているかチェック
+    if ! command -v fzf > /dev/null 2>&1; then
+        echo "${fg[red]}Error: fzfがインストールされていません${reset_color}"
+        echo "brew install fzf または apt install fzf でインストールしてください"
+        return 1
+    fi
+
+    # worktree一覧を取得
+    local worktree=$(git worktree list | fzf \
+        --height=40% \
+        --reverse \
+        --header="Select worktree to switch" \
+        --preview="echo {} | awk '{print \$1}' | xargs -I{} sh -c 'cd {} && git status -sb && echo && git log --oneline -5'" \
+        --preview-window=right:50%:wrap)
+
+    if [[ -n "$worktree" ]]; then
+        local path=$(echo "$worktree" | awk '{print $1}')
+        cd "$path"
+        echo "${fg[green]}→ 切り替えました: $(pwd)${reset_color}"
+    fi
+}
+
+# ========================================
+# 3. 不要なworktreeを削除
+# ========================================
+_gwt_remove() {
+    # 削除対象を選択
+    local worktree=$(git worktree list | grep -v "bare" | fzf \
+        --height=40% \
+        --reverse \
+        --header="Select worktree to remove" \
+        --preview="echo {} | awk '{print \$1}' | xargs -I{} sh -c 'cd {} && git status -sb && echo && git log --oneline -5'" \
+        --preview-window=right:50%:wrap \
+        --multi)
+
+    if [[ -n "$worktree" ]]; then
+        echo "$worktree" | while read -r line; do
+            local path=$(echo "$line" | awk '{print $1}')
+            local branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
+
+            echo "${fg[yellow]}削除しますか？${reset_color}"
+            echo "  Path: $path"
+            echo "  Branch: $branch"
+            echo -n "続行しますか？ [y/N]: "
+            read -r confirm
+
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                # 現在のディレクトリがworktree内の場合、メインに移動
+                if [[ "$(pwd)" == "$path"* ]]; then
+                    cd $(git worktree list | head -1 | awk '{print $1}')
+                fi
+
+                git worktree remove "$path" --force
+                echo "${fg[green]}✓ Worktreeを削除しました: $path${reset_color}"
+
+                # ブランチも削除するか確認
+                echo -n "${fg[yellow]}ブランチ '${branch}' も削除しますか？ [y/N]: ${reset_color}"
+                read -r confirm_branch
+                if [[ "$confirm_branch" =~ ^[Yy]$ ]]; then
+                    git branch -D "$branch"
+                    echo "${fg[green]}✓ ブランチを削除しました: $branch${reset_color}"
+                fi
+            fi
+        done
+    fi
+}
+
+# ========================================
+# 4. worktree一覧を見やすく表示
+# ========================================
+_gwt_list() {
+    echo "${fg[cyan]}=== Git Worktrees ===${reset_color}"
+    git worktree list | while read -r line; do
+        local path=$(echo "$line" | awk '{print $1}')
+        local commit=$(echo "$line" | awk '{print $2}')
+        local branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
+
+        # 現在のディレクトリかチェック
+        if [[ "$(pwd)" == "$path"* ]]; then
+            echo "${fg[green]}→ ${path} ${fg[yellow]}[${branch}]${reset_color} ${commit}"
+        else
+            echo "  ${path} ${fg[blue]}[${branch}]${reset_color} ${commit}"
+        fi
+
+        # ステータスを表示
+        if [[ -d "$path" ]]; then
+            local status=$(cd "$path" && git status --porcelain | wc -l | tr -d ' ')
+            if [[ "$status" -gt 0 ]]; then
+                echo "    ${fg[yellow]}⚠ ${status} 個の変更があります${reset_color}"
+            fi
+        fi
+    done
+}
+
+# ========================================
+# 5. worktreeのステータスを一括確認
+# ========================================
+_gwt_status() {
+    echo "${fg[cyan]}=== Worktree Status ===${reset_color}"
+    git worktree list | grep -v "bare" | while read -r line; do
+        local path=$(echo "$line" | awk '{print $1}')
+        local branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
+
+        if [[ -d "$path" ]]; then
+            echo "\n${fg[blue]}[${branch}]${reset_color} ${path}"
+            (cd "$path" && git status -sb | head -10)
+        fi
+    done
+}
+
+# ========================================
+# 6. worktreeごとのメモ機能
+# ========================================
+_gwt_memo() {
+    local action="$1"
+    local memo_file=".git/worktree-memo"
+
+    case "$action" in
+        "edit"|"e")
+            ${EDITOR:-vim} "$memo_file"
+            ;;
+        "show"|"s"|"")
+            if [[ -f "$memo_file" ]]; then
+                echo "${fg[cyan]}=== Worktree Memo ===${reset_color}"
+                cat "$memo_file"
+            else
+                echo "${fg[yellow]}メモはまだありません${reset_color}"
+            fi
+            ;;
+        "clear"|"c")
+            rm -f "$memo_file"
+            echo "${fg[green]}メモをクリアしました${reset_color}"
+            ;;
+        *)
+            echo "Usage: gwt memo [edit|show|clear]"
+            ;;
+    esac
+}
+
+# ========================================
+# 7. 現在のworktree情報を表示
+# ========================================
+_gwt_info() {
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        echo "${fg[red]}Error: Gitリポジトリではありません${reset_color}"
+        return 1
+    fi
+
+    local current_path=$(pwd)
+    local worktree_info=$(git worktree list | grep "^${current_path}")
+
+    if [[ -n "$worktree_info" ]]; then
+        local branch=$(echo "$worktree_info" | grep -o '\[.*\]' | tr -d '[]')
+        echo "${fg[cyan]}=== Current Worktree Info ===${reset_color}"
+        echo "Path: ${current_path}"
+        echo "Branch: ${branch}"
+        echo "Status:"
+        git status -sb
+    else
+        echo "${fg[yellow]}現在のディレクトリはworktreeではありません${reset_color}"
+    fi
+}
+
+# ========================================
+# 8. worktreeを素早く作成（日付付き）
+# ========================================
+_gwt_quick() {
+    local prefix="$1"
+    local base_branch="${2:-main}"
+
+    if [[ -z "$prefix" ]]; then
+        echo "${fg[red]}Error: プレフィックスを指定してください${reset_color}"
+        echo "Usage: gwt quick <prefix> [base-branch]"
+        echo "Example: gwt quick feature/login"
+        return 1
+    fi
+
+    # 日付とランダムな文字列を追加
+    local date_str=$(date +%Y%m%d)
+    local random_str=$(head /dev/urandom | tr -dc 'a-z0-9' | head -c 4)
+    local branch_name="${prefix}-${date_str}-${random_str}"
+
+    _gwt_new "$branch_name" "$base_branch"
+}
+
+# ========================================
+# 9. pruneとclean up
+# ========================================
+_gwt_prune() {
+    echo "${fg[cyan]}=== Pruning Worktrees ===${reset_color}"
+
+    # 削除されたworktreeをクリーンアップ
+    git worktree prune -v
+
+    # 削除されたリモートブランチの追跡を削除
+    git remote prune origin
+
+    # マージ済みのブランチを表示
+    echo "\n${fg[yellow]}=== マージ済みのブランチ ===${reset_color}"
+    git branch --merged | grep -v '\*\|main\|master\|develop'
+
+    echo "\n${fg[green]}✓ クリーンアップが完了しました${reset_color}"
+}
+
+# ========================================
+# ヘルプ表示
+# ========================================
+_gwt_help() {
+    cat << EOF
+${fg[cyan]}Git Worktree Manager (gwt)${reset_color}
+
+${fg[yellow]}使い方:${reset_color}
+  gwt <command> [options]
+
+${fg[yellow]}コマンド:${reset_color}
+  new, n <branch> [base]     新しいworktreeを作成して移動
+  switch, s                  fzfでworktreeを選択して切り替え
+  remove, rm, r              不要なworktreeを削除
+  list, ls, l                worktree一覧を表示
+  status, st                 全worktreeのステータスを確認
+  memo, m [edit|show|clear]  worktreeごとのメモ管理
+  info, i                    現在のworktree情報を表示
+  quick, q <prefix> [base]   日付付きでworktreeを素早く作成
+  prune, p                   worktreeのクリーンアップ
+  help, h                    このヘルプを表示
+
+${fg[yellow]}環境変数:${reset_color}
+  GIT_WORKTREE_BASE    worktreeのベースディレクトリ (default: ~/worktrees)
+  GIT_WORKTREE_PREFIX  worktreeディレクトリのプレフィックス (default: wt-)
+
+${fg[yellow]}使用例:${reset_color}
+  gwt new feature/login develop    # developブランチから新しいworktreeを作成
+  gwt quick fix/bug                 # 日付付きブランチを素早く作成
+  gwt switch                        # worktreeを切り替え
+  gwt status                        # 全worktreeの状態を確認
+  gwt remove                        # 不要なworktreeを削除
+
+${fg[yellow]}短縮形:${reset_color}
+  gwt n    = gwt new
+  gwt s    = gwt switch
+  gwt r    = gwt remove
+  gwt l    = gwt list
+  gwt st   = gwt status
+  gwt m    = gwt memo
+  gwt i    = gwt info
+  gwt q    = gwt quick
+  gwt p    = gwt prune
+EOF
+}
+
+# ========================================
+# 補完設定
+# ========================================
+_gwt_completion() {
+    local -a commands
+    commands=(
+        'new:新しいworktreeを作成して移動'
+        'switch:fzfでworktreeを選択して切り替え'
+        'remove:不要なworktreeを削除'
+        'list:worktree一覧を表示'
+        'status:全worktreeのステータスを確認'
+        'memo:worktreeごとのメモ管理'
+        'info:現在のworktree情報を表示'
+        'quick:日付付きでworktreeを素早く作成'
+        'prune:worktreeのクリーンアップ'
+        'help:ヘルプを表示'
+    )
+
+    local -a short_commands
+    short_commands=(
+        'n:new'
+        's:switch'
+        'r:remove'
+        'l:list'
+        'st:status'
+        'm:memo'
+        'i:info'
+        'q:quick'
+        'p:prune'
+        'h:help'
+    )
+
+    _describe 'command' commands
+    _describe 'short command' short_commands
+}
+
+# zsh補完を設定
+if [[ -n "$ZSH_VERSION" ]]; then
+    compdef _gwt_completion gwt
+fi

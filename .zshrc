@@ -136,7 +136,7 @@ function ghq_finder() {
 zle -N ghq_finder
 bindkey '^G' ghq_finder
 
-# 履歴検索 (Ctrl+R)
+# 履歴検索 (Ctrl+R) 
 function history_search() {
     local selected_command=$(history -n 1 | awk '!seen[$0]++' | fzf --reverse --height 40%)
     if [[ -n "$selected_command" ]]; then
@@ -146,7 +146,7 @@ function history_search() {
     zle reset-prompt
 }
 zle -N history_search
-# bindkey '^R' history_search
+# bindkey '^R' history_search # atuin 使うので不要
 
 # 最近アクセスしたディレクトリに移動 (Ctrl+])
 function recent_dirs() {
@@ -270,3 +270,5 @@ eval "$(starship init zsh)"
 
 # Amazon Q post block. Keep at the bottom of this file.
 [[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"
+
+eval "$(atuin init zsh)"

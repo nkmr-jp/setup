@@ -60,7 +60,7 @@ jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs exa fd tesseract-lang google-cloud-sdk pre-commit \
 tflint buildpacks/tap/pack tgenv grep miniserve orbstack helm \
 parallel lefthook htop tmux duckdb deno bottom starship \
-font-fira-code-nerd-font amazon-q
+font-fira-code-nerd-font amazon-q atuin
 
 brew install --cask miniconda warp
 brew install --cask rectangle
@@ -409,10 +409,4 @@ See: https://qiita.com/numanomanu/items/513d62fb4a7921880085
 # ~/.tigrc
 bind main    B !git rebase -i %(commit)
 bind diff    B !git rebase -i %(commit)
-```
-
-### atuin
-See: https://docs.atuin.sh/guide/installation/
-```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
 ```

@@ -1,6 +1,12 @@
-#!/usr/bin/env zsh
+#!/bin/bash
 
-autoload -Uz compinit && compinit
+# PATH設定を明示的に行う
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+# zsh環境でのみ補完機能を有効化
+if [[ -n "$ZSH_VERSION" ]]; then
+    autoload -Uz compinit && compinit
+fi
 
 # Git Worktree Manager - 統合コマンド
 # 複数のworktreeでの並行作業を効率化するユーティリティ
@@ -124,8 +130,8 @@ _gwt_switch() {
         --preview-window=right:50%:wrap)
 
     if [[ -n "$worktree" ]]; then
-        local path=$(echo "$worktree" | awk '{print $1}')
-        cd "$path"
+        local wt_path=$(echo "$worktree" | awk '{print $1}')
+        cd "$wt_path"
         echo "${fg[green]}→ 切り替えました: $(pwd)${reset_color}"
     fi
 }
@@ -145,23 +151,23 @@ _gwt_remove() {
 
     if [[ -n "$worktree" ]]; then
         echo "$worktree" | while read -r line; do
-            local path=$(echo "$line" | awk '{print $1}')
+            local wt_path=$(echo "$line" | awk '{print $1}')
             local branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
 
             echo "${fg[yellow]}削除しますか？${reset_color}"
-            echo "  Path: $path"
+            echo "  Path: $wt_path"
             echo "  Branch: $branch"
             echo -n "続行しますか？ [y/N]: "
             read -r confirm
 
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
                 # 現在のディレクトリがworktree内の場合、メインに移動
-                if [[ "$(pwd)" == "$path"* ]]; then
+                if [[ "$(pwd)" == "$wt_path"* ]]; then
                     cd $(git worktree list | head -1 | awk '{print $1}')
                 fi
 
-                git worktree remove "$path" --force
-                echo "${fg[green]}✓ Worktreeを削除しました: $path${reset_color}"
+                git worktree remove "$wt_path" --force
+                echo "${fg[green]}✓ Worktreeを削除しました: $wt_path${reset_color}"
 
                 # ブランチも削除するか確認
                 echo -n "${fg[yellow]}ブランチ '${branch}' も削除しますか？ [y/N]: ${reset_color}"
@@ -181,22 +187,22 @@ _gwt_remove() {
 _gwt_list() {
     echo "${fg[cyan]}=== Git Worktrees ===${reset_color}"
     git worktree list | while read -r line; do
-        local path=$(echo "$line" | awk '{print $1}')
+        local wt_path=$(echo "$line" | awk '{print $1}')
         local commit=$(echo "$line" | awk '{print $2}')
         local branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
 
         # 現在のディレクトリかチェック
-        if [[ "$(pwd)" == "$path"* ]]; then
-            echo "${fg[green]}→ ${path} ${fg[yellow]}[${branch}]${reset_color} ${commit}"
+        if [[ "$(pwd)" == "$wt_path"* ]]; then
+            echo "${fg[green]}→ ${wt_path} ${fg[yellow]}[${branch}]${reset_color} ${commit}"
         else
-            echo "  ${path} ${fg[blue]}[${branch}]${reset_color} ${commit}"
+            echo "  ${wt_path} ${fg[blue]}[${branch}]${reset_color} ${commit}"
         fi
 
         # ステータスを表示
-        if [[ -d "$path" ]]; then
-            local status=$(cd "$path" && git status --porcelain | wc -l | tr -d ' ')
-            if [[ "$status" -gt 0 ]]; then
-                echo "    ${fg[yellow]}⚠ ${status} 個の変更があります${reset_color}"
+        if [[ -d "$wt_path" ]]; then
+            local changed_files=$(cd "$wt_path" && git status --porcelain | wc -l | tr -d ' ')
+            if [[ "$changed_files" -gt 0 ]]; then
+                echo "    ${fg[yellow]}⚠ ${changed_files} 個の変更があります${reset_color}"
             fi
         fi
     done
@@ -208,12 +214,12 @@ _gwt_list() {
 _gwt_status() {
     echo "${fg[cyan]}=== Worktree Status ===${reset_color}"
     git worktree list | grep -v "bare" | while read -r line; do
-        local path=$(echo "$line" | awk '{print $1}')
+        local wt_path=$(echo "$line" | awk '{print $1}')
         local branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
 
-        if [[ -d "$path" ]]; then
-            echo "\n${fg[blue]}[${branch}]${reset_color} ${path}"
-            (cd "$path" && git status -sb | head -10)
+        if [[ -d "$wt_path" ]]; then
+            echo "\n${fg[blue]}[${branch}]${reset_color} ${wt_path}"
+            (cd "$wt_path" && git status -sb | head -10)
         fi
     done
 }

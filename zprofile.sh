@@ -1,6 +1,3 @@
-# Starship
-eval "$(starship init zsh)"
-
 # Golang
 # See: https://github.com/golang/go/issues/35164#issuecomment-546503518
 export GO111MODULE=on

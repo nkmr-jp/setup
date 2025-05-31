@@ -1,0 +1,28 @@
+#!/bin/bash
+# Common PATH settings for both Zsh and Fish shells
+
+# Golang
+export GO111MODULE=on
+export GOPROXY=direct
+export GOSUMDB="sum.golang.org"
+
+# anyenv and goenv
+export GOENV_ROOT="$HOME/.anyenv/envs/goenv/"
+export PATH="$GOENV_ROOT/bin:$PATH"
+export PATH="$HOME/.anyenv/bin:$PATH"
+export PATH="$GOROOT/bin:$PATH"
+export PATH="$PATH:$GOPATH/bin"
+
+# Additional paths
+export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="/usr/local/Caskroom/miniconda/base/bin:$PATH"
+
+# For installing Command binaries
+export PATH="$HOME/src/bin:$PATH"
+
+# Added by Windsurf
+export PATH="$HOME/.codeium/windsurf/bin:$PATH"
+
+# Save path order for fish shell
+export ZSH_PATH=$PATH

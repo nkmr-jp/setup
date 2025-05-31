@@ -206,8 +206,8 @@ if [[ -f ~/.zshrc.local ]]; then
 fi
 
 eval "$(starship init zsh)"
+eval "$(atuin init zsh)"
+source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Amazon Q post block. Keep at the bottom of this file.
 [[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"
-
-eval "$(atuin init zsh)"

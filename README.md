@@ -60,7 +60,7 @@ jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs exa fd tesseract-lang google-cloud-sdk pre-commit \
 tflint buildpacks/tap/pack tgenv grep miniserve orbstack helm \
 parallel lefthook htop tmux duckdb deno bottom starship \
-font-fira-code-nerd-font amazon-q atuin
+font-fira-code-nerd-font amazon-q atuin zsh-syntax-highlighting
 
 brew install --cask miniconda warp
 brew install --cask rectangle

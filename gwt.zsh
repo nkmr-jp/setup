@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# PATH設定を明示的に行う
-export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
-
 # zsh環境でのみ補完機能を有効化
 if [[ -n "$ZSH_VERSION" ]]; then
     autoload -Uz compinit && compinit

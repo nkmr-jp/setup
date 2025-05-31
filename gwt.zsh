@@ -13,7 +13,10 @@ fi
 : ${GIT_WORKTREE_PREFIX:="wt-"}           # worktreeディレクトリのプレフィックス
 
 # カラー定義
-autoload -U colors
+if [[ -n "$ZSH_VERSION" ]]; then
+    autoload -U colors
+    colors > /dev/null 2>&1
+fi
 
 # ========================================
 # メインコマンド

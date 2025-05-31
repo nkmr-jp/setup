@@ -13,7 +13,7 @@ fi
 : ${GIT_WORKTREE_PREFIX:="wt-"}           # worktreeディレクトリのプレフィックス
 
 # カラー定義
-#autoload -U colors && colors
+autoload -U colors
 
 # ========================================
 # メインコマンド
@@ -296,7 +296,7 @@ _gwt_quick() {
 
     # 日付とランダムな文字列を追加
     local date_str=$(date +%Y%m%d)
-    local random_str=$(head /dev/urandom | tr -dc 'a-z0-9' | head -c 4)
+    local random_str=$(cat /dev/urandom | LC_ALL=C tr -dc 'a-z0-9' | head -c 4)
     local branch_name="${prefix}-${date_str}-${random_str}"
 
     _gwt_new "$branch_name" "$base_branch"

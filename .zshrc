@@ -136,36 +136,6 @@ function ghq_finder() {
 zle -N ghq_finder
 bindkey '^G' ghq_finder
 
-# 履歴検索 (Ctrl+R) 
-function history_search() {
-    local selected_command=$(history -n 1 | awk '!seen[$0]++' | fzf --reverse --height 40%)
-    if [[ -n "$selected_command" ]]; then
-        BUFFER="$selected_command"
-        zle end-of-line
-    fi
-    zle reset-prompt
-}
-zle -N history_search
-bindkey '^R' history_search
-
-# 最近アクセスしたディレクトリに移動 (Ctrl+])
-function recent_dirs() {
-    # ディレクトリスタックの操作を有効化
-    setopt AUTO_PUSHD
-
-    # dirs -pは重複も含むため、ユニークな結果を返すようにする
-    local selected_dir=$(dirs -p | sort -u | fzf --reverse --height 40% --preview 'ls -la {}')
-    if [[ -n "$selected_dir" ]]; then
-        BUFFER="cd ${selected_dir}"
-        zle accept-line
-        cd "$selected_dir"
-    else
-        zle reset-prompt
-    fi
-}
-zle -N recent_dirs
-bindkey '^]' recent_dirs
-
 
 # worktreeを作成して即座に移動
 function wtc() {
@@ -210,3 +180,29 @@ source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zs
 
 # Amazon Q post block. Keep at the bottom of this file.
 [[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"
+
+
+# $(brew --prefix)/opt/fzf/install 実行
+# Ctrl+R でコマンド履歴検索
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+bindkey '^T' fzf-cd-widget
+
+eval "$(zoxide init zsh)"
+
+# fzfと組み合わせたウィジェット
+fzf-cd-enhanced() {
+  local dir
+  dir=$(
+    (
+      zoxide query -l 2>/dev/null | sed 's/^[0-9.]* *//'
+      echo ".."
+      echo "../.."
+      echo "../../.."
+      find . -type d -not -path '*/\.*' 2>/dev/null | head -100
+    ) | awk '!seen[$0]++' | fzf --height 40% --reverse --preview 'tree -C {} 2>/dev/null | head -200'
+  ) && cd "$dir"
+  zle reset-prompt
+}
+zle -N fzf-cd-enhanced
+bindkey '^]' fzf-cd-enhanced

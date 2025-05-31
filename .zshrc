@@ -199,6 +199,8 @@ fzf-cd-enhanced() {
       echo ".."
       echo "../.."
       echo "../../.."
+      echo "../../../.."
+      echo "../../../../.."
       find . -type d -not -path '*/\.*' 2>/dev/null | head -100
     ) | awk '!seen[$0]++' | fzf --height 50% --reverse --preview 'tree -C {} 2>/dev/null | head -200'
   ) && cd "$dir"

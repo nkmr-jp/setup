@@ -1,16 +1,38 @@
 #!/bin/bash
 # Setup script for Zsh configuration
 
-set -e  # Exit on error
+set -euo pipefail  # Exit on error, undefined vars, pipe failures
+IFS=$'\n\t'       # Secure IFS
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "=== Setting up Zsh configuration ==="
+# Colors for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly NC='\033[0m' # No Color
 
-# Create .zshrc file
-cat > ~/.zshrc << 'EOL'
-# Amazon Q pre block. Keep at the top of this file.
+# Logging functions
+log_info() {
+    echo -e "${GREEN}[INFO]${NC} $*" >&2
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $*" >&2
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $*" >&2
+}
+
+# Source common utilities
+source "$SCRIPT_DIR/common/backup.sh"
+
+log_info "Setting up Zsh configuration"
+
+# Create .zshrc file with backup
+safe_write ~/.zshrc '# Amazon Q pre block. Keep at the top of this file.
 [[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh"
 
 # Source modular Zsh configurations
@@ -29,13 +51,13 @@ source "$SETUP_DIR/zsh/plugins.zsh"
 source "$SETUP_DIR/zsh/theme.zsh"
 
 # Amazon Q post block. Keep at the bottom of this file.
-[[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"
-EOL
-
-echo "Created ~/.zshrc"
+[[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"'
 
 # Make sure the files are executable
-chmod +x common/*.sh
-chmod +x zsh/*.zsh
+if chmod +x common/*.sh zsh/*.zsh 2>/dev/null; then
+    log_info "Set executable permissions"
+else
+    log_warn "Some files may not have been found for chmod"
+fi
 
-echo "=== Zsh configuration setup complete! ==="
+log_info "Zsh configuration setup complete!"

@@ -1,12 +1,32 @@
 #!/bin/bash
 # Main installation script for dotfiles
 
-set -e  # Exit on error
+set -euo pipefail  # Exit on error, undefined vars, pipe failures
+IFS=$'\n\t'       # Secure IFS
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "=== Starting dotfiles installation ==="
+# Colors for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly NC='\033[0m' # No Color
+
+# Logging functions
+log_info() {
+    echo -e "${GREEN}[INFO]${NC} $*" >&2
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $*" >&2
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $*" >&2
+}
+
+log_info "Starting dotfiles installation"
 
 # Create necessary directories
 mkdir -p ~/.config/fish
@@ -20,13 +40,20 @@ SETUP_SCRIPTS=(
 
 # Run each setup script
 for script in "${SETUP_SCRIPTS[@]}"; do
-    if [ -f "$script" ]; then
-        echo "Running $script..."
-        bash "$script"
+    if [[ -f "$script" ]]; then
+        log_info "Running $script"
+        if bash "$script"; then
+            log_info "$script completed successfully"
+        else
+            log_error "$script failed with exit code $?"
+            exit 1
+        fi
     else
-        echo "Warning: $script not found, skipping..."
+        log_warn "$script not found, skipping"
     fi
 done
 
-echo "=== Installation complete! ==="
-echo "Please restart your shell or run 'source ~/.zshrc' (for Zsh) or 'source ~/.config/fish/config.fish' (for Fish) to apply changes."
+log_info "Installation complete!"
+echo "Please restart your shell or run:"
+echo "  - For Zsh: source ~/.zshrc"
+echo "  - For Fish: source ~/.config/fish/config.fish"

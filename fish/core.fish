@@ -1,17 +1,23 @@
 # Core Fish settings
 
-# Source common configurations
-# Note: Fish uses a different syntax for sourcing files
-# We'll need to create Fish-compatible versions of these files or use bass
-# For now, we'll use the PATH from zsh
-set PATH $ZSH_PATH
+# Set SETUP_DIR if not already set
+set -q SETUP_DIR; or set -x SETUP_DIR "$HOME/ghq/github.com/nkmr-jp/setup"
 
-# Source common aliases (need to convert to Fish syntax)
-# This will be handled by a script that converts Bash aliases to Fish functions
+# Import PATH from ZSH_PATH (set by env_vars.sh)
+if set -q ZSH_PATH
+    set PATH $ZSH_PATH
+end
+
+# Source Fish-specific configurations
+source "$SETUP_DIR/fish/aliases.fish"
+source "$SETUP_DIR/fish/functions.fish"
 
 # Call the greeting function when starting an interactive shell
 function fish_greeting
-    gshuf -n 1 $HOME/ghq/github.com/nkmr-jp/setup/.messages
+    set -q SETUP_DIR; or set -x SETUP_DIR "$HOME/ghq/github.com/nkmr-jp/setup"
+    if test -f "$SETUP_DIR/.messages"
+        gshuf -n 1 "$SETUP_DIR/.messages"
+    end
 end
 
 # Add any other core Fish settings here

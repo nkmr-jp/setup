@@ -1,5 +1,5 @@
-#!/bin/bash
-# Common aliases for both Zsh and Fish shells
+# Fish-specific aliases
+# Converted from common/aliases.sh
 
 # Basic file operations
 alias l='ls'
@@ -18,8 +18,8 @@ alias load='exec $SHELL -l'
 
 # Development
 alias pecob='peco --layout bottom-up'
-alias m='code "$SETUP_DIR/.messages"'
-alias setup='code "$SETUP_DIR"'
+function m; code "$SETUP_DIR/.messages"; end
+function setup; code "$SETUP_DIR"; end
 alias profile='code ~/.zprofile'
 alias run='go run main.go'
 alias xbar='code ~/ghq/github.com/nkmr-jp/xbar/plugins'

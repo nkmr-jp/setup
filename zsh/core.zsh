@@ -17,10 +17,10 @@ autoload -Uz colors
 colors
 
 # Source common configurations
-source ~/ghq/github.com/nkmr-jp/setup/common/aliases.sh
-source ~/ghq/github.com/nkmr-jp/setup/common/functions.sh
+# Order matters: env_vars.sh must be first to set SETUP_DIR
 source ~/ghq/github.com/nkmr-jp/setup/common/env_vars.sh
-source ~/ghq/github.com/nkmr-jp/setup/common/paths.sh
+source "$SETUP_DIR/common/aliases.sh"
+source "$SETUP_DIR/common/functions.sh"
 
 # Call the greeting function when starting an interactive shell
 if [[ $- == *i* ]]; then

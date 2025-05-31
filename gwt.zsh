@@ -319,9 +319,38 @@ _gwt_prune() {
     # 削除されたリモートブランチの追跡を削除
     git remote prune origin
 
-    # マージ済みのブランチを表示
-    echo -e "\n${YELLOW}=== マージ済みのブランチ ===${RESET}"
-    git branch --merged | grep -v '\*\|main\|master\|develop'
+    # マージ済みのブランチを確認して削除
+    echo -e "\n${YELLOW}=== マージ済みのブランチとworktreeを削除 ===${RESET}"
+    local merged_branches=$(git branch --merged | grep -v '\*\|main\|master\|develop' | tr -d ' ')
+    
+    if [[ -n "$merged_branches" ]]; then
+        echo "$merged_branches" | while IFS= read -r branch; do
+            [[ -z "$branch" ]] && continue
+            
+            # 該当するworktreeを検索
+            local worktree_info=$(git worktree list | grep "\[$branch\]")
+            
+            if [[ -n "$worktree_info" ]]; then
+                local wt_path=$(echo "$worktree_info" | awk '{print $1}')
+                echo -e "${YELLOW}マージ済みブランチ '${branch}' のworktreeを削除: ${wt_path}${RESET}"
+                
+                # 現在のディレクトリがworktree内の場合、メインに移動
+                if [[ "$(pwd)" == "$wt_path"* ]]; then
+                    cd $(git worktree list | head -1 | awk '{print $1}')
+                fi
+                
+                # worktreeを削除
+                git worktree remove "$wt_path" --force
+                echo -e "${GREEN}✓ Worktreeを削除: ${wt_path}${RESET}"
+            fi
+            
+            # ブランチを削除
+            git branch -d "$branch"
+            echo -e "${GREEN}✓ ブランチを削除: ${branch}${RESET}"
+        done
+    else
+        echo -e "${GREEN}マージ済みのブランチはありません${RESET}"
+    fi
 
     echo -e "\n${GREEN}✓ クリーンアップが完了しました${RESET}"
 }

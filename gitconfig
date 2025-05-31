@@ -21,6 +21,16 @@
     # See:
     # https://qiita.com/hajimeni/items/73d2155fc59e152630c4
     delete-merged-branch = "!f () { git checkout $1; git branch --merged|egrep -v '\\*|develop|main'|xargs git branch -d; };f"
+
+    # worktree関連のエイリアス
+    wt = worktree
+    wta = worktree add
+    wtl = worktree list
+    wtr = worktree remove
+    wtm = worktree move
+    
+    # fzfと組み合わせたインタラクティブな選択
+    wtswitch = !git worktree list | fzf | awk '{print $1}' | xargs -I {} cd {}
 [core]
     excludesfile = ~/ghq/github.com/nkmr-jp/setup/gitignore_global
     autocrlf = input

@@ -167,85 +167,24 @@ zle -N recent_dirs
 bindkey '^]' recent_dirs
 
 
-# Git worktree operations
-function wt() {
-    case "$1" in
-        "add")
-            if [[ -z "$2" ]]; then
-                echo "Usage: wt add <branch_name>"
-                return 1
-            fi
-            git worktree add "../${PWD##*/}-$2" -b "$2"
-            ;;
-        "ls")
-            git worktree list
-            ;;
-        "rm")
-            if [[ -z "$2" ]]; then
-                echo "Usage: wt rm [-f] <worktree_path>"
-                return 1
-            fi
-            if [[ "$2" == "-f" ]]; then
-                if [[ -z "$3" ]]; then
-                    echo "Usage: wt rm -f <worktree_path>"
-                    return 1
-                fi
-                # Get branch name from worktree path
-                local branch_name=$(git worktree list | grep "$3" | awk '{print $3}' | sed 's/\[//;s/\]//')
-                git worktree remove --force "$3"
-                # Delete the branch if it exists
-                if [[ -n "$branch_name" ]]; then
-                    echo "Deleting branch: $branch_name"
-                    git branch -D "$branch_name"
-                fi
-            else
-                # Get branch name from worktree path
-                local branch_name=$(git worktree list | grep "$2" | awk '{print $3}' | sed 's/\[//;s/\]//')
-                git worktree remove "$2"
-                # Delete the branch if it exists
-                if [[ -n "$branch_name" ]]; then
-                    echo "Deleting branch: $branch_name"
-                    git branch -D "$branch_name"
-                fi
-            fi
-            ;;
-        "rmall")
-            # Get main directory (directory without suffix)
-            local main_dir=$(basename "$PWD")
-            local base_name=$(echo "$main_dir" | sed 's/-[^-]*$//')
-
-            # Remove all worktrees except the main one
-            git worktree list --porcelain | grep "^worktree" | while read -r line; do
-                local worktree_path=$(echo "$line" | cut -d' ' -f2-)
-                local worktree_name=$(basename "$worktree_path")
-
-                # Skip if this is the main directory (no suffix)
-                if [[ "$worktree_name" != "$base_name" && "$worktree_path" != "$PWD" ]]; then
-                    # Get branch name for this worktree
-                    local branch_info=$(git worktree list | grep "$worktree_path")
-                    local branch_name=$(echo "$branch_info" | awk '{print $3}' | sed 's/\[//;s/\]//')
-
-                    echo "Removing worktree: $worktree_path"
-                    git worktree remove --force "$worktree_path"
-
-                    # Delete the branch if it exists
-                    if [[ -n "$branch_name" ]]; then
-                        echo "Deleting branch: $branch_name"
-                        git branch -D "$branch_name"
-                    fi
-                fi
-            done
-            ;;
-        *)
-            echo "Usage: wt {add|ls|rm|rmall}"
-            echo "  add <branch>    - Create new branch and worktree"
-            echo "  ls              - List worktrees"
-            echo "  rm [-f] <path>  - Remove worktree and its branch (use -f to force)"
-            echo "  rmall           - Remove all worktrees except main and their branches"
-            return 1
-            ;;
-    esac
+# worktreeを作成して即座に移動
+function wtc() {
+    git worktree add "$1" && cd "$1"
 }
+
+# worktreeをインタラクティブに選択して移動
+function wts() {
+    local worktree=$(git worktree list | fzf | awk '{print $1}')
+    if [ -n "$worktree" ]; then
+        cd "$worktree"
+    fi
+}
+
+# 不要なworktreeを一括削除
+function wtclean() {
+    git worktree list | grep -E '\[.*gone\]' | awk '{print $1}' | xargs -I {} git worktree remove {}
+}
+
 
 # ghu
 source ~/ghq/github.com/nkmr-jp/fish-functions/ghu.zsh

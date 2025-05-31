@@ -10,7 +10,7 @@ fi
 
 # 設定可能な環境変数
 : ${GIT_WORKTREE_BASE:="$HOME/worktrees"}  # worktreeのベースディレクトリ
-: ${GIT_WORKTREE_PREFIX:="wt-"}           # worktreeディレクトリのプレフィックス
+: ${GIT_WORKTREE_PREFIX:="wt-"}           # worktreeディレクトリのプレフィックス（廃止予定：リポジトリ名を使用）
 
 # カラー定義 (ANSI escape codes)
 RED='\033[0;31m'
@@ -91,7 +91,7 @@ _gwt_new() {
     mkdir -p "$worktree_base"
 
     # worktreeパスを生成
-    local worktree_path="${worktree_base}/${GIT_WORKTREE_PREFIX}${branch_name}"
+    local worktree_path="${worktree_base}/${repo_name}-${branch_name}"
 
     # ブランチが既に存在するかチェック
     if git show-ref --verify --quiet "refs/heads/${branch_name}"; then
@@ -350,7 +350,7 @@ ${YELLOW}コマンド:${RESET}
 
 ${YELLOW}環境変数:${RESET}
   GIT_WORKTREE_BASE    worktreeのベースディレクトリ (default: ~/worktrees)
-  GIT_WORKTREE_PREFIX  worktreeディレクトリのプレフィックス (default: wt-)
+  GIT_WORKTREE_PREFIX  worktreeディレクトリのプレフィックス (廃止予定：リポジトリ名を使用)
 
 ${YELLOW}使用例:${RESET}
   gwt new feature/login develop    # developブランチから新しいworktreeを作成

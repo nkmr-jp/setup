@@ -39,7 +39,7 @@
     - [pack](#pack)
     - [Google Cloud SDK](#google-cloud-sdk)
     - [tig](#tig)
-  
+
 <!-- /code_chunk_output -->
 
 
@@ -118,7 +118,46 @@ git config --global user.name "username"
 git config --global user.email "mailaddress"
 ```
 
+## Repository Structure
+
+This repository has been refactored to use a modular approach for better maintainability:
+
+```
+setup/
+├── common/           # Shared configurations for all shells
+│   ├── aliases.sh    # Common aliases
+│   ├── functions.sh  # Common functions
+│   ├── paths.sh      # Common PATH settings
+│   └── env_vars.sh   # Common environment variables
+├── zsh/              # Zsh-specific configurations
+│   ├── core.zsh      # Core Zsh settings
+│   ├── keybindings.zsh # Zsh key bindings
+│   ├── plugins.zsh   # Zsh plugin settings
+│   └── theme.zsh     # Zsh theme settings
+├── fish/             # Fish-specific configurations
+│   ├── core.fish     # Core Fish settings
+│   ├── keybindings.fish # Fish key bindings
+│   ├── plugins.fish  # Fish plugin settings
+│   └── theme.fish    # Fish theme settings
+├── tools/            # Tool-specific configurations
+├── install.sh        # Main installation script
+├── setup_zsh.sh      # Zsh setup script
+├── setup_fish.sh     # Fish setup script
+└── setup_git.sh      # Git setup script
+```
+
 ## Shell Settings
+
+### Automated Installation
+
+The easiest way to set up everything is to use the automated installation script:
+
+```shell
+cd ~/ghq/github.com/nkmr-jp/setup
+./install.sh
+```
+
+This will set up both Zsh and Fish configurations, as well as Git settings.
 
 ### Fish Settings ([fish](https://fishshell.com/))
 
@@ -159,11 +198,12 @@ echo "shut the fuck up and write some code" >> ~/ghq/github.com/nkmr-jp/setup/.m
 echo "stay hungry stay foolish" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 ```
 
-#### Set ~/.config/fish/config.fish
-```shell
-source $HOME/ghq/github.com/nkmr-jp/setup/config.fish
+#### Manual Fish Setup
+If you prefer to set up Fish manually:
 
-# write fish scripts here.
+```shell
+cd ~/ghq/github.com/nkmr-jp/setup
+./setup_fish.sh
 ```
 
 #### fish_config
@@ -176,13 +216,12 @@ fish_config
 
 ### Zsh Settings
 
-#### Set ~/.zshrc
-```shell
-# Create a symbolic link to the Zsh configuration file
-ln -sf ~/ghq/github.com/nkmr-jp/setup/.zshrc ~/.zshrc
+#### Manual Zsh Setup
+If you prefer to set up Zsh manually:
 
-# Or source it directly in your existing .zshrc
-# echo "source ~/ghq/github.com/nkmr-jp/setup/.zshrc" >> ~/.zshrc
+```shell
+cd ~/ghq/github.com/nkmr-jp/setup
+./setup_zsh.sh
 ```
 
 #### Set ~/.zprofile

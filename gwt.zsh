@@ -85,13 +85,12 @@ _gwt_new() {
         return 1
     fi
 
-    # worktreeベースディレクトリを作成
+    # 元リポジトリと同じディレクトリにworktreeを作成
     local repo_name=$(basename $(git rev-parse --show-toplevel))
-    local worktree_base="${GIT_WORKTREE_BASE}/${repo_name}"
-    mkdir -p "$worktree_base"
+    local repo_parent_dir=$(dirname $(git rev-parse --show-toplevel))
 
-    # worktreeパスを生成
-    local worktree_path="${worktree_base}/${repo_name}-${branch_name}"
+    # worktreeパスを生成（元リポジトリと同じディレクトリに作成）
+    local worktree_path="${repo_parent_dir}/${repo_name}-wt-${branch_name}"
 
     # ブランチが既に存在するかチェック
     if git show-ref --verify --quiet "refs/heads/${branch_name}"; then

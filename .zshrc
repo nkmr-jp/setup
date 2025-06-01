@@ -1,9 +1,9 @@
-# ===== Import =====
 # Amazon Q pre block. Keep at the top of this file.
 [[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh"
-source ~/ghq/github.com/nkmr-jp/fish-functions/ghu.zsh
+# ===== Import =====
 source ~/ghq/github.com/nkmr-jp/setup/zsh_functions.zsh
 source ~/ghq/github.com/nkmr-jp/setup/gwt.zsh
+source ~/ghq/github.com/nkmr-jp/fish-functions/ghu.zsh
 
 # ===== Aliases =====
 alias l='ls'
@@ -61,10 +61,10 @@ if [[ -f ~/.zshrc.local ]]; then
     source ~/.zshrc.local
 fi
 
-# Amazon Q post block. Keep at the bottom of this file.
-[[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"
-
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:/Users/nkmr/.lmstudio/bin"
 # End of LM Studio CLI section
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
+# Amazon Q post block. Keep at the bottom of this file.
+[[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"

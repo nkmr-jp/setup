@@ -147,8 +147,6 @@ _gwt_remove() {
         --height=40% \
         --reverse \
         --header="Select worktree to remove" \
-        --preview="echo {} | awk '{print \$1}' | xargs -I{} sh -c 'cd {} && git status -sb && echo && git log --oneline -5'" \
-        --preview-window=right:50%:wrap \
         --multi)
 
     if [[ -n "$worktree" ]]; then

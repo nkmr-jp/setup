@@ -360,7 +360,8 @@ _gwt_prune() {
         local is_merged=false
         for check_branch in "master" "main" "develop"; do
             if git show-ref --verify --quiet "refs/heads/$check_branch" || git show-ref --verify --quiet "refs/remotes/origin/$check_branch"; then
-                if git merge-base --is-ancestor "$branch" "$check_branch" 2>/dev/null; then
+                # git branch --merged を使ってマージ済みブランチをチェック
+                if git branch --merged "$check_branch" 2>/dev/null | grep -q "^[[:space:]]*[+*][[:space:]]*${branch}$"; then
                     is_merged=true
                     break
                 fi

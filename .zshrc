@@ -52,14 +52,14 @@ compinit
 autoload -Uz colors
 
 # Call the greeting function when starting an interactive shell
-if [[ $- == *i* ]]; then
-    display_greeting
-fi
+# if [[ $- == *i* ]]; then
+#     display_greeting
+# fi
 
 # Source additional configuration files if they exist
-if [[ -f ~/.zshrc.local ]]; then
-    source ~/.zshrc.local
-fi
+# if [[ -f ~/.zshrc.local ]]; then
+#     source ~/.zshrc.local
+# fi
 
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:/Users/nkmr/.lmstudio/bin"

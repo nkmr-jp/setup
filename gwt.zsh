@@ -360,10 +360,36 @@ _gwt_prune() {
         local is_merged=false
         for check_branch in "master" "main" "develop"; do
             if git show-ref --verify --quiet "refs/heads/$check_branch" || git show-ref --verify --quiet "refs/remotes/origin/$check_branch"; then
-                # git branch --merged を使ってマージ済みブランチをチェック
+                # 通常のマージ: git branch --merged を使ってマージ済みブランチをチェック
                 if git branch --merged "$check_branch" 2>/dev/null | grep -q "^[[:space:]]*[+*][[:space:]]*${branch}$"; then
                     is_merged=true
                     break
+                fi
+                
+                # スカッシュマージの検知: ブランチの変更がすべてメインブランチに含まれているかチェック
+                if ! git merge-base --is-ancestor "$check_branch" "$branch" 2>/dev/null; then
+                    # ブランチの全ファイル変更を取得
+                    local branch_changes=$(git diff --name-only "$check_branch"..."$branch" 2>/dev/null)
+                    if [[ -n "$branch_changes" ]]; then
+                        # 各ファイルの内容がメインブランチと同じかチェック
+                        local all_changes_included=true
+                        while IFS= read -r file; do
+                            if [[ -n "$file" ]]; then
+                                # ブランチでの最終的な内容とメインブランチでの内容を比較
+                                local branch_content=$(git show "$branch":"$file" 2>/dev/null || echo "")
+                                local main_content=$(git show "$check_branch":"$file" 2>/dev/null || echo "")
+                                if [[ "$branch_content" != "$main_content" ]]; then
+                                    all_changes_included=false
+                                    break
+                                fi
+                            fi
+                        done <<< "$branch_changes"
+                        
+                        if [[ "$all_changes_included" == true ]]; then
+                            is_merged=true
+                            break
+                        fi
+                    fi
                 fi
             fi
         done

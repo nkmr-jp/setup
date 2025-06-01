@@ -115,7 +115,16 @@ fzf-cd-enhanced() {
 }
 zle -N fzf-cd-enhanced
 
+# gwt switch関数のウィジェット
+function gwt_switch_widget() {
+    echo -n "\033[2K\r"  # 現在の行をクリア
+    gwt s
+    zle reset-prompt
+}
+zle -N gwt_switch_widget
+
 # ===== KeyBinds =====
 bindkey '^G' ghq_finder
 bindkey '^]' fzf-cd-enhanced
 bindkey '^F' fzf-cd-widget
+bindkey '^T' gwt_switch_widget

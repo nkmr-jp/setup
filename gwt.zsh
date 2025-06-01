@@ -302,9 +302,8 @@ _gwt_quick() {
     fi
 
     # 日付とランダムな文字列を追加
-    local date_str=$(date +%Y%m%d)
-    local random_str=$(cat /dev/urandom | LC_ALL=C tr -dc 'a-z0-9' | head -c 4)
-    local branch_name="${prefix}-${date_str}-${random_str}"
+    local timestamp=$(date +"%Y%m%d_%H%M%S")
+    local branch_name="${prefix}-${timestamp}"
 
     _gwt_new "$branch_name" "$base_branch"
 }

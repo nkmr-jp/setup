@@ -86,8 +86,11 @@ _gwt_new() {
     fi
 
     # 元リポジトリと同じディレクトリにworktreeを作成
-    local repo_name=$(basename $(git rev-parse --show-toplevel))
+    local current_repo_name=$(basename $(git rev-parse --show-toplevel))
     local repo_parent_dir=$(dirname $(git rev-parse --show-toplevel))
+    
+    # 既存の-wt-サフィックスを除去してベースリポジトリ名を取得
+    local repo_name=$(echo "$current_repo_name" | sed 's/-wt-.*$//')
 
     # worktreeパスを生成（元リポジトリと同じディレクトリに作成）
     local worktree_path="${repo_parent_dir}/${repo_name}-wt-${branch_name}"

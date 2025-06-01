@@ -129,9 +129,7 @@ _gwt_switch() {
     local worktree=$(git worktree list | fzf \
         --height=40% \
         --reverse \
-        --header="Select worktree to switch" \
-        --preview="echo {} | awk '{print \$1}' | xargs -I{} sh -c 'cd {} && git status -sb && echo && git log --oneline -5'" \
-        --preview-window=right:50%:wrap)
+        --header="Select worktree to switch")
 
     if [[ -n "$worktree" ]]; then
         local wt_path=$(echo "$worktree" | awk '{print $1}')

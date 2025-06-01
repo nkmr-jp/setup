@@ -71,7 +71,7 @@ gwt() {
 # ========================================
 _gwt_new() {
     local branch_name="$1"
-    local base_branch="${2:-master}"
+    local base_branch="${2:-$(git branch --show-current)}"
 
     if [[ -z "$branch_name" ]]; then
         echo -e "${RED}Error: ブランチ名を指定してください${RESET}"
@@ -290,7 +290,7 @@ _gwt_info() {
 # ========================================
 _gwt_quick() {
     local prefix="$1"
-    local base_branch="${2:-master}"
+    local base_branch="${2:-$(git branch --show-current)}"
 
     if [[ -z "$prefix" ]]; then
         echo -e "${RED}Error: プレフィックスを指定してください${RESET}"

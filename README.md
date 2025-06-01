@@ -81,6 +81,10 @@ $(brew --prefix)/opt/fzf/install
 starship preset pastel-powerline -o ~/.config/starship.toml
 ```
 
+### Iterm2
+
+menu -> Install Shell Integration 
+
 ### Install QucickLook Plugins
 
 ```shell

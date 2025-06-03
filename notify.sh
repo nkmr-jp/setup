@@ -46,6 +46,10 @@ notify_claude() {
                 bundle_id="com.todesktop.230313mzl4w4u92"
                 break
                 ;;
+            *"Windsurf"*)
+                bundle_id="com.codeium.windsurf"
+                break
+                ;;
             *"Zed"*)
                 bundle_id="dev.zed.Zed"
                 break
@@ -120,6 +124,10 @@ notify_claude() {
                 bundle_id="co.zeit.hyper"
                 break
                 ;;
+            *"WezTerm"*|*"wezterm"*)
+                bundle_id="com.github.wez.wezterm"
+                break
+                ;;
             
             # Other Editors
             *"Sublime Text"*)
@@ -189,6 +197,9 @@ notify_claude() {
         "com.todesktop.230313mzl4w4u92")
             app_name="Cursor"
             ;;
+        "com.codeium.windsurf")
+            app_name="Windsurf"
+            ;;
         "dev.zed.Zed")
             app_name="Zed"
             ;;
@@ -256,6 +267,9 @@ notify_claude() {
             ;;
         "co.zeit.hyper")
             app_name="Hyper"
+            ;;
+        "com.github.wez.wezterm")
+            app_name="WezTerm"
             ;;
             
         *)

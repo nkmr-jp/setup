@@ -5,6 +5,13 @@ notify_claude() {
     local message="$2"
     local sound="${3:-default}"
     
+    # Check if running in iTerm2 - use native notification
+    if [ "$TERM_PROGRAM" = "iTerm.app" ]; then
+        # Use iTerm2's native notification
+        printf "\033]9;%s\007" "$title: $message"
+        return
+    fi
+    
     # Trace parent processes to find the originating application
     local pid=$$
     local bundle_id=""

@@ -2,7 +2,8 @@
 [[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh"
 # ===== Import =====
 source ~/ghq/github.com/nkmr-jp/setup/zsh_functions.zsh
-source ~/ghq/github.com/nkmr-jp/setup/gwt.zsh
+source ~/ghq/github.com/nkmr-jp/setup/gwt.sh
+source ~/ghq/github.com/nkmr-jp/setup/notify.sh
 source ~/ghq/github.com/nkmr-jp/fish-functions/ghu.zsh
 
 # ===== Aliases =====

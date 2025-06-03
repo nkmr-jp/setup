@@ -27,6 +27,9 @@ if [[ $- == *i* ]]; then
     display_greeting
 fi
 
+# Load minimal iTerm2 directory restore
+[[ -f "$SETUP_DIR/iterm2_directory_restore.zsh" ]] && source "$SETUP_DIR/iterm2_directory_restore.zsh"
+
 # Source local configurations if they exist
 if [[ -f ~/.zshrc.local ]]; then
     source ~/.zshrc.local

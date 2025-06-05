@@ -4,7 +4,7 @@
 source ${HOME}/ghq/github.com/nkmr-jp/setup/iterm2_directory_restore.zsh
 source ${HOME}/ghq/github.com/nkmr-jp/setup/zsh_functions.zsh
 source ${HOME}/ghq/github.com/nkmr-jp/setup/gwt.sh
-source ${HOME}/ghq/github.com/nkmr-jp/setup/notify.sh
+source ${HOME}/ghq/github.com/nkmr-jp/setup/notify_claude.sh
 source ${HOME}/ghq/github.com/nkmr-jp/fish-functions/ghu.zsh
 
 # ===== Aliases =====

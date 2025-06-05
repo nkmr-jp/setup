@@ -310,6 +310,10 @@ _gwt_quick() {
 _gwt_prune() {
     echo -e "${CYAN}=== Pruning Worktrees ===${RESET}"
 
+    # リモートから最新の情報を取得
+    echo -e "${BLUE}リモートから最新の情報を取得中...${RESET}"
+    git pull
+
     # 削除されたworktreeをクリーンアップ
     git worktree prune -v
 

@@ -307,4 +307,3 @@ notify_claude() {
         -sound "$sound" \
         -activate "$bundle_id"
 }
-

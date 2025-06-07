@@ -36,6 +36,7 @@ alias opr='open https://console.cloud.google.com/run'
 alias ope='open https://console.cloud.google.com/eventarc/triggers'
 alias wind='windsurf'
 alias cl='claude'
+alias g='gwt'
 
 # ===== Zsh Settings =====
 # History configuration

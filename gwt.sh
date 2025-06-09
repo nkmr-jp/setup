@@ -8,10 +8,6 @@ fi
 # Git Worktree Manager - 統合コマンド
 # 複数のworktreeでの並行作業を効率化するユーティリティ
 
-# 設定可能な環境変数
-: ${GIT_WORKTREE_BASE:="$HOME/worktrees"}  # worktreeのベースディレクトリ
-: ${GIT_WORKTREE_PREFIX:="wt-"}           # worktreeディレクトリのプレフィックス（廃止予定：リポジトリ名を使用）
-
 # カラー定義 (ANSI escape codes)
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -473,10 +469,6 @@ ${YELLOW}コマンド:${RESET}
   quick, q <prefix> [base]   日付付きでworktreeを素早く作成
   prune, p                   worktreeのクリーンアップ
   help, h                    このヘルプを表示
-
-${YELLOW}環境変数:${RESET}
-  GIT_WORKTREE_BASE    worktreeのベースディレクトリ (default: ~/worktrees)
-  GIT_WORKTREE_PREFIX  worktreeディレクトリのプレフィックス (廃止予定：リポジトリ名を使用)
 
 ${YELLOW}使用例:${RESET}
   gwt new feature/login develop    # developブランチから新しいworktreeを作成

@@ -127,4 +127,4 @@ zle -N gwt_switch_widget
 bindkey '^G' ghq_finder
 bindkey '^]' fzf-cd-enhanced
 bindkey '^F' fzf-cd-widget
-bindkey '^T' gwt_switch_widget
+bindkey '^E' gwt_switch_widget

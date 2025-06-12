@@ -39,6 +39,9 @@ alias cl='claude'
 alias g='gwt'
 alias gq='gwt q'
 alias gp='gwt p'
+alias gr='gwt r'
+alias gl='gwt l'
+alias gs='gwt s'
 # See: https://spiess.dev/blog/how-i-use-claude-code
 alias yolo="claude --dangerously-skip-permissions"
 

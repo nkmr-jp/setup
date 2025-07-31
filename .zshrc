@@ -44,6 +44,8 @@ alias gl='gwt l'
 alias gs='gwt s'
 # See: https://spiess.dev/blog/how-i-use-claude-code
 alias yolo="claude --dangerously-skip-permissions"
+alias ep='edge-playback --rate "+25%" -v ja-JP-NanamiNeural --text'
+# alias ep='edge-playback --rate "+25%" -v ja-JP-KeitaNeural --text'
 
 # ===== Zsh Settings =====
 # History configuration

@@ -404,7 +404,7 @@ aws iam list-users --output table
 ```sh
 gem install iStats
 npm install -g fkill-cli
-pip install yq jupyterlab notebook voila iplantuml
+pip install yq jupyterlab notebook voila iplantuml edge-tts
 ```
 
 ## Install Commands from Binary

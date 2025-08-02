@@ -61,7 +61,7 @@ procs exa fd tesseract-lang google-cloud-sdk pre-commit \
 tflint buildpacks/tap/pack tgenv grep miniserve orbstack helm \
 parallel lefthook htop tmux duckdb deno bottom starship \
 font-fira-code-nerd-font amazon-q zsh-syntax-highlighting zoxide \
-ripgrep mpv
+ripgrep mpv yq
 
 brew install --cask miniconda warp
 brew install --cask rectangle
@@ -404,7 +404,7 @@ aws iam list-users --output table
 ```sh
 gem install iStats
 npm install -g fkill-cli
-pip install yq jupyterlab notebook voila iplantuml edge-tts
+pip install jupyterlab notebook voila iplantuml edge-tts
 ```
 
 ## Install Commands from Binary

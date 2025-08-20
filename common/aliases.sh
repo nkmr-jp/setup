@@ -6,7 +6,7 @@ alias l='ls'
 alias ll='ls -l'
 alias lla='ls -la'
 alias op='open'
-alias rm='trash-put'
+alias rm='trash'
 alias c='clear'
 
 # Applications

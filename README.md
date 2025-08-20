@@ -155,6 +155,7 @@ setup/
 The easiest way to set up everything is to use the automated installation script:
 
 ```shell
+touch ~/.config/fish/config.fish
 cd ~/ghq/github.com/nkmr-jp/setup
 ./install.sh
 ```

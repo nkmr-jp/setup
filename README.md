@@ -57,7 +57,7 @@
 brew install \
 fish ghq peco gh fzf trash-cli terminal-notifier  \
 jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
-procs exa fd tesseract-lang google-cloud-sdk pre-commit \
+procs fd tesseract-lang google-cloud-sdk pre-commit \
 tflint buildpacks/tap/pack tgenv grep miniserve orbstack helm \
 parallel lefthook htop tmux duckdb deno bottom starship \
 font-fira-code-nerd-font amazon-q zsh-syntax-highlighting zoxide \

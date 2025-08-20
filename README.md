@@ -14,12 +14,6 @@
     - [Set .gitconfig](#set-gitconfig)
     - [Set git user](#set-git-user)
   - [Shell Settings](#shell-settings)
-    - [Fish Settings (fish)](#fish-settings-fishhttpsfishshellcom)
-      - [Install fisher (fisher)](#install-fisher-fisherhttpsgithubcomjorgebucaranfisher)
-      - [Install fish plugins](#install-fish-plugins)
-      - [Set messages](#set-messages)
-      - [Set ~/.config/fish/config.fish](#set-~configfishconfigfish)
-      - [fish_config](#fish_config)
     - [Zsh Settings](#zsh-settings)
       - [Set ~/.zshrc](#set-zshrc)
     - [Set ~/.zprofile](#set-zprofile)
@@ -27,7 +21,6 @@
     - [Install env commands](#install-env-commands)
     - [Install programing langages and set global version](#install-programing-langages-and-set-global-version)
     - [To get the latest version](#to-get-the-latest-version)
-    - [Install Poetry (poetry)](#install-poetry-poetryhttpsgithubcompython-poetrypoetry)
   - [Install Rust](#install-rust)
   - [Install Java](#install-java)
   - [Install AWS CLI v2](#install-aws-cli-v2)
@@ -80,7 +73,7 @@ $(brew --prefix)/opt/fzf/install
 
 ### Setup Starship preset
 ```sh
-starship preset pastel-powerline -o ~/.config/starship.toml
+starship preset pure-preset -o ~/.config/starship.toml
 ```
 
 ### Iterm2
@@ -155,43 +148,11 @@ setup/
 The easiest way to set up everything is to use the automated installation script:
 
 ```shell
-touch ~/.config/fish/config.fish
 cd ~/ghq/github.com/nkmr-jp/setup
 ./install.sh
 ```
 
-This will set up both Zsh and Fish configurations, as well as Git settings.
-
-### Fish Settings ([fish](https://fishshell.com/))
-
-#### Install fisher ([fisher](https://github.com/jorgebucaran/fisher))
-```shell
-curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
-``` 
-
-#### Install fish plugins
-```shell
-fish
-```
-
-```shell
-fisher install \
-decors/fish-ghq \
-edc/bass \
-fishpkg/fish-humanize-duration \
-franciscolourenco/done \
-jethrokuan/fzf \
-jethrokuan/z \
-oh-my-fish/theme-nai
-```
-
-```shell
-fisher list
-```
-
-```shell
-exit
-```
+This will set up both Zsh configurations, as well as Git settings.
 
 #### Set messages
 ```shell
@@ -199,22 +160,6 @@ exit
 echo "hello world!" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 echo "shut the fuck up and write some code" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 echo "stay hungry stay foolish" >> ~/ghq/github.com/nkmr-jp/setup/.messages
-```
-
-#### Manual Fish Setup
-If you prefer to set up Fish manually:
-
-```shell
-cd ~/ghq/github.com/nkmr-jp/setup
-./setup_fish.sh
-```
-
-#### fish_config
-```shell
-fish
-fish_config
-
-# Setting in browser
 ```
 
 ### Zsh Settings
@@ -279,22 +224,6 @@ anyenv install --update
 anyenv install goenv
 
 # rbenv pyenv nodenv jenv ...
-```
-
-### Install Poetry ([poetry](https://github.com/python-poetry/poetry))
-
-```sh
-curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
-poetry --version
-# > Poetry version 1.1.11
-
-poetry completions fish > ~/.config/fish/completions/poetry.fish
-
-poetry # press tab
-# > about                                                     (Shows information about Poetry.)
-# > add                                              (Adds a new dependency to pyproject.toml.)
-# > build                              (Builds a package, as a tarball and a wheel by default.)
-# > cache                                                        (Interact with Poetry's cache)
 ```
 
 ## Install Rust

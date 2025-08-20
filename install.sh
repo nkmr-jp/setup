@@ -28,13 +28,10 @@ log_error() {
 
 log_info "Starting dotfiles installation"
 
-# Create necessary directories
-mkdir -p ~/.config/fish
 
 # Setup scripts
 SETUP_SCRIPTS=(
     "setup_zsh.sh"
-    "setup_fish.sh"
     "setup_git.sh"
 )
 
@@ -56,4 +53,3 @@ done
 log_info "Installation complete!"
 echo "Please restart your shell or run:"
 echo "  - For Zsh: source ~/.zshrc"
-echo "  - For Fish: source ~/.config/fish/config.fish"

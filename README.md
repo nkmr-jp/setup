@@ -56,9 +56,6 @@ parallel lefthook htop tmux duckdb deno bottom starship \
 font-fira-code-nerd-font amazon-q zsh-syntax-highlighting zoxide \
 ripgrep mpv yq uv pnpm
 
-# See: https://socket.dev/blog/pnpm-10-16-adds-new-setting-for-delayed-dependency-updates
-pnpm config set minimumReleaseAge=1440 --global
-
 brew install --cask miniconda warp
 brew install --cask rectangle
 # brew install --cask hyper@canary
@@ -316,8 +313,12 @@ aws iam list-users --output table
 ## Install Commands for each language
 ```sh
 gem install iStats
+# See: https://zenn.dev/azu/articles/ad168118524135
+# See: https://socket.dev/blog/pnpm-10-16-adds-new-setting-for-delayed-dependency-updates
+pnpm config set minimumReleaseAge=1440 --global
+npm config set ignore-scripts true --global
+npm install -g @aikidosec/safe-chain
 npm install -g fkill-cli
-npm install -g socket
 pip install jupyterlab notebook voila iplantuml edge-tts
 ```
 

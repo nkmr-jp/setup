@@ -11,7 +11,6 @@ alias c='clear'
 
 # Applications
 alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
-alias e='open /Applications/Effortless.app'
 
 # Shell management
 alias load='exec $SHELL -l'
@@ -20,7 +19,6 @@ alias load='exec $SHELL -l'
 alias pecob='peco --layout bottom-up'
 alias m='code "$SETUP_DIR/.messages"'
 alias setup='code "$SETUP_DIR"'
-alias profile='code ~/.zprofile'
 alias run='go run main.go'
 alias xbar='code ~/ghq/github.com/nkmr-jp/xbar/plugins'
 
@@ -41,7 +39,6 @@ alias sleepon='sudo pmset -a disablesleep 0'
 alias sleepoff='sudo pmset -a disablesleep 1'
 
 # Other
-alias oura='open https://cloud.ouraring.com/dashboard'
 alias wind='windsurf'
 
 # AI Agents
@@ -61,3 +58,12 @@ alias gp='gwt p'
 alias gr='gwt r'
 alias gl='gwt l'
 alias gs='gwt s'
+
+
+# See: https://github.com/AikidoSec/safe-chain
+source ~/.safe-chain/scripts/init-posix.sh # Safe-chain Zsh initialization script
+# socket.dev
+# See: https://docs.socket.dev/docs/safe-npm-faq
+#alias npm="socket-npm"
+#alias npx="socket-npx"
+#compdef \_npm socket-npm

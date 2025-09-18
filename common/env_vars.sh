@@ -16,11 +16,6 @@ export GOENV_ROOT="$HOME/.anyenv/envs/goenv/"
 export PATH="$GOENV_ROOT/bin:$PATH"
 export PATH="$HOME/.anyenv/bin:$PATH"
 
-# Initialize anyenv (only in interactive shells)
-if [[ -n "$PS1" ]] && command -v anyenv >/dev/null 2>&1; then
-    eval "$(anyenv init - --no-rehash)"
-fi
-
 # Add Go paths if GOROOT and GOPATH are set
 if [[ -n "$GOROOT" ]]; then
     export PATH="$GOROOT/bin:$PATH"
@@ -40,8 +35,14 @@ export PATH="$HOME/src/bin:$PATH"
 # Added by Windsurf
 export PATH="$HOME/.codeium/windsurf/bin:$PATH"
 
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/nkmr/.lmstudio/bin"
+
+
 # Save path order for fish shell
 export ZSH_PATH=$PATH
 
+# eval
+eval "$(anyenv init -)"
 eval "$(uv generate-shell-completion zsh)"
 eval "$(uvx --generate-shell-completion zsh)"

@@ -18,10 +18,19 @@ colors
 
 # Source common configurations
 # Order matters: env_vars.sh must be first to set SETUP_DIR
-source ~/ghq/github.com/nkmr-jp/setup/common/env_vars.sh
+source "$SETUP_DIR/common/env_vars.sh"
 source "$SETUP_DIR/common/gwt.sh"
 source "$SETUP_DIR/common/aliases.sh"
 source "$SETUP_DIR/common/functions.sh"
+eval "$(anyenv init -)"
+# See: https://github.com/AikidoSec/safe-chain
+source ~/.safe-chain/scripts/init-posix.sh # Safe-chain Zsh initialization script
+# socket.dev
+# See: https://docs.socket.dev/docs/safe-npm-faq
+#alias npm="socket-npm"
+#alias npx="socket-npx"
+#compdef \_npm socket-npm
+
 
 # Call the greeting function when starting an interactive shell
 if [[ $- == *i* ]]; then

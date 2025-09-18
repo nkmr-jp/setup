@@ -44,12 +44,6 @@ alias sleepoff='sudo pmset -a disablesleep 1'
 alias oura='open https://cloud.ouraring.com/dashboard'
 alias wind='windsurf'
 
-# socket.dev
-# See: https://docs.socket.dev/docs/safe-npm-faq
-alias npm="socket-npm"  
-alias npx="socket-npx"
-compdef \_npm socket-npm
-
 # AI Agents
 alias cl='claude'
 alias co='codex'

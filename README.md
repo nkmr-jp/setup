@@ -54,7 +54,10 @@ procs fd tesseract-lang google-cloud-sdk pre-commit \
 tflint buildpacks/tap/pack tgenv grep miniserve orbstack helm \
 parallel lefthook htop tmux duckdb deno bottom starship \
 font-fira-code-nerd-font amazon-q zsh-syntax-highlighting zoxide \
-ripgrep mpv yq uv
+ripgrep mpv yq uv pnpm
+
+# See: https://socket.dev/blog/pnpm-10-16-adds-new-setting-for-delayed-dependency-updates
+pnpm config set minimumReleaseAge=1440 --global
 
 brew install --cask miniconda warp
 brew install --cask rectangle
@@ -334,6 +337,7 @@ aws iam list-users --output table
 ```sh
 gem install iStats
 npm install -g fkill-cli
+npm install -g socket
 pip install jupyterlab notebook voila iplantuml edge-tts
 ```
 

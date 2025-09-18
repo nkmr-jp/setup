@@ -43,3 +43,27 @@ alias sleepoff='sudo pmset -a disablesleep 1'
 # Other
 alias oura='open https://cloud.ouraring.com/dashboard'
 alias wind='windsurf'
+
+# socket.dev
+# See: https://docs.socket.dev/docs/safe-npm-faq
+alias npm="socket-npm"  
+alias npx="socket-npx"
+compdef \_npm socket-npm
+
+# AI Agents
+alias cl='claude'
+alias co='codex'
+alias ge='gemini'
+# See: https://spiess.dev/blog/how-i-use-claude-code
+alias yolo="claude --dangerously-skip-permissions"
+alias ep='edge-playback --rate "+25%" -v ja-JP-NanamiNeural --text'
+# alias ep='edge-playback --rate "+25%" -v ja-JP-KeitaNeural --text'
+alias md="open -a 'Marked 2'"
+
+# Git worktree
+alias g='gwt'
+alias gq='gwt q'
+alias gp='gwt p'
+alias gr='gwt r'
+alias gl='gwt l'
+alias gs='gwt s'

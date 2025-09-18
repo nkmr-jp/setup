@@ -42,3 +42,6 @@ export PATH="$HOME/.codeium/windsurf/bin:$PATH"
 
 # Save path order for fish shell
 export ZSH_PATH=$PATH
+
+eval "$(uv generate-shell-completion zsh)"
+eval "$(uvx --generate-shell-completion zsh)"

@@ -9,12 +9,30 @@ fi
 # 複数のworktreeでの並行作業を効率化するユーティリティ
 
 # カラー定義 (ANSI escape codes)
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-RESET='\033[0m'
+if [[ -t 1 ]]; then
+    if command -v tput > /dev/null 2>&1 && tput colors > /dev/null 2>&1; then
+        RED=$(tput setaf 1)
+        GREEN=$(tput setaf 2)
+        YELLOW=$(tput setaf 3)
+        BLUE=$(tput setaf 4)
+        CYAN=$(tput setaf 6)
+        RESET=$(tput sgr0)
+    else
+        RED=$(printf '\033[0;31m')
+        GREEN=$(printf '\033[0;32m')
+        YELLOW=$(printf '\033[0;33m')
+        BLUE=$(printf '\033[0;34m')
+        CYAN=$(printf '\033[0;36m')
+        RESET=$(printf '\033[0m')
+    fi
+else
+    RED=""
+    GREEN=""
+    YELLOW=""
+    BLUE=""
+    CYAN=""
+    RESET=""
+fi
 
 # ========================================
 # メインコマンド

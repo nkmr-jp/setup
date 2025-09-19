@@ -5,7 +5,7 @@
 alias l='ls'
 alias ll='ls -l'
 alias lla='ls -la'
-alias op='open'
+alias o='open'
 alias rm='trash'
 alias c='clear'
 

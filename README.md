@@ -65,7 +65,6 @@ brew install redis-stack
 brew install --cask iterm2
 brew install --cask github
 brew install --cask licecap
-brew install --cask 1password/tap/1password-cli
 
 # Install fzf widget
 # See: https://junegunn.github.io/fzf/

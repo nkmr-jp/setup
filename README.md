@@ -56,7 +56,7 @@ parallel lefthook htop tmux duckdb deno bottom starship \
 font-fira-code-nerd-font amazon-q zsh-syntax-highlighting zoxide \
 ripgrep mpv yq uv pnpm
 
-brew install --cask miniconda warp
+#brew install --cask miniconda warp
 brew install --cask rectangle
 # brew install --cask hyper@canary
 # brew install --cask wezterm
@@ -65,6 +65,7 @@ brew install redis-stack
 brew install --cask iterm2
 brew install --cask github
 brew install --cask licecap
+brew install --cask 1password/tap/1password-cli
 
 # Install fzf widget
 # See: https://junegunn.github.io/fzf/

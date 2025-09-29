@@ -25,7 +25,7 @@ alias run='go run main.go'
 alias xbar='code ~/ghq/github.com/nkmr-jp/xbar/plugins'
 
 # GitHub
-alias opg='gh repo view --web'
+alias opg='git remote get-url origin | sed -e "s/^git@github\.com:/https:\/\/github.com\//" -e "s/\.git$//" | xargs open'
 alias get='ghu get'
 alias init='ghu init'
 

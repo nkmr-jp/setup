@@ -55,7 +55,7 @@ procs fd tesseract-lang google-cloud-sdk pre-commit \
 tflint buildpacks/tap/pack tgenv grep miniserve orbstack helm \
 parallel lefthook htop tmux duckdb deno bottom starship \
 font-fira-code-nerd-font amazon-q zsh-syntax-highlighting zoxide \
-ripgrep mpv yq uv pnpm secretive
+ripgrep mpv yq uv pnpm secretive sleepwatcher
 
 #brew install --cask miniconda warp
 brew install --cask rectangle

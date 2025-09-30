@@ -8,6 +8,7 @@ alias lla='ls -la'
 alias o='open'
 alias rm='trash'
 alias c='clear'
+alias e='exit'
 
 # Applications
 alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"

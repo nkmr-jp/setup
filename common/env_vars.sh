@@ -38,6 +38,8 @@ export PATH="$HOME/.codeium/windsurf/bin:$PATH"
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:/Users/nkmr/.lmstudio/bin"
 
+# aqua https://aquaproj.github.io/docs/install
+export PATH="$(aqua root-dir)/bin:$PATH"
 
 # Save path order for fish shell
 export ZSH_PATH=$PATH

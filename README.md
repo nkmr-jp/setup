@@ -50,12 +50,12 @@
 ```shell
 brew install \
 fish ghq peco gh fzf trash-cli terminal-notifier  \
-jq tig httpie anyenv fx translate-shell tree bat gitmoji coreutils  \
+jq tig anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs fd tesseract-lang google-cloud-sdk pre-commit \
-tflint buildpacks/tap/pack tgenv grep miniserve orbstack helm \
+tflint buildpacks/tap/pack grep helm \
 parallel lefthook htop tmux duckdb deno bottom starship \
-font-fira-code-nerd-font amazon-q zsh-syntax-highlighting zoxide \
-ripgrep mpv yq uv pnpm secretive sleepwatcher
+font-fira-code-nerd-font zsh-syntax-highlighting zoxide \
+ripgrep mpv yq uv pnpm secretive sleepwatcher aqua
 
 #brew install --cask miniconda warp
 brew install --cask rectangle
@@ -66,6 +66,7 @@ brew install redis-stack
 brew install --cask iterm2
 brew install --cask github
 brew install --cask licecap
+brew install orbstack amazon-q miniserve 
 
 # Install fzf widget
 # See: https://junegunn.github.io/fzf/

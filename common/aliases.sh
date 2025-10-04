@@ -51,6 +51,7 @@ alias yolo="claude --dangerously-skip-permissions"
 alias ep='edge-playback --rate "+25%" -v ja-JP-NanamiNeural --text'
 # alias ep='edge-playback --rate "+25%" -v ja-JP-KeitaNeural --text'
 alias md="open -a 'Marked 2'"
+alias ob="open "obsidian://open?path=$(pwd)"
 
 # Git worktree
 alias g='gwt'

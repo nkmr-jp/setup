@@ -41,3 +41,8 @@ fi
 
 eval "$(uv generate-shell-completion zsh)"
 eval "$(uvx --generate-shell-completion zsh)"
+
+# Google Cloud SDK completion
+if [ -f '/opt/homebrew/share/google-cloud-sdk/completion.zsh.inc' ]; then
+  source '/opt/homebrew/share/google-cloud-sdk/completion.zsh.inc'
+fi

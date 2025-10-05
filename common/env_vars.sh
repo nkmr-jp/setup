@@ -41,9 +41,6 @@ export PATH="$PATH:/Users/nkmr/.lmstudio/bin"
 # aqua https://aquaproj.github.io/docs/install
 export PATH="$(aqua root-dir)/bin:$PATH"
 
-# Save path order for fish shell
-export ZSH_PATH=$PATH
-
 # eval
 eval "$(anyenv init -)"
 eval "$(uv generate-shell-completion zsh)"

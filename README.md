@@ -49,7 +49,7 @@
 
 ```shell
 brew install \
-fish ghq peco gh fzf trash-cli terminal-notifier  \
+ghq peco gh fzf trash-cli terminal-notifier  \
 jq tig anyenv fx translate-shell tree bat gitmoji coreutils  \
 procs fd tesseract-lang google-cloud-sdk pre-commit \
 tflint buildpacks/tap/pack grep helm \
@@ -131,15 +131,9 @@ setup/
 │   ├── keybindings.zsh # Zsh key bindings
 │   ├── plugins.zsh   # Zsh plugin settings
 │   └── theme.zsh     # Zsh theme settings
-├── fish/             # Fish-specific configurations
-│   ├── core.fish     # Core Fish settings
-│   ├── keybindings.fish # Fish key bindings
-│   ├── plugins.fish  # Fish plugin settings
-│   └── theme.fish    # Fish theme settings
 ├── tools/            # Tool-specific configurations
 ├── install.sh        # Main installation script
 ├── setup_zsh.sh      # Zsh setup script
-├── setup_fish.sh     # Fish setup script
 └── setup_git.sh      # Git setup script
 ```
 
@@ -357,10 +351,6 @@ curl -sS https://starship.rs/install.sh | sh
 ### pack
 
 See: https://buildpacks.io/docs/tools/pack/
-
-```sh
-source (pack completion --shell fish)
-```
 
 ### Google Cloud SDK
 

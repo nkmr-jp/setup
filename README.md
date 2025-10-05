@@ -14,11 +14,8 @@
     * [Set .gitconfig](#set-gitconfig)
     * [Set git user](#set-git-user)
   * [Repository Structure](#repository-structure)
-  * [Shell Settings](#shell-settings)
-    * [Automated Installation](#automated-installation)
-      * [Set messages](#set-messages)
-    * [Zsh Settings](#zsh-settings)
-      * [Manual Zsh Setup](#manual-zsh-setup)
+  * [Zsh Configuration](#zsh-configuration)
+    * [Optional: Set greeting messages](#optional-set-greeting-messages)
   * [Anyenv (anyenv)](#anyenv-anyenv)
     * [Install env commands](#install-env-commands)
     * [Install programing langages and set global version](#install-programing-langages-and-set-global-version)
@@ -117,55 +114,39 @@ git config --global user.email "mailaddress"
 
 ## Repository Structure
 
-This repository has been refactored to use a modular approach for better maintainability:
+This repository uses a modular approach for Zsh configuration:
 
 ```
 setup/
-├── common/           # Shared configurations for all shells
-│   ├── aliases.sh    # Common aliases
-│   ├── functions.sh  # Common functions
-│   ├── paths.sh      # Common PATH settings
-│   └── env_vars.sh   # Common environment variables
-├── zsh/              # Zsh-specific configurations
-│   ├── core.zsh      # Core Zsh settings
-│   ├── keybindings.zsh # Zsh key bindings
-│   ├── plugins.zsh   # Zsh plugin settings
-│   └── theme.zsh     # Zsh theme settings
+├── .zshrc            # Main Zsh configuration (symlinked to ~/.zshrc)
+├── zsh/              # Modular Zsh configurations
+│   ├── core.zsh      # Core Zsh settings and sourcing
+│   ├── env_vars.zsh  # Environment variables and PATH
+│   ├── aliases.zsh   # Shell aliases
+│   ├── functions.zsh # Utility functions
+│   ├── gwt.zsh       # Git worktree utilities
+│   ├── keybindings.zsh # Key bindings
+│   ├── plugins.zsh   # Plugin settings
+│   └── theme.zsh     # Theme settings
 ├── tools/            # Tool-specific configurations
-├── install.sh        # Main installation script
-├── setup_zsh.sh      # Zsh setup script
-└── setup_git.sh      # Git setup script
+└── gitconfig         # Git configuration
 ```
 
-## Shell Settings
+## Zsh Configuration
 
-### Automated Installation
-
-The easiest way to set up everything is to use the automated installation script:
+Create a symlink from this repository's `.zshrc` to your home directory:
 
 ```shell
-cd ~/ghq/github.com/nkmr-jp/setup
-./install.sh
+ln -s ~/ghq/github.com/nkmr-jp/setup/.zshrc ~/.zshrc
+source ~/.zshrc
 ```
 
-This will set up both Zsh configurations, as well as Git settings.
-
-#### Set messages
+### Optional: Set greeting messages
 ```shell
 # A message that is displayed at random when the shell starts.
 echo "hello world!" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 echo "shut the fuck up and write some code" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 echo "stay hungry stay foolish" >> ~/ghq/github.com/nkmr-jp/setup/.messages
-```
-
-### Zsh Settings
-
-#### Manual Zsh Setup
-If you prefer to set up Zsh manually:
-
-```shell
-cd ~/ghq/github.com/nkmr-jp/setup
-./setup_zsh.sh
 ```
 
 ## Anyenv ([anyenv](https://github.com/anyenv/anyenv))

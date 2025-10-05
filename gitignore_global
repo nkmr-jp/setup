@@ -36,3 +36,6 @@ Temporary Items
 # Other
 .history
 .todo.txt
+
+# Claude Code
+.claude/scratch

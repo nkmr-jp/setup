@@ -19,47 +19,35 @@ gh_last_login() {
     fi
 }
 
-# Check if gh is installed and user is logged in
+# Check if gh is installed
 if command -v gh &> /dev/null; then
-    if ! gh auth status &> /dev/null; then
-        echo "GitHub CLI is not authenticated. Please log in:"
+    # Check login time file
+    if [[ -f "${GH_LOGIN_TIME_FILE}" ]]; then
+        last_login=$(cat "${GH_LOGIN_TIME_FILE}")
+        current_time=$(date +%s)
+        elapsed_hours=$(( (current_time - last_login) / 3600 ))
+    else
+        # If file doesn't exist, treat as expired (elapsed_hours >= 8)
+        elapsed_hours=8
+    fi
+
+    # Check if token is expired or about to expire
+    if [[ ${elapsed_hours} -ge 8 ]]; then
+        echo "⚠️  WARNING: GitHub CLI token is ${elapsed_hours} hours old (>= 8 hours)"
+        echo ""
+        echo "Opening GitHub CLI application settings..."
+        echo "https://github.com/settings/connections/applications/178c6fc778ccc68e1d6a"
+        echo ""
+        echo "Please follow these steps:"
+        echo "  1. Click 'Revoke access' button in the top right"
+        echo "  2. Confirm the revocation"
+        echo ""
+        open https://github.com/settings/connections/applications/178c6fc778ccc68e1d6a
+        echo "After revoking, press Enter to re-authenticate..."
+        read
         gh auth login -p ssh --web --skip-ssh-key
 
-        # Record login time after successful authentication
-        if gh auth status &> /dev/null; then
-            date +%s > "${GH_LOGIN_TIME_FILE}"
-        fi
-    else
-        # Check if login time file exists and validate token age
-        if [[ -f "${GH_LOGIN_TIME_FILE}" ]]; then
-            last_login=$(cat "${GH_LOGIN_TIME_FILE}")
-            current_time=$(date +%s)
-            elapsed_hours=$(( (current_time - last_login) / 3600 ))
-        else
-            # If file doesn't exist, treat as expired (elapsed_hours >= 8)
-            elapsed_hours=8
-        fi
-
-        if [[ ${elapsed_hours} -ge 8 ]]; then
-            echo "⚠️  WARNING: GitHub CLI token is ${elapsed_hours} hours old (>= 8 hours)"
-            echo ""
-            echo "Opening GitHub applications settings..."
-            echo "https://github.com/settings/applications"
-            echo ""
-            echo "Please follow these steps:"
-            echo "  1. Find 'GitHub CLI' in the 'Authorized OAuth Apps' tab"
-            echo "  2. Click the '...' menu button on the right"
-            echo "  3. Click 'Revoke' button"
-            echo ""
-            open https://github.com/settings/applications
-            echo "After revoking, press Enter to re-authenticate..."
-            read
-            gh auth login -p ssh --web --skip-ssh-key
-
-            # Record new login time after successful authentication
-            if gh auth status &> /dev/null; then
-                date +%s > "${GH_LOGIN_TIME_FILE}"
-            fi
-        fi
+        # Record new login time after successful authentication
+        date +%s > "${GH_LOGIN_TIME_FILE}"
     fi
 fi

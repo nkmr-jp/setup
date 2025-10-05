@@ -23,6 +23,7 @@ colors
 # Order matters: env_vars.zsh must be first to set up environment
 source "$SETUP_DIR/zsh/env_vars.zsh"
 source "$SETUP_DIR/zsh/gwt.zsh"
+source "$SETUP_DIR/zsh/ghu.zsh"
 source "$SETUP_DIR/zsh/aliases.zsh"
 source "$SETUP_DIR/zsh/functions.zsh"
 

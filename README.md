@@ -133,6 +133,10 @@ setup/
 ```
 
 ## Zsh Configuration
+Get plugin
+```sh
+ghq get -p Aloxaf/fzf-tab
+```
 
 Create a symlink from this repository's `.zshrc` to your home directory:
 

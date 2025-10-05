@@ -12,6 +12,9 @@ setopt HIST_IGNORE_DUPS     # Don't record duplicated commands
 autoload -Uz compinit
 compinit
 
+# https://github.com/Aloxaf/fzf-tab?tab=readme-ov-file
+source "$(ghq root)/github.com/Aloxaf/fzf-tab/fzf-tab.plugin.zsh"
+
 # Enable colors
 autoload -Uz colors
 colors

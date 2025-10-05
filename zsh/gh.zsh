@@ -35,31 +35,31 @@ if command -v gh &> /dev/null; then
             last_login=$(cat "${GH_LOGIN_TIME_FILE}")
             current_time=$(date +%s)
             elapsed_hours=$(( (current_time - last_login) / 3600 ))
-
-            if [[ ${elapsed_hours} -ge 8 ]]; then
-                echo "⚠️  WARNING: GitHub CLI token is ${elapsed_hours} hours old (>= 8 hours)"
-                echo ""
-                echo "Opening GitHub applications settings..."
-                echo "https://github.com/settings/applications"
-                echo ""
-                echo "Please follow these steps:"
-                echo "  1. Find 'GitHub CLI' in the 'Authorized OAuth Apps' tab"
-                echo "  2. Click the '...' menu button on the right"
-                echo "  3. Click 'Revoke' button"
-                echo ""
-                open https://github.com/settings/applications
-                echo "After revoking, press Enter to re-authenticate..."
-                read
-                gh auth login -p ssh --web --skip-ssh-key
-
-                # Record new login time after successful authentication
-                if gh auth status &> /dev/null; then
-                    date +%s > "${GH_LOGIN_TIME_FILE}"
-                fi
-            fi
         else
-            # Create login time file if it doesn't exist (for existing logged-in users)
-            date +%s > "${GH_LOGIN_TIME_FILE}"
+            # If file doesn't exist, treat as expired (elapsed_hours >= 8)
+            elapsed_hours=8
+        fi
+
+        if [[ ${elapsed_hours} -ge 8 ]]; then
+            echo "⚠️  WARNING: GitHub CLI token is ${elapsed_hours} hours old (>= 8 hours)"
+            echo ""
+            echo "Opening GitHub applications settings..."
+            echo "https://github.com/settings/applications"
+            echo ""
+            echo "Please follow these steps:"
+            echo "  1. Find 'GitHub CLI' in the 'Authorized OAuth Apps' tab"
+            echo "  2. Click the '...' menu button on the right"
+            echo "  3. Click 'Revoke' button"
+            echo ""
+            open https://github.com/settings/applications
+            echo "After revoking, press Enter to re-authenticate..."
+            read
+            gh auth login -p ssh --web --skip-ssh-key
+
+            # Record new login time after successful authentication
+            if gh auth status &> /dev/null; then
+                date +%s > "${GH_LOGIN_TIME_FILE}"
+            fi
         fi
     fi
 fi

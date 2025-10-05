@@ -1,4 +1,4 @@
-# Core Zsh settings
+# Zsh initialization and core settings
 
 # History configuration
 HISTFILE=~/.zsh_history
@@ -12,20 +12,25 @@ setopt HIST_IGNORE_DUPS     # Don't record duplicated commands
 autoload -Uz compinit
 compinit
 
-# https://github.com/Aloxaf/fzf-tab?tab=readme-ov-file
-source "$(ghq root)/github.com/Aloxaf/fzf-tab/fzf-tab.plugin.zsh"
-
 # Enable colors
 autoload -Uz colors
 colors
 
-# Source zsh configurations
-# Order matters: env_vars.zsh must be first to set up environment
-source "$SETUP_DIR/zsh/env_vars.zsh"
+# Load zsh configurations
+# Order matters: env.zsh must be first to set up environment
+source "$SETUP_DIR/zsh/env.zsh"
+source "$SETUP_DIR/zsh/completion.zsh"
 source "$SETUP_DIR/zsh/gwt.zsh"
 source "$SETUP_DIR/zsh/ghu.zsh"
 source "$SETUP_DIR/zsh/aliases.zsh"
 source "$SETUP_DIR/zsh/functions.zsh"
+source "$SETUP_DIR/zsh/keybindings.zsh"
+
+# Initialize tools
+eval "$(anyenv init -)"
+eval "$(uv generate-shell-completion zsh)"
+eval "$(uvx --generate-shell-completion zsh)"
+eval "$(zoxide init zsh)"
 
 # Call the greeting function when starting an interactive shell
 if [[ $- == *i* ]]; then
@@ -38,12 +43,4 @@ fi
 # Source local configurations if they exist
 if [[ -f ~/.zshrc.local ]]; then
     source ~/.zshrc.local
-fi
-
-eval "$(uv generate-shell-completion zsh)"
-eval "$(uvx --generate-shell-completion zsh)"
-
-# Google Cloud SDK completion
-if [ -f '/opt/homebrew/share/google-cloud-sdk/completion.zsh.inc' ]; then
-  source '/opt/homebrew/share/google-cloud-sdk/completion.zsh.inc'
 fi

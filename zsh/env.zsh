@@ -1,5 +1,4 @@
-#!/bin/bash
-# Common environment variables and PATH settings for both Zsh and Fish shells
+# Environment variables and PATH settings
 
 # Setup directory
 export SETUP_DIR="$HOME/ghq/github.com/nkmr-jp/setup"
@@ -40,8 +39,3 @@ export PATH="$PATH:/Users/nkmr/.lmstudio/bin"
 
 # aqua https://aquaproj.github.io/docs/install
 export PATH="$(aqua root-dir)/bin:$PATH"
-
-# eval
-eval "$(anyenv init -)"
-eval "$(uv generate-shell-completion zsh)"
-eval "$(uvx --generate-shell-completion zsh)"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 # zsh環境でのみ補完機能を有効化
 if [[ -n "$ZSH_VERSION" ]]; then

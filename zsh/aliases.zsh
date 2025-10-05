@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 # Common aliases for both Zsh and Fish shells
 
 # Basic file operations

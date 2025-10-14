@@ -3,6 +3,9 @@
 # File to store last login time
 GH_LOGIN_TIME_FILE="${HOME}/.gh_last_login"
 
+# Token expiration threshold in hours (2 days = 48 hours)
+GH_TOKEN_EXPIRATION_HOURS=48
+
 # Function to display last login time
 gh_last_login() {
     if [[ -f "${GH_LOGIN_TIME_FILE}" ]]; then
@@ -27,13 +30,13 @@ if command -v gh &> /dev/null; then
         current_time=$(date +%s)
         elapsed_hours=$(( (current_time - last_login) / 3600 ))
     else
-        # If file doesn't exist, treat as expired (elapsed_hours >= 8)
-        elapsed_hours=8
+        # If file doesn't exist, treat as expired
+        elapsed_hours=${GH_TOKEN_EXPIRATION_HOURS}
     fi
 
     # Check if token is expired or about to expire
-    if [[ ${elapsed_hours} -ge 8 ]]; then
-        echo "⚠️  WARNING: GitHub CLI token is ${elapsed_hours} hours old (>= 8 hours)"
+    if [[ ${elapsed_hours} -ge ${GH_TOKEN_EXPIRATION_HOURS} ]]; then
+        echo "⚠️  WARNING: GitHub CLI token is ${elapsed_hours} hours old (>= ${GH_TOKEN_EXPIRATION_HOURS} hours)"
         echo ""
         echo "Opening GitHub CLI application settings..."
         echo "https://github.com/settings/connections/applications/178c6fc778ccc68e1d6a"

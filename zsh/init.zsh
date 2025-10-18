@@ -45,3 +45,19 @@ fi
 if [[ -f ~/.zshrc.local ]]; then
     source ~/.zshrc.local
 fi
+
+# bun completions
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# security
+# See: https://github.com/AikidoSec/safe-chain
+source ~/.safe-chain/scripts/init-posix.sh # Safe-chain Zsh initialization script
+# socket.dev
+# See: https://docs.socket.dev/docs/safe-npm-faq
+#alias npm="socket-npm"
+#alias npx="socket-npx"
+#compdef \_npm socket-npm

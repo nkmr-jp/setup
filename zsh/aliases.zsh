@@ -60,12 +60,3 @@ alias gp='gwt p'
 alias gr='gwt r'
 alias gl='gwt l'
 alias gs='gwt s'
-
-
-# See: https://github.com/AikidoSec/safe-chain
-source ~/.safe-chain/scripts/init-posix.sh # Safe-chain Zsh initialization script
-# socket.dev
-# See: https://docs.socket.dev/docs/safe-npm-faq
-#alias npm="socket-npm"
-#alias npx="socket-npx"
-#compdef \_npm socket-npm

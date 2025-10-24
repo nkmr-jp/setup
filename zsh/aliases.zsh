@@ -60,3 +60,5 @@ alias gp='gwt p'
 alias gr='gwt r'
 alias gl='gwt l'
 alias gs='gwt s'
+
+alias ctop='/Users/nkmr/ghq/github.com/nkmr-jp/claude/scripts/session-top.sh'

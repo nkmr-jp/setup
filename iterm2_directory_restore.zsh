@@ -21,21 +21,21 @@ if [[ -o interactive ]]; then
     }
     
     # タイトルを設定する関数 - ディレクトリ名のみを表示
-    iterm2_set_tab_title() {
+    iterm2_set_title() {
       # ホームディレクトリの場合は「~」を表示
       local dir_name="${PWD##*/}"
       if [[ "$PWD" == "$HOME" ]]; then
         dir_name="~"
       fi
-      # タブのタイトルを設定
-      printf "\033]1;%s\007" "$dir_name"
+      # タブとセッションのタイトルを設定
+      printf "\033]0;%s\007" "$dir_name"
     }
 
     # Called after each command execution
     iterm2_after_cmd_executes() {
       iterm2_print_state_data
       iterm2_print_user_vars
-      iterm2_set_tab_title
+      iterm2_set_title
     }
 
     # Hook that runs before each prompt
@@ -51,6 +51,6 @@ if [[ -o interactive ]]; then
     # Send initial directory
     iterm2_print_state_data
     iterm2_print_user_vars
-    iterm2_set_tab_title
+    iterm2_set_title
   fi
 fi

@@ -54,12 +54,14 @@ alias md="open -a 'Marked 2'"
 alias ob='open "obsidian://open?path=$(pwd)"'
 
 # Git worktree
-alias g='gwt'
-alias gq='gwt q'
-alias gp='gwt p'
-alias gr='gwt r'
-alias gl='gwt l'
-alias gs='gwt s'
+#alias g='gwt'
+#alias gq='gwt q'
+#alias gp='gwt p'
+#alias gr='gwt r'
+#alias gl='gwt l'
+#alias gs='gwt s'
+
+alias gw='git gtr'
 
 alias cctop='/Users/nkmr/ghq/github.com/nkmr-jp/claude/scripts/session-top.sh'
 alias ccstatus='/Users/nkmr/ghq/github.com/nkmr-jp/claude/scripts/session-status.sh'

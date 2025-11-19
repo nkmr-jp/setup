@@ -112,6 +112,12 @@ git config --global user.name "username"
 git config --global user.email "mailaddress"
 ```
 
+### Set gtr
+```sh
+ghq get coderabbitai/git-worktree-runner
+ln -s "$(pwd)/bin/git-gtr" ~/src/bin/git-gtr
+```
+
 ## Repository Structure
 
 This repository uses a modular approach for Zsh configuration:

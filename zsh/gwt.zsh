@@ -49,7 +49,21 @@ _gwt_run_post_create_hook() {
 
     local hook_executed=false
 
-    # 1. グローバル設定のスクリプトを実行
+    # 1. SETUP_DIR のスクリプトを実行（優先）
+    if [[ -n "$SETUP_DIR" ]]; then
+        local setup_hook="${SETUP_DIR}/gwt/post-create.sh"
+        if [[ -f "$setup_hook" && -x "$setup_hook" ]]; then
+            echo -e "${CYAN}→ SETUP_DIR post-create hook を実行中...${RESET}"
+            if "$setup_hook"; then
+                echo -e "${GREEN}✓ SETUP_DIR hook 完了${RESET}"
+            else
+                echo -e "${YELLOW}⚠ SETUP_DIR hook がエラーで終了しました (exit code: $?)${RESET}"
+            fi
+            hook_executed=true
+        fi
+    fi
+
+    # 2. グローバル設定のスクリプトを実行（フォールバック）
     local global_hook="${HOME}/.config/gwt/post-create.sh"
     if [[ -f "$global_hook" && -x "$global_hook" ]]; then
         echo -e "${CYAN}→ グローバル post-create hook を実行中...${RESET}"
@@ -61,7 +75,7 @@ _gwt_run_post_create_hook() {
         hook_executed=true
     fi
 
-    # 2. リポジトリルートのスクリプトを実行
+    # 3. リポジトリルートのスクリプトを実行
     local repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
     local repo_hook="${repo_root}/.gwt-post-create.sh"
     if [[ -f "$repo_hook" && -x "$repo_hook" ]]; then
@@ -561,13 +575,10 @@ ${YELLOW}短縮形:${RESET}
 ${YELLOW}Post-create Hook:${RESET}
   worktree作成後に自動的にスクリプトを実行できます。
 
-  ${CYAN}スクリプトの配置場所:${RESET}
-    グローバル:    ~/.config/gwt/post-create.sh
-    リポジトリ:    <repo-root>/.gwt-post-create.sh
-
-  ${CYAN}実行順序:${RESET}
-    1. グローバルスクリプト
-    2. リポジトリスクリプト
+  ${CYAN}スクリプトの配置場所 (実行順序):${RESET}
+    1. \$SETUP_DIR/gwt/post-create.sh  (setup リポジトリで管理)
+    2. ~/.config/gwt/post-create.sh    (グローバル設定)
+    3. <repo-root>/.gwt-post-create.sh (リポジトリ固有)
 
   ${CYAN}利用可能な環境変数:${RESET}
     GWT_WORKTREE_PATH   作成されたworktreeのパス

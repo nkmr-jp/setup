@@ -41,11 +41,13 @@ _gwt_run_post_create_hook() {
     local worktree_path="$1"
     local branch_name="$2"
     local base_branch="$3"
+    local base_path="$4"
 
     # 環境変数を設定
     export GWT_WORKTREE_PATH="$worktree_path"
     export GWT_BRANCH_NAME="$branch_name"
     export GWT_BASE_BRANCH="$base_branch"
+    export GWT_BASE_PATH="$base_path"
 
     local hook_executed=false
 
@@ -77,7 +79,7 @@ _gwt_run_post_create_hook() {
     fi
 
     # 環境変数をクリア
-    unset GWT_WORKTREE_PATH GWT_BRANCH_NAME GWT_BASE_BRANCH
+    unset GWT_WORKTREE_PATH GWT_BRANCH_NAME GWT_BASE_BRANCH GWT_BASE_PATH
 
     if [[ "$hook_executed" == false ]]; then
         # hookが見つからなかった場合は何も表示しない（通常動作）
@@ -171,11 +173,15 @@ _gwt_new() {
 
     if [[ $? -eq 0 ]]; then
         echo -e "${GREEN}✓ Worktreeを作成しました: ${worktree_path}${RESET}"
+
+        # ベースパス（メインworktree）を取得
+        local base_path=$(git worktree list | head -1 | awk '{print $1}')
+
         cd "$worktree_path"
         echo -e "${BLUE}→ 移動しました: $(pwd)${RESET}"
 
         # Post-create hook を実行
-        _gwt_run_post_create_hook "$worktree_path" "$branch_name" "$base_branch"
+        _gwt_run_post_create_hook "$worktree_path" "$branch_name" "$base_branch" "$base_path"
     else
         echo -e "${RED}Error: Worktreeの作成に失敗しました${RESET}"
         return 1
@@ -571,6 +577,7 @@ ${YELLOW}Post-create Hook:${RESET}
     GWT_WORKTREE_PATH   作成されたworktreeのパス
     GWT_BRANCH_NAME     ブランチ名
     GWT_BASE_BRANCH     ベースブランチ名
+    GWT_BASE_PATH       ベースリポジトリ（メインworktree）のパス
 
   ${CYAN}例 (.gwt-post-create.sh):${RESET}
     #!/bin/bash

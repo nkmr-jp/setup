@@ -35,6 +35,55 @@ else
 fi
 
 # ========================================
+# Post-create hook 実行
+# ========================================
+_gwt_run_post_create_hook() {
+    local worktree_path="$1"
+    local branch_name="$2"
+    local base_branch="$3"
+
+    # 環境変数を設定
+    export GWT_WORKTREE_PATH="$worktree_path"
+    export GWT_BRANCH_NAME="$branch_name"
+    export GWT_BASE_BRANCH="$base_branch"
+
+    local hook_executed=false
+
+    # 1. グローバル設定のスクリプトを実行
+    local global_hook="${HOME}/.config/gwt/post-create.sh"
+    if [[ -f "$global_hook" && -x "$global_hook" ]]; then
+        echo -e "${CYAN}→ グローバル post-create hook を実行中...${RESET}"
+        if "$global_hook"; then
+            echo -e "${GREEN}✓ グローバル hook 完了${RESET}"
+        else
+            echo -e "${YELLOW}⚠ グローバル hook がエラーで終了しました (exit code: $?)${RESET}"
+        fi
+        hook_executed=true
+    fi
+
+    # 2. リポジトリルートのスクリプトを実行
+    local repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
+    local repo_hook="${repo_root}/.gwt-post-create.sh"
+    if [[ -f "$repo_hook" && -x "$repo_hook" ]]; then
+        echo -e "${CYAN}→ リポジトリ post-create hook を実行中...${RESET}"
+        if "$repo_hook"; then
+            echo -e "${GREEN}✓ リポジトリ hook 完了${RESET}"
+        else
+            echo -e "${YELLOW}⚠ リポジトリ hook がエラーで終了しました (exit code: $?)${RESET}"
+        fi
+        hook_executed=true
+    fi
+
+    # 環境変数をクリア
+    unset GWT_WORKTREE_PATH GWT_BRANCH_NAME GWT_BASE_BRANCH
+
+    if [[ "$hook_executed" == false ]]; then
+        # hookが見つからなかった場合は何も表示しない（通常動作）
+        :
+    fi
+}
+
+# ========================================
 # メインコマンド
 # ========================================
 gwt() {
@@ -122,6 +171,9 @@ _gwt_new() {
         echo -e "${GREEN}✓ Worktreeを作成しました: ${worktree_path}${RESET}"
         cd "$worktree_path"
         echo -e "${BLUE}→ 移動しました: $(pwd)${RESET}"
+
+        # Post-create hook を実行
+        _gwt_run_post_create_hook "$worktree_path" "$branch_name" "$base_branch"
     else
         echo -e "${RED}Error: Worktreeの作成に失敗しました${RESET}"
         return 1
@@ -505,6 +557,26 @@ ${YELLOW}短縮形:${RESET}
   gwt i    = gwt info
   gwt q    = gwt quick
   gwt p    = gwt prune
+
+${YELLOW}Post-create Hook:${RESET}
+  worktree作成後に自動的にスクリプトを実行できます。
+
+  ${CYAN}スクリプトの配置場所:${RESET}
+    グローバル:    ~/.config/gwt/post-create.sh
+    リポジトリ:    <repo-root>/.gwt-post-create.sh
+
+  ${CYAN}実行順序:${RESET}
+    1. グローバルスクリプト
+    2. リポジトリスクリプト
+
+  ${CYAN}利用可能な環境変数:${RESET}
+    GWT_WORKTREE_PATH   作成されたworktreeのパス
+    GWT_BRANCH_NAME     ブランチ名
+    GWT_BASE_BRANCH     ベースブランチ名
+
+  ${CYAN}例 (.gwt-post-create.sh):${RESET}
+    #!/bin/bash
+    npm install  # 依存関係をインストール
 EOF
 }
 

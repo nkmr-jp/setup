@@ -51,7 +51,7 @@ _gwt_run_post_create_hook() {
 
     # 1. SETUP_DIR のスクリプトを実行（優先）
     if [[ -n "$SETUP_DIR" ]]; then
-        local setup_hook="${SETUP_DIR}/gwt/post-create.sh"
+        local setup_hook="${SETUP_DIR}/zsh/gwt/post-create.sh"
         if [[ -f "$setup_hook" && -x "$setup_hook" ]]; then
             echo -e "${CYAN}→ SETUP_DIR post-create hook を実行中...${RESET}"
             if "$setup_hook"; then
@@ -576,7 +576,7 @@ ${YELLOW}Post-create Hook:${RESET}
   worktree作成後に自動的にスクリプトを実行できます。
 
   ${CYAN}スクリプトの配置場所 (実行順序):${RESET}
-    1. \$SETUP_DIR/gwt/post-create.sh  (setup リポジトリで管理)
+    1. \$SETUP_DIR/zsh/gwt/post-create.sh  (setup リポジトリで管理)
     2. ~/.config/gwt/post-create.sh    (グローバル設定)
     3. <repo-root>/.gwt-post-create.sh (リポジトリ固有)
 

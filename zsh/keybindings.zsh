@@ -35,3 +35,11 @@ bindkey '^]' fzf-cd-enhanced
 
 # Ctrl+F for fzf-cd-widget
 bindkey '^F' fzf-cd-widget
+
+# Git Worktree switch (Alt+W)
+function gwt_switch_widget() {
+    _gwt_switch
+    zle reset-prompt
+}
+zle -N gwt_switch_widget
+bindkey '\ew' gwt_switch_widget

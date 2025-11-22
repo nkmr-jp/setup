@@ -625,3 +625,13 @@ _gwt_completion() {
 if [[ -n "$ZSH_VERSION" ]]; then
     compdef _gwt_completion gwt
 fi
+
+# ========================================
+# エイリアス
+# ========================================
+alias g='gwt'
+alias gq='gwt q'
+alias gp='gwt p'
+alias gr='gwt r'
+alias gl='gwt l'
+alias gs='gwt s'

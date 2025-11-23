@@ -27,3 +27,10 @@ function display_greeting() {
         gshuf -n 1 "$SETUP_DIR/.messages"
     fi
 }
+
+# Auto-run make login if Makefile exists with login target
+function auto_make_login() {
+    if [[ -f "Makefile" ]] && grep -q '^login:' Makefile; then
+        make login
+    fi
+}

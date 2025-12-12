@@ -473,9 +473,30 @@ _gwt_prune() {
         done
         
         if [[ "$is_merged" == true ]]; then
-            echo -e "${YELLOW}マージ済み検出: ${branch} (${wt_path})${RESET}"
-            merged_worktrees+=("$wt_path")
-            merged_branches+=("$branch")
+            # 未コミットの変更があるかチェック
+            local has_uncommitted=false
+            if [[ -d "$wt_path" ]]; then
+                local uncommitted_count=$(cd "$wt_path" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+                if [[ "$uncommitted_count" -gt 0 ]]; then
+                    has_uncommitted=true
+                    echo -e "${RED}⚠ スキップ: ${branch} (${wt_path})${RESET}"
+                    echo -e "  ${YELLOW}未コミットの変更が ${uncommitted_count} 個あります${RESET}"
+                    # 変更内容を表示
+                    (cd "$wt_path" && git status --porcelain | head -10 | while read -r status_line; do
+                        echo -e "    ${CYAN}${status_line}${RESET}"
+                    done)
+                    local remaining=$((uncommitted_count - 10))
+                    if [[ $remaining -gt 0 ]]; then
+                        echo -e "    ${YELLOW}... 他 ${remaining} 個${RESET}"
+                    fi
+                fi
+            fi
+
+            if [[ "$has_uncommitted" == false ]]; then
+                echo -e "${YELLOW}マージ済み検出: ${branch} (${wt_path})${RESET}"
+                merged_worktrees+=("$wt_path")
+                merged_branches+=("$branch")
+            fi
         fi
     done < <(git worktree list | grep -v "bare")
 

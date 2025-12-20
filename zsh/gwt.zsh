@@ -473,6 +473,41 @@ _gwt_prune() {
         done
         
         if [[ "$is_merged" == true ]]; then
+            # 作成から30分以上経過しているかチェック
+            local is_old_enough=false
+            if [[ -d "$wt_path" ]]; then
+                local current_time=$(date +%s)
+                # macOSではstat -f %B、Linuxではstat -c %W（未対応の場合は%Y）
+                local creation_time
+                if [[ "$OSTYPE" == "darwin"* ]]; then
+                    creation_time=$(stat -f %B "$wt_path" 2>/dev/null)
+                else
+                    creation_time=$(stat -c %W "$wt_path" 2>/dev/null)
+                    # 作成時間が取得できない場合は変更時間を使用
+                    if [[ "$creation_time" == "0" || -z "$creation_time" ]]; then
+                        creation_time=$(stat -c %Y "$wt_path" 2>/dev/null)
+                    fi
+                fi
+
+                if [[ -n "$creation_time" && "$creation_time" != "0" ]]; then
+                    local age_seconds=$((current_time - creation_time))
+                    local age_minutes=$((age_seconds / 60))
+                    if [[ $age_minutes -ge 30 ]]; then
+                        is_old_enough=true
+                    else
+                        echo -e "${BLUE}⏳ スキップ: ${branch} (${wt_path})${RESET}"
+                        echo -e "  ${CYAN}作成から ${age_minutes} 分経過（30分未満のためスキップ）${RESET}"
+                    fi
+                else
+                    # 作成時間が取得できない場合はスキップしない
+                    is_old_enough=true
+                fi
+            fi
+
+            if [[ "$is_old_enough" == false ]]; then
+                continue
+            fi
+
             # 未コミットの変更があるかチェック
             local has_uncommitted=false
             if [[ -d "$wt_path" ]]; then

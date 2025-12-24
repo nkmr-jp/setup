@@ -52,7 +52,7 @@ procs fd tesseract-lang google-cloud-sdk pre-commit \
 tflint buildpacks/tap/pack grep helm \
 parallel lefthook htop tmux duckdb deno bottom starship \
 font-fira-code-nerd-font zsh-syntax-highlighting zoxide \
-ripgrep mpv yq uv pnpm secretive sleepwatcher aqua
+ripgrep mpv yq pnpm secretive sleepwatcher aqua
 
 #brew install --cask miniconda warp
 brew install --cask rectangle
@@ -310,6 +310,10 @@ pip install jupyterlab notebook voila iplantuml edge-tts
 ```
 
 ## Install Commands from Binary
+
+```aiignore
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 ```sh
 curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b (go env GOPATH)/bin v1.46.2

@@ -30,4 +30,5 @@ alias xbar='code ~/ghq/github.com/nkmr-jp/xbar/plugins'
 alias sleepon='sudo pmset -a disablesleep 0'
 alias sleepoff='sudo pmset -a disablesleep 1'
 
+# See: https://oraios.github.io/serena/02-usage/020_running.html
 alias serena='uvx --from git+https://github.com/oraios/serena serena'

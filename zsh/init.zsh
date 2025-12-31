@@ -76,6 +76,3 @@ esac
 
 # Visivo
 export PATH="$HOME/.visivo/bin:$PATH"
-
-# Claude Code
-export ENABLE_BACKGROUND_TASKS=1

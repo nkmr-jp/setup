@@ -88,6 +88,44 @@ _gwt_run_post_create_hook() {
 }
 
 # ========================================
+# JetBrains Recent Projectsから削除
+# ========================================
+_gwt_remove_from_jetbrains_recent() {
+    local wt_path="$1"
+    local jetbrains_dir="$HOME/Library/Application Support/JetBrains"
+
+    # JetBrainsディレクトリが存在しない場合はスキップ
+    [[ ! -d "$jetbrains_dir" ]] && return 0
+
+    # $HOME を $USER_HOME$ に変換（JetBrainsのXML形式）
+    local escaped_path="${wt_path/#$HOME/\$USER_HOME\$}"
+    # XMLで使う正規表現用にエスケープ
+    local escaped_for_sed=$(echo "$escaped_path" | sed 's/[\/&]/\\&/g')
+
+    local removed=false
+
+    # 全てのJetBrains IDEのrecentProjects.xmlを処理
+    find "$jetbrains_dir" -name "recentProjects.xml" -type f 2>/dev/null | while read -r xml_file; do
+        # backupディレクトリはスキップ
+        [[ "$xml_file" == *"-backup"* ]] && continue
+
+        # 該当エントリが存在するかチェック
+        if grep -q "\"${escaped_path}\"" "$xml_file" 2>/dev/null; then
+            # sedでエントリブロック全体を削除
+            # <entry key="$USER_HOME$/path">...</entry> の形式
+            sed -i '' "/<entry key=\"${escaped_for_sed}\">/,/<\/entry>/d" "$xml_file" 2>/dev/null
+            if [[ $? -eq 0 ]]; then
+                local ide_name=$(echo "$xml_file" | sed 's|.*/JetBrains/\([^/]*\)/.*|\1|')
+                echo -e "${GREEN}✓ JetBrains Recent Projectsから削除: ${ide_name}${RESET}"
+                removed=true
+            fi
+        fi
+    done
+
+    return 0
+}
+
+# ========================================
 # メインコマンド
 # ========================================
 gwt() {
@@ -246,14 +284,11 @@ _gwt_remove() {
                     cd $(git worktree list | head -1 | awk '{print $1}')
                 fi
 
-                # JetBrainsプロジェクトファイル（.idea）を削除
-                if [[ -d "${wt_path}/.idea" ]]; then
-                    rm -rf "${wt_path}/.idea"
-                    echo -e "${GREEN}✓ JetBrainsプロジェクトを削除しました: ${wt_path}/.idea${RESET}"
-                fi
-
                 git worktree remove "$wt_path" --force
                 echo -e "${GREEN}✓ Worktreeを削除しました: $wt_path${RESET}"
+
+                # JetBrains Recent Projectsから削除
+                _gwt_remove_from_jetbrains_recent "$wt_path"
 
                 # ブランチも削除するか確認
                 echo -ne "${YELLOW}ブランチ '${branch}' も削除しますか？ [y/N]: ${RESET}"
@@ -559,16 +594,13 @@ _gwt_prune() {
                 echo -e "${BLUE}メインリポジトリに移動: ${main_path}${RESET}"
             fi
             
-            # JetBrainsプロジェクトファイル（.idea）を削除
-            if [[ -d "${wt_path}/.idea" ]]; then
-                rm -rf "${wt_path}/.idea"
-                echo -e "${GREEN}✓ JetBrainsプロジェクトを削除: ${wt_path}/.idea${RESET}"
-            fi
-
             # worktreeを削除
             if git worktree remove "$wt_path" --force 2>/dev/null; then
                 echo -e "${GREEN}✓ Worktreeを削除: ${wt_path}${RESET}"
                 ((deleted_count++))
+
+                # JetBrains Recent Projectsから削除
+                _gwt_remove_from_jetbrains_recent "$wt_path"
             else
                 echo -e "${RED}✗ Worktreeの削除に失敗: ${wt_path}${RESET}"
                 continue

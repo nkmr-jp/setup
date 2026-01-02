@@ -246,6 +246,12 @@ _gwt_remove() {
                     cd $(git worktree list | head -1 | awk '{print $1}')
                 fi
 
+                # JetBrainsプロジェクトファイル（.idea）を削除
+                if [[ -d "${wt_path}/.idea" ]]; then
+                    rm -rf "${wt_path}/.idea"
+                    echo -e "${GREEN}✓ JetBrainsプロジェクトを削除しました: ${wt_path}/.idea${RESET}"
+                fi
+
                 git worktree remove "$wt_path" --force
                 echo -e "${GREEN}✓ Worktreeを削除しました: $wt_path${RESET}"
 
@@ -553,6 +559,12 @@ _gwt_prune() {
                 echo -e "${BLUE}メインリポジトリに移動: ${main_path}${RESET}"
             fi
             
+            # JetBrainsプロジェクトファイル（.idea）を削除
+            if [[ -d "${wt_path}/.idea" ]]; then
+                rm -rf "${wt_path}/.idea"
+                echo -e "${GREEN}✓ JetBrainsプロジェクトを削除: ${wt_path}/.idea${RESET}"
+            fi
+
             # worktreeを削除
             if git worktree remove "$wt_path" --force 2>/dev/null; then
                 echo -e "${GREEN}✓ Worktreeを削除: ${wt_path}${RESET}"

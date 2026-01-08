@@ -254,6 +254,9 @@ _gwt_switch() {
 # 3. 不要なworktreeを削除
 # ========================================
 _gwt_remove() {
+    # 保護対象のブランチ
+    local -a protected_branches=("main" "master" "develop" "development")
+
     # 削除対象を選択
     local worktree=$(git worktree list | grep -v "bare" | fzf \
         --height=40% \
@@ -271,6 +274,16 @@ _gwt_remove() {
         for line in "${worktree_lines[@]}"; do
             local wt_path=$(echo "$line" | awk '{print $1}')
             local branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
+
+            # 保護対象ブランチのチェック
+            local is_protected=false
+            for protected in "${protected_branches[@]}"; do
+                [[ "$branch" == "$protected" ]] && is_protected=true && break
+            done
+            if [[ "$is_protected" == true ]]; then
+                echo -e "${RED}Error: '${branch}' は保護対象ブランチのため削除できません${RESET}"
+                continue
+            fi
 
             echo -e "${YELLOW}削除しますか？${RESET}"
             echo "  Path: $wt_path"

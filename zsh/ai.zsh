@@ -5,6 +5,8 @@
 alias cl='claude'
 alias co='codex'
 alias ge='gemini'
+alias oc='openclaw'
+alias oct='openclaw tui'
 
 # Claude Code
 # See: https://spiess.dev/blog/how-i-use-claude-code

@@ -2,11 +2,12 @@
 
 # ghqリポジトリ検索と移動 (Ctrl+G)
 function ghq_finder() {
-    local selected_dir=$(find ~/ghq -mindepth 3 -maxdepth 3 -type d | fzf --reverse --height 40% --preview 'ls -la {}')
+    local selected_dir=$(find ~/ghq -mindepth 3 -maxdepth 3 -type d | sed "s|$HOME/ghq/||" | fzf --reverse --height 40%)
     if [[ -n "$selected_dir" ]]; then
-        BUFFER="cd ${selected_dir}"
+        local full_path="$HOME/ghq/$selected_dir"
+        BUFFER="cd ${full_path}"
         zle accept-line
-        cd "$selected_dir"
+        cd "$full_path"
     else
         zle reset-prompt
     fi

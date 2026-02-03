@@ -12,6 +12,7 @@ alias claw='openclaw'
 alias yolo="claude --dangerously-skip-permissions"
 alias cctop='/Users/nkmr/ghq/github.com/nkmr-jp/claude/scripts/session-top.sh'
 alias ccstatus='/Users/nkmr/ghq/github.com/nkmr-jp/claude/scripts/session-status.sh'
+alias help='claude --setting-sources "" --model haiku -p'
 
 # Text-to-speech
 alias ep='edge-playback --rate "+25%" -v ja-JP-NanamiNeural --text'

@@ -43,3 +43,6 @@ export PATH="$(aqua root-dir)/bin:$PATH"
 # Export PATH to GUI apps (for GoLand, VSCode, etc.)
 # This allows GUI apps launched from Dock/Spotlight to access CLI tools
 launchctl setenv PATH "$PATH" 2>/dev/null || true
+
+# See: https://opencode.ai/docs/tui/#editor-setup
+export EDITOR="code --wait"

@@ -38,7 +38,7 @@ eval "$(zoxide init zsh)"
 
 # Call the greeting function when starting an interactive shell
 if [[ $- == *i* ]]; then
-    display_greeting
+#    display_greeting
     auto_make_login
 fi
 

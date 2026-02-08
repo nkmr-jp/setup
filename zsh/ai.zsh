@@ -9,7 +9,7 @@ alias claw='openclaw'
 
 # Claude Code
 # See: https://spiess.dev/blog/how-i-use-claude-code
-alias yolo="claude --dangerously-skip-permissions"
+alias yolo="claude --dangerously-skip-permissions --teammate-mode=tmux"
 alias cctop='/Users/nkmr/ghq/github.com/nkmr-jp/claude/scripts/session-top.sh'
 alias ccstatus='/Users/nkmr/ghq/github.com/nkmr-jp/claude/scripts/session-status.sh'
 alias h='claude --setting-sources "" --model haiku -p'

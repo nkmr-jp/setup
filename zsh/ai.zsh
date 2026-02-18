@@ -12,6 +12,7 @@ alias claw='openclaw'
 # See: https://github.com/anthropics/claude-code/issues/8473
 # See: https://github.com/anthropics/claude-code/issues/24292
 alias claude="unset CLAUDE_CODE_OAUTH_TOKEN; unset ANTHROPIC_API_KEY; claude --teammate-mode=tmux"
+alias yolo="claude --dangerously-skip-permissions"
 alias cctop='/Users/nkmr/ghq/github.com/nkmr-jp/claude/scripts/session-top.sh'
 alias ccstatus='/Users/nkmr/ghq/github.com/nkmr-jp/claude/scripts/session-status.sh'
 alias h='claude --setting-sources "" --model haiku -p'

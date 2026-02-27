@@ -39,5 +39,6 @@ Temporary Items
 
 # Claude Code
 .claude/scratch
-
 .cclinear.yml
+settings.local.json
+CLAUDE.local.md

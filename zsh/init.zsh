@@ -76,3 +76,7 @@ esac
 
 # Visivo
 export PATH="$HOME/.visivo/bin:$PATH"
+
+# PromptLine
+zoxide query -l > ~/.prompt-line/z.txt
+ghq list > ~/.prompt-line/ghq.txt

@@ -77,6 +77,8 @@ esac
 # Visivo
 export PATH="$HOME/.visivo/bin:$PATH"
 
+
 # PromptLine
 zoxide query -l > ~/.prompt-line/z.txt
+mdfind -onlyin ~ 'kMDItemLastUsedDate >= $time.today(-7)' | head -100 > ~/.prompt-line/mdfind.txt
 ghq list > ~/.prompt-line/ghq.txt

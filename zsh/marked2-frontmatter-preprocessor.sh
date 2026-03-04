@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 #
 # Marked 2 Custom Preprocessor: Frontmatter Display (Shell版)
 #

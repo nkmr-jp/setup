@@ -32,3 +32,5 @@ alias sleepoff='sudo pmset -a disablesleep 1'
 
 # See: https://oraios.github.io/serena/02-usage/020_running.html
 alias serena='uvx --from git+https://github.com/oraios/serena serena'
+
+alias drawio='/Applications/draw.io.app/Contents/MacOS/draw.io'

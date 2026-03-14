@@ -82,3 +82,15 @@ export PATH="$HOME/.visivo/bin:$PATH"
 zoxide query -l > ~/.prompt-line/z.txt
 mdfind -onlyin ~ 'kMDItemLastUsedDate >= $time.today(-7)' | head -100 > ~/.prompt-line/mdfind.txt
 ghq list > ~/.prompt-line/ghq.txt
+
+
+iterm-run() {
+  osascript -e "
+  tell application \"iTerm2\"
+    create window with default profile
+    tell current session of current window
+      delay 0.1
+      write text \"$*\"
+    end tell
+  end tell"
+}

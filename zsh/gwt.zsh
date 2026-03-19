@@ -660,6 +660,7 @@ _gwt_claude() {
     fi
 
     local base_branch="$1"
+    local original_dir="$(pwd)"
 
     # quickでworktreeを作成
     _GWT_LAST_WORKTREE_PATH=""
@@ -678,10 +679,9 @@ _gwt_claude() {
     echo -e "${CYAN}→ Claude Code を起動します ($(pwd))...${RESET}"
     claude
 
-    # Claude終了後もworktreeディレクトリに留まる
-    if [[ -n "$worktree_dir" && -d "$worktree_dir" ]]; then
-        cd "$worktree_dir"
-    fi
+    # Claude終了後は起動時のディレクトリに戻る
+    cd "$original_dir"
+    echo -e "${BLUE}→ 元のディレクトリに戻りました: ${original_dir}${RESET}"
 }
 
 # ========================================

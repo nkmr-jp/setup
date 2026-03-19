@@ -163,6 +163,9 @@ gwt() {
         claude|cc)
             _gwt_claude "$@"
             ;;
+        yolo|y)
+            _gwt_claude_yolo "$@"
+            ;;
         help|h|"")
             _gwt_help
             ;;
@@ -685,6 +688,45 @@ _gwt_claude() {
 }
 
 # ========================================
+# 11. worktreeを作成してClaude Code (yolo) を起動
+# ========================================
+_gwt_claude_yolo() {
+    local prefix="$1"
+    shift
+
+    if [[ -z "$prefix" ]]; then
+        echo -e "${RED}Error: プレフィックスを指定してください${RESET}"
+        echo "Usage: gwt yolo <prefix> [base-branch]"
+        echo "Example: gwt yolo feature/login"
+        return 1
+    fi
+
+    local base_branch="$1"
+    local original_dir="$(pwd)"
+
+    # quickでworktreeを作成
+    _GWT_LAST_WORKTREE_PATH=""
+    _gwt_quick "$prefix" ${base_branch:+"$base_branch"}
+    if [[ $? -ne 0 ]]; then
+        return 1
+    fi
+
+    # 作成されたworktreeのパスを保持
+    local worktree_dir="$_GWT_LAST_WORKTREE_PATH"
+    if [[ -n "$worktree_dir" && -d "$worktree_dir" ]]; then
+        cd "$worktree_dir"
+    fi
+
+    # Claude Code (yolo mode) を起動
+    echo -e "${YELLOW}→ Claude Code (yolo mode) を起動します ($(pwd))...${RESET}"
+    claude --dangerously-skip-permissions
+
+    # Claude終了後は起動時のディレクトリに戻る
+    cd "$original_dir"
+    echo -e "${BLUE}→ 元のディレクトリに戻りました: ${original_dir}${RESET}"
+}
+
+# ========================================
 # ヘルプ表示
 # ========================================
 _gwt_help() {
@@ -705,6 +747,7 @@ ${YELLOW}コマンド:${RESET}
   quick, q <prefix> [base]   日付付きでworktreeを素早く作成
   prune, p                   worktreeのクリーンアップ
   claude, cc <prefix> [base] 日付付きworktreeを作成してClaude Codeを起動
+  yolo, y <prefix> [base]    日付付きworktreeを作成してClaude Code (yolo) を起動
   help, h                    このヘルプを表示
 
 ${YELLOW}使用例:${RESET}
@@ -714,6 +757,7 @@ ${YELLOW}使用例:${RESET}
   gwt status                        # 全worktreeの状態を確認
   gwt remove                        # 不要なworktreeを削除
   gwt claude feature/login develop  # 日付付きworktreeを作成してClaude Codeを起動
+  gwt yolo feature/login develop   # 日付付きworktreeを作成してClaude Code (yolo) を起動
 
 ${YELLOW}短縮形:${RESET}
   gwt n    = gwt new
@@ -726,6 +770,7 @@ ${YELLOW}短縮形:${RESET}
   gwt q    = gwt quick
   gwt p    = gwt prune
   gwt cc   = gwt claude
+  gwt y    = gwt yolo
 
 ${YELLOW}Post-create Hook:${RESET}
   worktree作成後に自動的にスクリプトを実行できます。
@@ -762,6 +807,7 @@ _gwt_completion() {
         'quick:日付付きでworktreeを素早く作成'
         'prune:worktreeのクリーンアップ'
         'claude:worktreeを作成してClaude Codeを起動'
+        'yolo:worktreeを作成してClaude Code (yolo) を起動'
         'help:ヘルプを表示'
     )
 
@@ -777,6 +823,7 @@ _gwt_completion() {
         'q:quick'
         'p:prune'
         'cc:claude'
+        'y:yolo'
         'h:help'
     )
 
@@ -800,3 +847,4 @@ alias gl='gwt l'
 alias gs='gwt s'
 alias gn='gwt n'
 alias gcc='gwt cc'
+alias gy='gwt y'

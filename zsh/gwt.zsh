@@ -160,6 +160,9 @@ gwt() {
         prune|p)
             _gwt_prune "$@"
             ;;
+        claude|cc)
+            _gwt_claude "$@"
+            ;;
         help|h|"")
             _gwt_help
             ;;
@@ -214,6 +217,9 @@ _gwt_new() {
 
         # ベースパス（メインworktree）を取得
         local base_path=$(git worktree list | head -1 | awk '{print $1}')
+
+        # 作成されたworktreeパスを共有変数に保存
+        _GWT_LAST_WORKTREE_PATH="$worktree_path"
 
         cd "$worktree_path"
         echo -e "${BLUE}→ 移動しました: $(pwd)${RESET}"
@@ -640,6 +646,45 @@ _gwt_prune() {
 }
 
 # ========================================
+# 10. worktreeを作成してClaude Codeを起動
+# ========================================
+_gwt_claude() {
+    local prefix="$1"
+    shift
+
+    if [[ -z "$prefix" ]]; then
+        echo -e "${RED}Error: プレフィックスを指定してください${RESET}"
+        echo "Usage: gwt claude <prefix> [base-branch]"
+        echo "Example: gwt claude feature/login"
+        return 1
+    fi
+
+    local base_branch="$1"
+
+    # quickでworktreeを作成
+    _GWT_LAST_WORKTREE_PATH=""
+    _gwt_quick "$prefix" ${base_branch:+"$base_branch"}
+    if [[ $? -ne 0 ]]; then
+        return 1
+    fi
+
+    # 作成されたworktreeのパスを保持
+    local worktree_dir="$_GWT_LAST_WORKTREE_PATH"
+    if [[ -n "$worktree_dir" && -d "$worktree_dir" ]]; then
+        cd "$worktree_dir"
+    fi
+
+    # Claude Codeを起動
+    echo -e "${CYAN}→ Claude Code を起動します ($(pwd))...${RESET}"
+    claude
+
+    # Claude終了後もworktreeディレクトリに留まる
+    if [[ -n "$worktree_dir" && -d "$worktree_dir" ]]; then
+        cd "$worktree_dir"
+    fi
+}
+
+# ========================================
 # ヘルプ表示
 # ========================================
 _gwt_help() {
@@ -659,6 +704,7 @@ ${YELLOW}コマンド:${RESET}
   info, i                    現在のworktree情報を表示
   quick, q <prefix> [base]   日付付きでworktreeを素早く作成
   prune, p                   worktreeのクリーンアップ
+  claude, cc <prefix> [base] 日付付きworktreeを作成してClaude Codeを起動
   help, h                    このヘルプを表示
 
 ${YELLOW}使用例:${RESET}
@@ -667,6 +713,7 @@ ${YELLOW}使用例:${RESET}
   gwt switch                        # worktreeを切り替え
   gwt status                        # 全worktreeの状態を確認
   gwt remove                        # 不要なworktreeを削除
+  gwt claude feature/login develop  # 日付付きworktreeを作成してClaude Codeを起動
 
 ${YELLOW}短縮形:${RESET}
   gwt n    = gwt new
@@ -678,6 +725,7 @@ ${YELLOW}短縮形:${RESET}
   gwt i    = gwt info
   gwt q    = gwt quick
   gwt p    = gwt prune
+  gwt cc   = gwt claude
 
 ${YELLOW}Post-create Hook:${RESET}
   worktree作成後に自動的にスクリプトを実行できます。
@@ -713,6 +761,7 @@ _gwt_completion() {
         'info:現在のworktree情報を表示'
         'quick:日付付きでworktreeを素早く作成'
         'prune:worktreeのクリーンアップ'
+        'claude:worktreeを作成してClaude Codeを起動'
         'help:ヘルプを表示'
     )
 
@@ -727,6 +776,7 @@ _gwt_completion() {
         'i:info'
         'q:quick'
         'p:prune'
+        'cc:claude'
         'h:help'
     )
 
@@ -749,3 +799,4 @@ alias gr='gwt r'
 alias gl='gwt l'
 alias gs='gwt s'
 alias gn='gwt n'
+alias gcc='gwt cc'

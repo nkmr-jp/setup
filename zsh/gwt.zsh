@@ -35,6 +35,18 @@ else
 fi
 
 # ========================================
+# ターミナルにCWDを通知（ブロッキングプロセス起動前に使用）
+# ========================================
+_gwt_notify_terminal_cwd() {
+    # OSC 1337: iTerm2用
+    printf '\033]1337;CurrentDir=%s\007' "$PWD"
+    # OSC 7: Terminal.app / 標準ターミナル用
+    printf '\033]7;file://%s%s\a' "${HOST}" "$PWD"
+    # タブタイトル更新
+    printf '\033]0;%s\007' "${PWD##*/}"
+}
+
+# ========================================
 # Post-create hook 実行
 # ========================================
 _gwt_run_post_create_hook() {
@@ -678,6 +690,9 @@ _gwt_claude() {
         cd "$worktree_dir"
     fi
 
+    # ブロッキングプロセス起動前にターミナルにCWDを通知
+    _gwt_notify_terminal_cwd
+
     # Claude Codeを起動
     echo -e "${CYAN}→ Claude Code を起動します ($(pwd))...${RESET}"
     claude
@@ -716,6 +731,9 @@ _gwt_claude_yolo() {
     if [[ -n "$worktree_dir" && -d "$worktree_dir" ]]; then
         cd "$worktree_dir"
     fi
+
+    # ブロッキングプロセス起動前にターミナルにCWDを通知
+    _gwt_notify_terminal_cwd
 
     # Claude Code (yolo mode) を起動
     echo -e "${YELLOW}→ Claude Code (yolo mode) を起動します ($(pwd))...${RESET}"
@@ -848,3 +866,5 @@ alias gs='gwt s'
 alias gn='gwt n'
 alias gcc='gwt cc'
 alias gy='gwt y'
+alias claudew='gwt cc'
+alias yolow='gwt y'

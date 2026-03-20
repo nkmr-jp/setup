@@ -55,7 +55,11 @@ _gwt_zle_auto_execute() {
 
         # BUFFERにコマンドを設定してaccept-lineで自動実行
         # プロンプト表示後なのでiTerm2のCWDは更新済み
-        BUFFER="${cmd}; cd '${return_dir}' && echo -e '\\033[34m→ 元のディレクトリに戻りました: ${return_dir}\\033[0m'"
+        if [[ -n "$return_dir" ]]; then
+            BUFFER="${cmd} && cd '${return_dir}'"
+        else
+            BUFFER="$cmd"
+        fi
         zle accept-line
     fi
 }

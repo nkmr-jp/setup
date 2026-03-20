@@ -35,16 +35,32 @@ else
 fi
 
 # ========================================
-# ターミナルにCWDを通知（ブロッキングプロセス起動前に使用）
+# ブロッキングコマンドの遅延実行（zle-line-init経由）
 # ========================================
-_gwt_notify_terminal_cwd() {
-    # OSC 1337: iTerm2用
-    printf '\033]1337;CurrentDir=%s\007' "$PWD"
-    # OSC 7: Terminal.app / 標準ターミナル用
-    printf '\033]7;file://%s%s\a' "${HOST}" "$PWD"
-    # タブタイトル更新
-    printf '\033]0;%s\007' "${PWD##*/}"
+# iTerm2の "Reuse previous session's directory" はプロンプトが実際に表示され、
+# シェルが入力待ち状態になって初めてCWDを更新する。
+# precmd内やエスケープシーケンスだけではCWDが更新されない。
+#
+# 解決策: 関数からリターン → precmd発火 → プロンプト表示 → zle-line-init発火
+# → この時点でiTerm2のCWDが更新済み → コマンドを自動実行
+_GWT_DEFERRED_CMD=""
+_GWT_DEFERRED_RETURN=""
+
+_gwt_zle_auto_execute() {
+    if [[ -n "$_GWT_DEFERRED_CMD" ]]; then
+        local cmd="$_GWT_DEFERRED_CMD"
+        local return_dir="$_GWT_DEFERRED_RETURN"
+        _GWT_DEFERRED_CMD=""
+        _GWT_DEFERRED_RETURN=""
+
+        # BUFFERにコマンドを設定してaccept-lineで自動実行
+        # プロンプト表示後なのでiTerm2のCWDは更新済み
+        BUFFER="${cmd}; cd '${return_dir}' && echo -e '\\033[34m→ 元のディレクトリに戻りました: ${return_dir}\\033[0m'"
+        zle accept-line
+    fi
 }
+zle -N _gwt_zle_auto_execute
+zle -N zle-line-init _gwt_zle_auto_execute
 
 # ========================================
 # Post-create hook 実行
@@ -690,16 +706,10 @@ _gwt_claude() {
         cd "$worktree_dir"
     fi
 
-    # ブロッキングプロセス起動前にターミナルにCWDを通知
-    _gwt_notify_terminal_cwd
-
-    # Claude Codeを起動
+    # Claude Codeを遅延実行（関数リターン → precmd発火 → CWD更新 → claude起動）
     echo -e "${CYAN}→ Claude Code を起動します ($(pwd))...${RESET}"
-    claude
-
-    # Claude終了後は起動時のディレクトリに戻る
-    cd "$original_dir"
-    echo -e "${BLUE}→ 元のディレクトリに戻りました: ${original_dir}${RESET}"
+    _GWT_DEFERRED_CMD="claude"
+    _GWT_DEFERRED_RETURN="$original_dir"
 }
 
 # ========================================
@@ -732,16 +742,10 @@ _gwt_claude_yolo() {
         cd "$worktree_dir"
     fi
 
-    # ブロッキングプロセス起動前にターミナルにCWDを通知
-    _gwt_notify_terminal_cwd
-
-    # Claude Code (yolo mode) を起動
+    # Claude Code (yolo mode) を遅延実行（関数リターン → precmd発火 → CWD更新 → claude起動）
     echo -e "${YELLOW}→ Claude Code (yolo mode) を起動します ($(pwd))...${RESET}"
-    claude --dangerously-skip-permissions
-
-    # Claude終了後は起動時のディレクトリに戻る
-    cd "$original_dir"
-    echo -e "${BLUE}→ 元のディレクトリに戻りました: ${original_dir}${RESET}"
+    _GWT_DEFERRED_CMD="claude --dangerously-skip-permissions"
+    _GWT_DEFERRED_RETURN="$original_dir"
 }
 
 # ========================================

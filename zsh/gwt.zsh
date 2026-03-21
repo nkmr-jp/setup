@@ -479,15 +479,12 @@ _gwt_quick() {
 _gwt_prune() {
     echo -e "${CYAN}=== Pruning Worktrees ===${RESET}"
 
-    # リモートから最新の情報を取得
+    # リモートから最新の情報を取得（--pruneで削除済みリモートブランチも反映）
     echo -e "${BLUE}リモートから最新の情報を取得中...${RESET}"
-    git pull
+    git fetch --prune
 
     # 削除されたworktreeをクリーンアップ
     git worktree prune -v
-
-    # 削除されたリモートブランチの追跡を削除
-    git remote prune origin
 
     # メインブランチを特定
     local main_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
@@ -531,41 +528,56 @@ _gwt_prune() {
         
         # マージ済みかチェック（master、main、developにマージ済みの場合）
         local is_merged=false
-        for check_branch in "master" "main" "develop"; do
-            if git show-ref --verify --quiet "refs/heads/$check_branch" || git show-ref --verify --quiet "refs/remotes/origin/$check_branch"; then
+
+        # 1. リモート追跡ブランチが削除されているかチェック（スカッシュマージ後にGitHubがブランチ削除）
+        local has_upstream=$(git rev-parse --verify "refs/remotes/origin/$branch" 2>/dev/null)
+        local had_upstream=$(git config "branch.${branch}.remote" 2>/dev/null)
+        if [[ -z "$has_upstream" && -n "$had_upstream" ]]; then
+            # リモートブランチが存在しないが、追跡設定がある = マージ後に削除された
+            is_merged=true
+        fi
+
+        # 2. 通常マージ・スカッシュマージの検知
+        if [[ "$is_merged" == false ]]; then
+            for check_branch in "master" "main" "develop"; do
+                # origin/$check_branch が存在するかチェック
+                if ! git show-ref --verify --quiet "refs/remotes/origin/$check_branch" 2>/dev/null; then
+                    continue
+                fi
+
                 # 通常のマージ: git branch --merged を使ってマージ済みブランチをチェック
-                if git branch --merged "$check_branch" 2>/dev/null | grep -q "^[[:space:]]*[+*][[:space:]]*${branch}$"; then
+                if git branch --merged "origin/$check_branch" 2>/dev/null | grep -q "^[[:space:]]*[+*]\?[[:space:]]*${branch}$"; then
                     is_merged=true
                     break
                 fi
-                
-                # スカッシュマージの検知: ブランチの変更がすべてメインブランチに含まれているかチェック
-                if ! git merge-base --is-ancestor "$check_branch" "$branch" 2>/dev/null; then
-                    # ブランチの全ファイル変更を取得
-                    local branch_changes=$(git diff --name-only "$check_branch"..."$branch" 2>/dev/null)
+
+                # スカッシュマージの検知: ブランチの変更がすべてリモートのメインブランチに含まれているかチェック
+                local merge_base=$(git merge-base "origin/$check_branch" "$branch" 2>/dev/null)
+                if [[ -n "$merge_base" ]]; then
+                    # ブランチの全ファイル変更を取得（merge-baseから）
+                    local branch_changes=$(git diff --name-only "$merge_base" "$branch" 2>/dev/null)
                     if [[ -n "$branch_changes" ]]; then
-                        # 各ファイルの内容がメインブランチと同じかチェック
+                        # 各ファイルの内容がリモートのメインブランチと同じかチェック
                         local all_changes_included=true
                         while IFS= read -r file; do
                             if [[ -n "$file" ]]; then
-                                # ブランチでの最終的な内容とメインブランチでの内容を比較
                                 local branch_content=$(git show "$branch":"$file" 2>/dev/null || echo "")
-                                local main_content=$(git show "$check_branch":"$file" 2>/dev/null || echo "")
+                                local main_content=$(git show "origin/$check_branch":"$file" 2>/dev/null || echo "")
                                 if [[ "$branch_content" != "$main_content" ]]; then
                                     all_changes_included=false
                                     break
                                 fi
                             fi
                         done <<< "$branch_changes"
-                        
+
                         if [[ "$all_changes_included" == true ]]; then
                             is_merged=true
                             break
                         fi
                     fi
                 fi
-            fi
-        done
+            done
+        fi
         
         if [[ "$is_merged" == true ]]; then
             # 作成から30分以上経過しているかチェック

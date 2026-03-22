@@ -666,6 +666,9 @@ _gwt_prune() {
         fi
     done < <(git worktree list | grep -v "bare")
 
+    # メインリポジトリのパスをキャッシュ
+    local _main_repo_path=$(git worktree list | head -1 | awk '{print $1}')
+
     # worktreeとブランチを削除する共通関数
     _gwt_delete_worktree_and_branch() {
         local wt_path="$1"
@@ -675,9 +678,8 @@ _gwt_prune() {
 
         # 現在のディレクトリがworktree内の場合、メインに移動
         if [[ "$(pwd)" == "$wt_path"* ]]; then
-            local main_path=$(git worktree list | head -1 | awk '{print $1}')
-            cd "$main_path"
-            echo -e "${BLUE}メインリポジトリに移動: ${main_path}${RESET}"
+            cd "$_main_repo_path"
+            echo -e "${BLUE}メインリポジトリに移動: ${_main_repo_path}${RESET}"
         fi
 
         # worktreeを削除（--forceなしで安全に削除）

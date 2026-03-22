@@ -490,18 +490,29 @@ _gwt_prune() {
     git fetch --prune
 
     # main/developブランチのローカルコピーを最新に更新
+    local _current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
     local -a _fetch_refspecs
+    local -a _updated_branches
     for _branch in main master develop; do
         if git show-ref --verify --quiet "refs/remotes/origin/$_branch" 2>/dev/null && \
            git show-ref --verify --quiet "refs/heads/$_branch" 2>/dev/null; then
-            _fetch_refspecs+=("$_branch:$_branch")
+            if [[ "$_branch" == "$_current_branch" ]]; then
+                # チェックアウト中のブランチはmerge --ff-onlyで更新
+                if git merge --ff-only "origin/$_branch" 2>/dev/null; then
+                    _updated_branches+=("$_branch")
+                fi
+            else
+                _fetch_refspecs+=("$_branch:$_branch")
+            fi
         fi
     done
     if [[ ${#_fetch_refspecs[@]} -gt 0 ]]; then
-        echo -e "${BLUE}ローカルブランチを更新中...${RESET}"
-        git fetch origin "${_fetch_refspecs[@]}" 2>/dev/null && \
-            echo -e "${GREEN}✓ 更新完了: ${_fetch_refspecs[*]%%:*}${RESET}" || \
-            echo -e "${YELLOW}⚠ 一部ブランチの更新をスキップ（チェックアウト中の可能性）${RESET}"
+        if git fetch origin "${_fetch_refspecs[@]}" 2>/dev/null; then
+            _updated_branches+=("${_fetch_refspecs[@]%%:*}")
+        fi
+    fi
+    if [[ ${#_updated_branches[@]} -gt 0 ]]; then
+        echo -e "${GREEN}✓ ブランチ更新完了: ${_updated_branches[*]}${RESET}"
     fi
 
     # 削除されたworktreeをクリーンアップ

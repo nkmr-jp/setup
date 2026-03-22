@@ -540,8 +540,13 @@ _gwt_prune() {
     # マージ済みのworktreeとブランチを収集
     local -a merged_worktrees
     local -a merged_branches
+    local -a auto_delete_worktrees
+    local -a auto_delete_branches
     local deleted_count=0
     local current_time=$(date +%s)
+
+    # ローカルの現在ブランチにマージ済みのブランチ一覧をキャッシュ
+    local _local_merged_branches=$(git branch --merged "$_current_branch" 2>/dev/null)
 
     # worktree一覧を取得してマージ済みかチェック
     while IFS= read -r line; do
@@ -647,16 +652,66 @@ _gwt_prune() {
             fi
 
             if [[ "$has_uncommitted" == false ]]; then
-                echo -e "${YELLOW}マージ済み検出: ${branch} (${wt_path})${RESET}"
-                merged_worktrees+=("$wt_path")
-                merged_branches+=("$branch")
+                # ローカルの現在ブランチに取り込み済みか判定
+                if echo "$_local_merged_branches" | grep -q "^[[:space:]]*[+*]\?[[:space:]]*${branch}$"; then
+                    echo -e "${GREEN}✓ ローカルに取り込み済み: ${branch} (${wt_path})${RESET}"
+                    auto_delete_worktrees+=("$wt_path")
+                    auto_delete_branches+=("$branch")
+                else
+                    echo -e "${YELLOW}マージ済み検出（リモートのみ）: ${branch} (${wt_path})${RESET}"
+                    merged_worktrees+=("$wt_path")
+                    merged_branches+=("$branch")
+                fi
             fi
         fi
     done < <(git worktree list | grep -v "bare")
 
-    # マージ済みworktreeとブランチがある場合削除処理
+    # worktreeとブランチを削除する共通関数
+    _gwt_delete_worktree_and_branch() {
+        local wt_path="$1"
+        local branch="$2"
+
+        echo -e "${YELLOW}削除中: ${branch} -> ${wt_path}${RESET}"
+
+        # 現在のディレクトリがworktree内の場合、メインに移動
+        if [[ "$(pwd)" == "$wt_path"* ]]; then
+            local main_path=$(git worktree list | head -1 | awk '{print $1}')
+            cd "$main_path"
+            echo -e "${BLUE}メインリポジトリに移動: ${main_path}${RESET}"
+        fi
+
+        # worktreeを削除（--forceなしで安全に削除）
+        if git worktree remove "$wt_path" 2>/dev/null; then
+            echo -e "${GREEN}✓ Worktreeを削除: ${wt_path}${RESET}"
+            ((deleted_count++))
+            _gwt_remove_from_jetbrains_recent "$wt_path"
+        else
+            echo -e "${RED}✗ Worktreeの削除に失敗: ${wt_path}${RESET}"
+            return 1
+        fi
+
+        # ブランチを削除
+        if git branch -d "$branch" 2>/dev/null; then
+            echo -e "${GREEN}✓ ブランチを削除: ${branch}${RESET}"
+        elif git branch -D "$branch" 2>/dev/null; then
+            echo -e "${GREEN}✓ ブランチを強制削除: ${branch}${RESET}"
+        else
+            echo -e "${RED}✗ ブランチの削除に失敗: ${branch}${RESET}"
+        fi
+        echo ""
+    }
+
+    # ローカルに取り込み済みのworktreeを確認なしで自動削除
+    if [[ ${#auto_delete_worktrees[@]} -gt 0 ]]; then
+        echo -e "\n${GREEN}=== ローカルに取り込み済み: ${#auto_delete_worktrees[@]}個を自動削除 ===${RESET}"
+        for ((i=1; i<=$#auto_delete_worktrees; i++)); do
+            _gwt_delete_worktree_and_branch "${auto_delete_worktrees[$i]}" "${auto_delete_branches[$i]}"
+        done
+    fi
+
+    # リモートのみにマージ済みのworktreeは確認して削除
     if [[ ${#merged_worktrees[@]} -gt 0 ]]; then
-        echo -e "\n${CYAN}削除対象: ${#merged_worktrees[@]}個のworktreeとブランチ${RESET}"
+        echo -e "\n${YELLOW}=== リモートのみにマージ済み: ${#merged_worktrees[@]}個（確認が必要） ===${RESET}"
         for ((i=1; i<=$#merged_worktrees; i++)); do
             echo -e "  ${YELLOW}${merged_branches[$i]}${RESET} -> ${merged_worktrees[$i]}"
         done
@@ -668,50 +723,21 @@ _gwt_prune() {
             read -r "answer?${YELLOW}削除しますか？ [y/N]: ${RESET}"
             if [[ ! "$answer" =~ ^[Yy]$ ]]; then
                 echo -e "${BLUE}キャンセルしました${RESET}"
+                if [[ $deleted_count -gt 0 ]]; then
+                    echo -e "${GREEN}✓ ${deleted_count}個のworktreeとブランチを削除しました${RESET}"
+                fi
                 return 0
             fi
         fi
 
-        # worktreeを削除
         for ((i=1; i<=$#merged_worktrees; i++)); do
-            local wt_path="${merged_worktrees[$i]}"
-            local branch="${merged_branches[$i]}"
-
-            echo -e "${YELLOW}削除中: ${branch} -> ${wt_path}${RESET}"
-
-            # 現在のディレクトリがworktree内の場合、メインに移動
-            if [[ "$(pwd)" == "$wt_path"* ]]; then
-                local main_path=$(git worktree list | head -1 | awk '{print $1}')
-                cd "$main_path"
-                echo -e "${BLUE}メインリポジトリに移動: ${main_path}${RESET}"
-            fi
-
-            # worktreeを削除（--forceなしで安全に削除）
-            if git worktree remove "$wt_path" 2>/dev/null; then
-                echo -e "${GREEN}✓ Worktreeを削除: ${wt_path}${RESET}"
-                ((deleted_count++))
-
-                # JetBrains Recent Projectsから削除
-                _gwt_remove_from_jetbrains_recent "$wt_path"
-            else
-                echo -e "${RED}✗ Worktreeの削除に失敗: ${wt_path}${RESET}"
-                continue
-            fi
-
-            # ブランチを削除
-            if git branch -d "$branch" 2>/dev/null; then
-                echo -e "${GREEN}✓ ブランチを削除: ${branch}${RESET}"
-            elif git branch -D "$branch" 2>/dev/null; then
-                echo -e "${GREEN}✓ ブランチを強制削除: ${branch}${RESET}"
-            else
-                echo -e "${RED}✗ ブランチの削除に失敗: ${branch}${RESET}"
-            fi
-
-            echo ""
+            _gwt_delete_worktree_and_branch "${merged_worktrees[$i]}" "${merged_branches[$i]}"
         done
+    fi
 
-        echo -e "${GREEN}✓ ${deleted_count}個のworktreeとブランチを削除しました${RESET}"
-    else
+    if [[ $deleted_count -gt 0 ]]; then
+        echo -e "${GREEN}✓ 合計 ${deleted_count}個のworktreeとブランチを削除しました${RESET}"
+    elif [[ ${#auto_delete_worktrees[@]} -eq 0 && ${#merged_worktrees[@]} -eq 0 ]]; then
         echo -e "${GREEN}マージ済みのworktreeとブランチはありません${RESET}"
     fi
 

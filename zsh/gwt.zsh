@@ -652,8 +652,28 @@ _gwt_prune() {
             fi
 
             if [[ "$has_uncommitted" == false ]]; then
-                # ローカルの現在ブランチに取り込み済みか判定
+                # ローカルの現在ブランチに取り込み済みか判定（通常マージ+スカッシュマージ）
+                local _merged_to_local=false
+
+                # 通常マージの検出
                 if echo "$_local_merged_branches" | grep -q "^[[:space:]]*[+*]\?[[:space:]]*${branch}$"; then
+                    _merged_to_local=true
+                fi
+
+                # スカッシュマージの検出
+                if [[ "$_merged_to_local" == false ]]; then
+                    local _local_merge_base=$(git merge-base "$_current_branch" "$branch" 2>/dev/null)
+                    if [[ -n "$_local_merge_base" ]]; then
+                        local _changed_files=$(git diff --name-only "$_local_merge_base" "$branch" 2>/dev/null)
+                        if [[ -n "$_changed_files" ]]; then
+                            if git diff --quiet "$branch" "$_current_branch" -- $_changed_files 2>/dev/null; then
+                                _merged_to_local=true
+                            fi
+                        fi
+                    fi
+                fi
+
+                if [[ "$_merged_to_local" == true ]]; then
                     echo -e "${GREEN}✓ ローカルに取り込み済み: ${branch} (${wt_path})${RESET}"
                     auto_delete_worktrees+=("$wt_path")
                     auto_delete_branches+=("$branch")

@@ -489,6 +489,21 @@ _gwt_prune() {
     echo -e "${BLUE}リモートから最新の情報を取得中...${RESET}"
     git fetch --prune
 
+    # main/developブランチのローカルコピーを最新に更新
+    local -a _fetch_refspecs
+    for _branch in main master develop; do
+        if git show-ref --verify --quiet "refs/remotes/origin/$_branch" 2>/dev/null && \
+           git show-ref --verify --quiet "refs/heads/$_branch" 2>/dev/null; then
+            _fetch_refspecs+=("$_branch:$_branch")
+        fi
+    done
+    if [[ ${#_fetch_refspecs[@]} -gt 0 ]]; then
+        echo -e "${BLUE}ローカルブランチを更新中...${RESET}"
+        git fetch origin "${_fetch_refspecs[@]}" 2>/dev/null && \
+            echo -e "${GREEN}✓ 更新完了: ${_fetch_refspecs[*]%%:*}${RESET}" || \
+            echo -e "${YELLOW}⚠ 一部ブランチの更新をスキップ（チェックアウト中の可能性）${RESET}"
+    fi
+
     # 削除されたworktreeをクリーンアップ
     git worktree prune -v
 

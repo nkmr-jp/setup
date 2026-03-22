@@ -497,9 +497,11 @@ _gwt_prune() {
         if git show-ref --verify --quiet "refs/remotes/origin/$_branch" 2>/dev/null && \
            git show-ref --verify --quiet "refs/heads/$_branch" 2>/dev/null; then
             if [[ "$_branch" == "$_current_branch" ]]; then
-                # チェックアウト中のブランチはmerge --ff-onlyで更新
+                # チェックアウト中のブランチはfetchで更新できないためmergeで更新
                 if git merge --ff-only "origin/$_branch" 2>/dev/null; then
                     _updated_branches+=("$_branch")
+                else
+                    echo -e "${YELLOW}⚠ ${_branch} の更新をスキップ（未コミットの変更またはfast-forward不可）${RESET}"
                 fi
             else
                 _fetch_refspecs+=("$_branch:$_branch")

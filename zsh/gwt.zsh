@@ -477,6 +477,12 @@ _gwt_quick() {
 # 9. pruneとclean up
 # ========================================
 _gwt_prune() {
+    # --force / -f オプションで確認プロンプトをスキップ
+    local force_mode=false
+    for arg in "$@"; do
+        [[ "$arg" == "--force" || "$arg" == "-f" ]] && force_mode=true
+    done
+
     echo -e "${CYAN}=== Pruning Worktrees ===${RESET}"
 
     # リモートから最新の情報を取得（--pruneで削除済みリモートブランチも反映）
@@ -507,6 +513,7 @@ _gwt_prune() {
     local -a merged_worktrees
     local -a merged_branches
     local deleted_count=0
+    local current_time=$(date +%s)
 
     # worktree一覧を取得してマージ済みかチェック
     while IFS= read -r line; do
@@ -529,61 +536,37 @@ _gwt_prune() {
         # マージ済みかチェック（master、main、developにマージ済みの場合）
         local is_merged=false
 
-        # 1. リモート追跡ブランチが削除されているかチェック（スカッシュマージ後にGitHubがブランチ削除）
-        local has_upstream=$(git rev-parse --verify "refs/remotes/origin/$branch" 2>/dev/null)
-        local had_upstream=$(git config "branch.${branch}.remote" 2>/dev/null)
-        if [[ -z "$has_upstream" && -n "$had_upstream" ]]; then
-            # リモートブランチが存在しないが、追跡設定がある = マージ後に削除された
-            is_merged=true
-        fi
+        # 通常マージ・スカッシュマージの検知
+        for check_branch in "master" "main" "develop"; do
+            # origin/$check_branch が存在するかチェック
+            if ! git show-ref --verify --quiet "refs/remotes/origin/$check_branch" 2>/dev/null; then
+                continue
+            fi
 
-        # 2. 通常マージ・スカッシュマージの検知
-        if [[ "$is_merged" == false ]]; then
-            for check_branch in "master" "main" "develop"; do
-                # origin/$check_branch が存在するかチェック
-                if ! git show-ref --verify --quiet "refs/remotes/origin/$check_branch" 2>/dev/null; then
-                    continue
-                fi
+            # 通常のマージ: git branch --merged を使ってマージ済みブランチをチェック
+            if git branch --merged "origin/$check_branch" 2>/dev/null | grep -q "^[[:space:]]*[+*]\?[[:space:]]*${branch}$"; then
+                is_merged=true
+                break
+            fi
 
-                # 通常のマージ: git branch --merged を使ってマージ済みブランチをチェック
-                if git branch --merged "origin/$check_branch" 2>/dev/null | grep -q "^[[:space:]]*[+*]\?[[:space:]]*${branch}$"; then
-                    is_merged=true
-                    break
-                fi
-
-                # スカッシュマージの検知: ブランチの変更がすべてリモートのメインブランチに含まれているかチェック
-                local merge_base=$(git merge-base "origin/$check_branch" "$branch" 2>/dev/null)
-                if [[ -n "$merge_base" ]]; then
-                    # ブランチの全ファイル変更を取得（merge-baseから）
-                    local branch_changes=$(git diff --name-only "$merge_base" "$branch" 2>/dev/null)
-                    if [[ -n "$branch_changes" ]]; then
-                        # 各ファイルの内容がリモートのメインブランチと同じかチェック
-                        local all_changes_included=true
-                        while IFS= read -r file; do
-                            if [[ -n "$file" ]]; then
-                                local branch_content=$(git show "$branch":"$file" 2>/dev/null || echo "")
-                                local main_content=$(git show "origin/$check_branch":"$file" 2>/dev/null || echo "")
-                                if [[ "$branch_content" != "$main_content" ]]; then
-                                    all_changes_included=false
-                                    break
-                                fi
-                            fi
-                        done <<< "$branch_changes"
-
-                        if [[ "$all_changes_included" == true ]]; then
-                            is_merged=true
-                            break
-                        fi
+            # スカッシュマージの検知: ブランチの変更がすべてリモートのメインブランチに含まれているかチェック
+            local merge_base=$(git merge-base "origin/$check_branch" "$branch" 2>/dev/null)
+            if [[ -n "$merge_base" ]]; then
+                # merge-base..branchの差分がorigin/check_branchに全て含まれているか一括チェック
+                if git diff --quiet "$branch" "origin/$check_branch" -- $(git diff --name-only "$merge_base" "$branch" 2>/dev/null) 2>/dev/null; then
+                    # 差分なし = スカッシュマージ済み（ただし変更がある場合のみ）
+                    if [[ -n "$(git diff --name-only "$merge_base" "$branch" 2>/dev/null)" ]]; then
+                        is_merged=true
+                        break
                     fi
                 fi
-            done
-        fi
+            fi
+        done
         
         if [[ "$is_merged" == true ]]; then
             # 作成から30分以上経過しているかチェック
             local is_old_enough=false
             if [[ -d "$wt_path" ]]; then
-                local current_time=$(date +%s)
                 # macOSではstat -f %B、Linuxではstat -c %W（未対応の場合は%Y）
                 local creation_time
                 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -606,8 +589,9 @@ _gwt_prune() {
                         echo -e "  ${CYAN}作成から ${age_minutes} 分経過（30分未満のためスキップ）${RESET}"
                     fi
                 else
-                    # 作成時間が取得できない場合はスキップしない
-                    is_old_enough=true
+                    # 作成時間が取得できない場合は安全のためスキップ
+                    echo -e "${BLUE}⏳ スキップ: ${branch} (${wt_path})${RESET}"
+                    echo -e "  ${CYAN}作成時間を取得できないためスキップ${RESET}"
                 fi
             fi
 
@@ -644,24 +628,38 @@ _gwt_prune() {
 
     # マージ済みworktreeとブランチがある場合削除処理
     if [[ ${#merged_worktrees[@]} -gt 0 ]]; then
-        echo -e "${CYAN}削除対象: ${#merged_worktrees[@]}個のworktreeとブランチ${RESET}"
-        
+        echo -e "\n${CYAN}削除対象: ${#merged_worktrees[@]}個のworktreeとブランチ${RESET}"
+        for ((i=1; i<=$#merged_worktrees; i++)); do
+            echo -e "  ${YELLOW}${merged_branches[$i]}${RESET} -> ${merged_worktrees[$i]}"
+        done
+
+        # 確認プロンプト（--force でスキップ）
+        if [[ "$force_mode" == false ]]; then
+            echo ""
+            local answer
+            read -r "answer?${YELLOW}削除しますか？ [y/N]: ${RESET}"
+            if [[ ! "$answer" =~ ^[Yy]$ ]]; then
+                echo -e "${BLUE}キャンセルしました${RESET}"
+                return 0
+            fi
+        fi
+
         # worktreeを削除
         for ((i=1; i<=$#merged_worktrees; i++)); do
             local wt_path="${merged_worktrees[$i]}"
             local branch="${merged_branches[$i]}"
-            
+
             echo -e "${YELLOW}削除中: ${branch} -> ${wt_path}${RESET}"
-            
+
             # 現在のディレクトリがworktree内の場合、メインに移動
             if [[ "$(pwd)" == "$wt_path"* ]]; then
                 local main_path=$(git worktree list | head -1 | awk '{print $1}')
                 cd "$main_path"
                 echo -e "${BLUE}メインリポジトリに移動: ${main_path}${RESET}"
             fi
-            
-            # worktreeを削除
-            if git worktree remove "$wt_path" --force 2>/dev/null; then
+
+            # worktreeを削除（--forceなしで安全に削除）
+            if git worktree remove "$wt_path" 2>/dev/null; then
                 echo -e "${GREEN}✓ Worktreeを削除: ${wt_path}${RESET}"
                 ((deleted_count++))
 
@@ -671,7 +669,7 @@ _gwt_prune() {
                 echo -e "${RED}✗ Worktreeの削除に失敗: ${wt_path}${RESET}"
                 continue
             fi
-            
+
             # ブランチを削除
             if git branch -d "$branch" 2>/dev/null; then
                 echo -e "${GREEN}✓ ブランチを削除: ${branch}${RESET}"
@@ -680,10 +678,10 @@ _gwt_prune() {
             else
                 echo -e "${RED}✗ ブランチの削除に失敗: ${branch}${RESET}"
             fi
-            
+
             echo ""
         done
-        
+
         echo -e "${GREEN}✓ ${deleted_count}個のworktreeとブランチを削除しました${RESET}"
     else
         echo -e "${GREEN}マージ済みのworktreeとブランチはありません${RESET}"
@@ -783,7 +781,7 @@ ${YELLOW}コマンド:${RESET}
   memo, m [edit|show|clear]  worktreeごとのメモ管理
   info, i                    現在のworktree情報を表示
   quick, q <prefix> [base]   日付付きでworktreeを素早く作成
-  prune, p                   worktreeのクリーンアップ
+  prune, p [-f|--force]      worktreeのクリーンアップ（-f: 確認スキップ）
   claude, cc <prefix> [base] 日付付きworktreeを作成してClaude Codeを起動
   yolo, y <prefix> [base]    日付付きworktreeを作成してClaude Code (yolo) を起動
   help, h                    このヘルプを表示

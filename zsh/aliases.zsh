@@ -26,6 +26,7 @@ alias setup='code "$SETUP_DIR"'
 alias run='go run main.go'
 alias xbar='code ~/ghq/github.com/nkmr-jp/xbar/plugins'
 alias lg='lazygit'
+alias yz='yazi'
 
 # System
 alias sleepon='sudo pmset -a disablesleep 0'

@@ -30,6 +30,7 @@
   * [Settings](#settings)
     * [pack](#pack)
     * [Google Cloud SDK](#google-cloud-sdk)
+    * [yazi](#yazi)
     * [tig](#tig)
 <!-- TOC -->
 
@@ -343,6 +344,13 @@ curl -sS https://starship.rs/install.sh | sh
 ```
 
 ## Settings
+
+### yazi
+
+```sh
+mkdir -p ~/.config/yazi
+ln -s ~/ghq/github.com/nkmr-jp/setup/yazi/yazi.toml ~/.config/yazi/yazi.toml
+```
 
 ### pack
 

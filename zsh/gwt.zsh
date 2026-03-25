@@ -600,6 +600,14 @@ _gwt_prune() {
                 is_merged=true
             fi
         fi
+
+        # GitHub PRマージ済みチェック（スカッシュマージ後にターゲットが進んだ場合のフォールバック）
+        if [[ "$is_merged" == false ]] && command -v gh > /dev/null 2>&1; then
+            local _pr_count=$(gh pr list --head "$branch" --state merged --json number --jq 'length' 2>/dev/null)
+            if [[ "$_pr_count" -gt 0 ]]; then
+                is_merged=true
+            fi
+        fi
         
         if [[ "$is_merged" == true ]]; then
             # 作成から30分以上経過しているかチェック

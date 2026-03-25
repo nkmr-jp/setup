@@ -545,9 +545,6 @@ _gwt_prune() {
     local deleted_count=0
     local current_time=$(date +%s)
 
-    # ローカルの現在ブランチにマージ済みのブランチ一覧をキャッシュ
-    local _local_merged_branches=$(git branch --merged "$_current_branch" 2>/dev/null)
-
     # worktree一覧を取得してマージ済みかチェック
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
@@ -576,8 +573,8 @@ _gwt_prune() {
                 continue
             fi
 
-            # 通常のマージ: git branch --merged を使ってマージ済みブランチをチェック
-            if git branch --merged "origin/$check_branch" 2>/dev/null | grep -q "^[[:space:]]*[+*]\?[[:space:]]*${branch}$"; then
+            # 通常のマージ: ブランチのHEADがorigin/$check_branchの祖先かチェック
+            if git merge-base --is-ancestor "$branch" "origin/$check_branch" 2>/dev/null; then
                 is_merged=true
                 break
             fi
@@ -595,6 +592,14 @@ _gwt_prune() {
                 fi
             fi
         done
+
+        # リモートブランチ削除済みチェック（PRマージ後の自動削除を検知）
+        if [[ "$is_merged" == false ]]; then
+            local _upstream_track=$(git for-each-ref --format='%(upstream:track)' "refs/heads/$branch" 2>/dev/null)
+            if [[ "$_upstream_track" == "[gone]" ]]; then
+                is_merged=true
+            fi
+        fi
         
         if [[ "$is_merged" == true ]]; then
             # 作成から30分以上経過しているかチェック
@@ -656,7 +661,7 @@ _gwt_prune() {
                 local _merged_to_local=false
 
                 # 通常マージの検出
-                if echo "$_local_merged_branches" | grep -q "^[[:space:]]*[+*]\?[[:space:]]*${branch}$"; then
+                if git merge-base --is-ancestor "$branch" "$_current_branch" 2>/dev/null; then
                     _merged_to_local=true
                 fi
 

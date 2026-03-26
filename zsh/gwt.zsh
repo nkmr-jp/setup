@@ -593,14 +593,6 @@ _gwt_prune() {
             fi
         done
 
-        # リモートブランチ削除済みチェック（PRマージ後の自動削除を検知）
-        if [[ "$is_merged" == false ]]; then
-            local _upstream_track=$(git for-each-ref --format='%(upstream:track)' "refs/heads/$branch" 2>/dev/null)
-            if [[ "$_upstream_track" == "[gone]" ]]; then
-                is_merged=true
-            fi
-        fi
-
         # GitHub PRマージ済みチェック（スカッシュマージ後にターゲットが進んだ場合のフォールバック）
         if [[ "$is_merged" == false ]] && command -v gh > /dev/null 2>&1; then
             local _pr_count=$(gh pr list --head "$branch" --state merged --json number --jq 'length' 2>/dev/null)

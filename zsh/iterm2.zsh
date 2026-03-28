@@ -136,12 +136,13 @@ _iterm2_set_user_last_prompt() {
   fi
 }
 
-_iterm2_set_tab_title() {
-  local dir_name="${PWD##*/}"
-  if [[ "$PWD" == "$HOME" ]]; then
-    dir_name="~"
+_iterm2_set_session_name() {
+  local title="$_iterm2_last_prompt_cache"
+  if [[ -z "$title" ]]; then
+    title="$(_iterm2_directory_name "$PWD")"
+    [[ -z "$title" ]] && title="${PWD##*/}"
   fi
-  printf "\033]0;%s\007" "$dir_name"
+  printf "\033]0;%s\007" "$title"
 }
 
 # ============================================================
@@ -153,7 +154,7 @@ _iterm2_precmd() {
   _iterm2_set_user_current_dir
   _iterm2_set_user_branch
   _iterm2_set_user_last_prompt
-  _iterm2_set_tab_title
+  _iterm2_set_session_name
 }
 
 # precmd_functions 配列にフックを登録
@@ -161,8 +162,4 @@ _iterm2_precmd() {
 precmd_functions=($precmd_functions _iterm2_precmd)
 
 # 初回読み込み時にも情報を送信（シェル起動直後のタブに反映させる）
-_iterm2_send_current_dir
-_iterm2_set_user_current_dir
-_iterm2_set_user_branch
-_iterm2_set_user_last_prompt
-_iterm2_set_tab_title
+_iterm2_precmd

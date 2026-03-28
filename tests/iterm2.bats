@@ -111,73 +111,16 @@ setup() {
 }
 
 # ============================================================
-# Group 4: _iterm2_set_session_name() - セッション名
+# Group 4: _iterm2_set_user_last_prompt() - lastPrompt
 # ============================================================
 
-@test "set_session_name: キャッシュが空ならディレクトリ名を表示する" {
-    run_iterm2 _iterm2_set_session_name
-    [ "$status" -eq 0 ]
-    # キャッシュ未設定なのでディレクトリ名にフォールバック
-    [[ "$output" == *"]0;"* ]]
-    # 空のセッション名ではないこと
-    [[ "$output" != *"]0;]"* ]]
-}
-
-# ============================================================
-# Group 5: _iterm2_set_user_last_prompt() - lastPrompt
-# ============================================================
-
-@test "set_user_last_prompt: ITERM_SESSION_ID 未設定なら何もしない" {
-    unset ITERM_SESSION_ID
-    run_iterm2 _iterm2_set_user_last_prompt
-    [ "$status" -eq 0 ]
-    [ "$output" = "" ]
-}
-
-@test "set_user_last_prompt: history_file がなければディレクトリ名にフォールバック" {
-    export ITERM_SESSION_ID="w0t0p0:fake-session-id"
-    export HOME="$BATS_TEST_TMPDIR/no-history-home"
-    mkdir -p "$HOME"
-    # history.jsonl は作成しない
-
+@test "set_user_last_prompt: キャッシュ空ならディレクトリ名をセットする" {
     run_iterm2 _iterm2_set_user_last_prompt
     [ "$status" -eq 0 ]
     # lastPrompt にディレクトリ名がセットされる
     [[ "$output" == *"SetUserVar=lastPrompt="* ]]
-    # 空ではない base64 値が含まれる
-    [[ "$output" != *"SetUserVar=lastPrompt=]"* ]]
-}
-
-@test "set_user_last_prompt: history_file から該当セッションのテキストを取得する" {
-    export ITERM_SESSION_ID="w0t0p0:test-session-123"
-    export HOME="$BATS_TEST_TMPDIR/prompt-home"
-    mkdir -p "$HOME/.prompt-line"
-
-    cat > "$HOME/.prompt-line/history.jsonl" << 'EOF'
-{"itermSessionId":"other-session","text":"other prompt"}
-{"itermSessionId":"test-session-123","text":"my test prompt"}
-EOF
-
-    run_iterm2 _iterm2_set_user_last_prompt
-    [ "$status" -eq 0 ]
-
-    local expected_b64=$(printf '%s' "my test prompt" | base64)
-    [[ "$output" == *"SetUserVar=lastPrompt=${expected_b64}"* ]]
-}
-
-@test "set_user_last_prompt: 該当セッションがなければディレクトリ名にフォールバック" {
-    export ITERM_SESSION_ID="w0t0p0:nonexistent-session"
-    export HOME="$BATS_TEST_TMPDIR/prompt-home2"
-    mkdir -p "$HOME/.prompt-line"
-
-    cat > "$HOME/.prompt-line/history.jsonl" << 'EOF'
-{"itermSessionId":"other-session","text":"other prompt"}
-EOF
-
-    run_iterm2 _iterm2_set_user_last_prompt
-    [ "$status" -eq 0 ]
-    # ディレクトリ名にフォールバック
-    [[ "$output" == *"SetUserVar=lastPrompt="* ]]
+    # セッション名（OSC 0）も同時にセットされる
+    [[ "$output" == *"]0;"* ]]
 }
 
 # ============================================================
@@ -207,8 +150,6 @@ EOF
     [[ "$output" == *"SetUserVar=currentDir="* ]]
     # branch ユーザー変数が含まれる
     [[ "$output" == *"SetUserVar=branch="* ]]
-    # lastPrompt ユーザー変数が含まれる
+    # lastPrompt ユーザー変数が含まれる（初回はディレクトリ名フォールバック）
     [[ "$output" == *"SetUserVar=lastPrompt="* ]]
-    # セッション名（OSC 0）が含まれる
-    [[ "$output" == *"]0;"* ]]
 }

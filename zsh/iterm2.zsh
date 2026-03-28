@@ -106,47 +106,52 @@ _iterm2_set_user_branch() {
   _iterm2_set_user_var branch "$(_iterm2_git_branch_label "$PWD")"
 }
 
-_iterm2_last_prompt_mtime=""
 _iterm2_last_prompt_cache=""
 
 _iterm2_set_user_last_prompt() {
+  local dir_name="$(_iterm2_directory_name "$PWD")"
+  [[ -z "$dir_name" ]] && dir_name="${PWD##*/}"
+
+  if [[ -z "$_iterm2_last_prompt_cache" ]]; then
+    _iterm2_last_prompt_cache="$dir_name"
+    _iterm2_set_user_var lastPrompt "$dir_name"
+    printf "\033]0;%s\007" "$dir_name"
+  fi
+}
+
+# ============================================================
+# fswatch によるリアルタイム lastPrompt 更新
+# ============================================================
+
+_iterm2_prompt_watcher_pid=""
+
+_iterm2_start_prompt_watcher() {
+  [[ -z "${ITERM_SESSION_ID-}" ]] && return
+  command -v fswatch >/dev/null 2>&1 || return
+
   local history_file="$HOME/.prompt-line/history.jsonl"
-  if [[ -z "${ITERM_SESSION_ID-}" ]]; then
-    return
-  fi
+  local session_id="${ITERM_SESSION_ID#*:}"
 
-  local text=""
-
-  if [[ -f "$history_file" ]]; then
-    local mtime
-    mtime=$(stat -f%m "$history_file" 2>/dev/null)
-    if [[ "$mtime" != "$_iterm2_last_prompt_mtime" ]]; then
-      _iterm2_last_prompt_mtime="$mtime"
-
-      local session_id="${ITERM_SESSION_ID#*:}"
+  (
+    fswatch --event Updated -o "$history_file" 2>/dev/null | while read -r _; do
+      local text
       text=$(tail -100 "$history_file" | grep "$session_id" | tail -1 \
-        | jq -r --arg sid "$session_id" 'select(.itermSessionId == $sid) | .text | gsub("\n"; " ")' 2>/dev/null)
-    else
-      text="$_iterm2_last_prompt_cache"
-    fi
-  fi
-
-  [[ -z "$text" ]] && text="$(_iterm2_directory_name "$PWD")"
-
-  if [[ "$text" != "$_iterm2_last_prompt_cache" ]]; then
-    _iterm2_last_prompt_cache="$text"
-    _iterm2_set_user_var lastPrompt "$text"
-  fi
+        | jq -r --arg sid "$session_id" \
+          'select(.itermSessionId == $sid) | .text | gsub("\n"; " ")' 2>/dev/null)
+      [[ -z "$text" ]] && continue
+      _iterm2_set_user_var lastPrompt "$text"
+      printf "\033]0;%s\007" "$text"
+    done
+  ) &!
+  _iterm2_prompt_watcher_pid=$!
 }
 
-_iterm2_set_session_name() {
-  local title="$_iterm2_last_prompt_cache"
-  if [[ -z "$title" ]]; then
-    title="$(_iterm2_directory_name "$PWD")"
-    [[ -z "$title" ]] && title="${PWD##*/}"
-  fi
-  printf "\033]0;%s\007" "$title"
+_iterm2_stop_prompt_watcher() {
+  [[ -n "$_iterm2_prompt_watcher_pid" ]] && kill "$_iterm2_prompt_watcher_pid" 2>/dev/null
+  _iterm2_prompt_watcher_pid=""
 }
+
+trap '_iterm2_stop_prompt_watcher' EXIT
 
 # ============================================================
 # precmd フック（プロンプト表示前に毎回実行）
@@ -157,7 +162,6 @@ _iterm2_precmd() {
   _iterm2_set_user_current_dir
   _iterm2_set_user_branch
   _iterm2_set_user_last_prompt
-  _iterm2_set_session_name
 }
 
 # precmd_functions 配列にフックを登録
@@ -166,3 +170,6 @@ precmd_functions=($precmd_functions _iterm2_precmd)
 
 # 初回読み込み時にも情報を送信（シェル起動直後のタブに反映させる）
 _iterm2_precmd
+
+# fswatch によるリアルタイム監視を開始
+_iterm2_start_prompt_watcher

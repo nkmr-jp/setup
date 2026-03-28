@@ -133,8 +133,8 @@ _iterm2_start_prompt_watcher() {
   local session_id="${ITERM_SESSION_ID#*:}"
 
   (
+    exec >/dev/tty 2>/dev/null
     fswatch --event Updated -o "$history_file" 2>/dev/null | while read -r _; do
-      local text
       text=$(tail -100 "$history_file" | grep "$session_id" | tail -1 \
         | jq -r --arg sid "$session_id" \
           'select(.itermSessionId == $sid) | .text | gsub("\n"; " ")' 2>/dev/null)

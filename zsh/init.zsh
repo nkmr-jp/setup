@@ -29,9 +29,7 @@ source "$SETUP_DIR/zsh/ai.zsh"
 source "$SETUP_DIR/zsh/aliases.zsh"
 source "$SETUP_DIR/zsh/functions.zsh"
 source "$SETUP_DIR/zsh/keybindings.zsh"
-source "$SETUP_DIR/zsh/iterm2_directory_restore.zsh"
-source "$SETUP_DIR/zsh/iterm2_subtitle.sh"
-#source "$SETUP_DIR/zsh/iterm2_tab_title.sh"
+source "$SETUP_DIR/zsh/iterm2.zsh"
 #test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh" # iTerm公式
 
 # Initialize tools

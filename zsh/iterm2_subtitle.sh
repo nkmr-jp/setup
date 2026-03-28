@@ -13,7 +13,7 @@ _is_git_repo() {
 }
 
 # Get current git branch name
-get_git_branch() {
+_get_git_branch() {
   local dir="$1"
   git -C "$dir" -c core.useReplaceRefs=false -c advice.detachedHead=false \
     symbolic-ref --short HEAD 2>/dev/null || echo ""
@@ -57,7 +57,7 @@ _git_branch() {
   local dir="$1"
   if _is_git_repo "$dir"; then
     local branch
-    branch=$(get_git_branch "$dir")
+    branch=$(_get_git_branch "$dir")
     if [ -n "$branch" ]; then
       # If path contains -worktrees/, add wt: prefix to branch name
       if [[ "$dir" == *"-worktrees/"* ]]; then

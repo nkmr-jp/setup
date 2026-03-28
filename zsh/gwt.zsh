@@ -466,8 +466,8 @@ _gwt_quick() {
         return 1
     fi
 
-    # 日付とランダムな文字列を追加
-    local timestamp=$(date +"%Y%m%d_%H%M%S")
+    # 日付時刻サフィックス (MMDDHHmm形式)
+    local timestamp=$(date +"%m%d%H%M")
     local branch_name="${prefix}-${timestamp}"
 
     _gwt_new "$branch_name" "$base_branch"

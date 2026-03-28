@@ -111,7 +111,12 @@ _iterm2_last_prompt_cache=""
 
 _iterm2_set_user_last_prompt() {
   local history_file="$HOME/.prompt-line/history.jsonl"
-  if [[ ! -f "$history_file" ]] || [[ -z "${ITERM_SESSION_ID-}" ]]; then
+  if [[ -z "${ITERM_SESSION_ID-}" ]]; then
+    return
+  fi
+
+  if [[ ! -f "$history_file" ]]; then
+    _iterm2_set_user_var lastPrompt ""
     return
   fi
 
@@ -125,7 +130,7 @@ _iterm2_set_user_last_prompt() {
   text=$(tail -100 "$history_file" | jq -r --arg sid "$session_id" \
     'select(.itermSessionId == $sid) | .text' 2>/dev/null | tail -1)
 
-  if [[ -n "$text" && "$text" != "$_iterm2_last_prompt_cache" ]]; then
+  if [[ "$text" != "$_iterm2_last_prompt_cache" ]]; then
     _iterm2_last_prompt_cache="$text"
     _iterm2_set_user_var lastPrompt "$text"
   fi

@@ -106,10 +106,6 @@ _iterm2_set_user_branch() {
   _iterm2_set_user_var branch "$(_iterm2_git_branch_label "$PWD")"
 }
 
-_iterm2_set_user_last_activity() {
-  _iterm2_set_user_var lastActivity "$EPOCHSECONDS"
-}
-
 _iterm2_set_tab_title() {
   local dir_name="${PWD##*/}"
   if [[ "$PWD" == "$HOME" ]]; then
@@ -126,7 +122,6 @@ _iterm2_precmd() {
   _iterm2_send_current_dir
   _iterm2_set_user_current_dir
   _iterm2_set_user_branch
-  _iterm2_set_user_last_activity
   _iterm2_set_tab_title
 }
 
@@ -138,5 +133,4 @@ precmd_functions=($precmd_functions _iterm2_precmd)
 _iterm2_send_current_dir
 _iterm2_set_user_current_dir
 _iterm2_set_user_branch
-_iterm2_set_user_last_activity
 _iterm2_set_tab_title

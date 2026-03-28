@@ -82,7 +82,7 @@ _iterm2_git_branch_label() {
     branch="wt:$branch"
   fi
 
-  echo "🌿$branch"
+  echo "$branch"
 }
 
 # ============================================================

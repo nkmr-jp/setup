@@ -106,6 +106,31 @@ _iterm2_set_user_branch() {
   _iterm2_set_user_var branch "$(_iterm2_git_branch_label "$PWD")"
 }
 
+_iterm2_last_prompt_mtime=""
+_iterm2_last_prompt_cache=""
+
+_iterm2_set_user_last_prompt() {
+  local history_file="$HOME/.prompt-line/history.jsonl"
+  if [[ ! -f "$history_file" ]] || [[ -z "${ITERM_SESSION_ID-}" ]]; then
+    return
+  fi
+
+  local mtime
+  mtime=$(stat -f%m "$history_file" 2>/dev/null)
+  [[ "$mtime" == "$_iterm2_last_prompt_mtime" ]] && return
+  _iterm2_last_prompt_mtime="$mtime"
+
+  local session_id="${ITERM_SESSION_ID%:*}"
+  local text
+  text=$(tail -100 "$history_file" | jq -r --arg sid "$session_id" \
+    'select(.itermSessionId == $sid) | .text' 2>/dev/null | tail -1)
+
+  if [[ -n "$text" && "$text" != "$_iterm2_last_prompt_cache" ]]; then
+    _iterm2_last_prompt_cache="$text"
+    _iterm2_set_user_var lastPrompt "$text"
+  fi
+}
+
 _iterm2_set_tab_title() {
   local dir_name="${PWD##*/}"
   if [[ "$PWD" == "$HOME" ]]; then
@@ -122,6 +147,7 @@ _iterm2_precmd() {
   _iterm2_send_current_dir
   _iterm2_set_user_current_dir
   _iterm2_set_user_branch
+  _iterm2_set_user_last_prompt
   _iterm2_set_tab_title
 }
 
@@ -133,4 +159,5 @@ precmd_functions=($precmd_functions _iterm2_precmd)
 _iterm2_send_current_dir
 _iterm2_set_user_current_dir
 _iterm2_set_user_branch
+_iterm2_set_user_last_prompt
 _iterm2_set_tab_title

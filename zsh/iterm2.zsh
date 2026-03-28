@@ -130,6 +130,8 @@ _iterm2_set_user_last_prompt() {
   text=$(tail -100 "$history_file" | grep "$session_id" | tail -1 \
     | jq -r --arg sid "$session_id" 'select(.itermSessionId == $sid) | .text | gsub("\n"; " ")' 2>/dev/null)
 
+  [[ -z "$text" ]] && text="$(_iterm2_directory_name "$PWD")"
+
   if [[ "$text" != "$_iterm2_last_prompt_cache" ]]; then
     _iterm2_last_prompt_cache="$text"
     _iterm2_set_user_var lastPrompt "$text"

@@ -115,20 +115,21 @@ _iterm2_set_user_last_prompt() {
     return
   fi
 
-  if [[ ! -f "$history_file" ]]; then
-    _iterm2_set_user_var lastPrompt ""
-    return
+  local text=""
+
+  if [[ -f "$history_file" ]]; then
+    local mtime
+    mtime=$(stat -f%m "$history_file" 2>/dev/null)
+    if [[ "$mtime" != "$_iterm2_last_prompt_mtime" ]]; then
+      _iterm2_last_prompt_mtime="$mtime"
+
+      local session_id="${ITERM_SESSION_ID#*:}"
+      text=$(tail -100 "$history_file" | grep "$session_id" | tail -1 \
+        | jq -r --arg sid "$session_id" 'select(.itermSessionId == $sid) | .text | gsub("\n"; " ")' 2>/dev/null)
+    else
+      text="$_iterm2_last_prompt_cache"
+    fi
   fi
-
-  local mtime
-  mtime=$(stat -f%m "$history_file" 2>/dev/null)
-  [[ "$mtime" == "$_iterm2_last_prompt_mtime" ]] && return
-  _iterm2_last_prompt_mtime="$mtime"
-
-  local session_id="${ITERM_SESSION_ID#*:}"
-  local text
-  text=$(tail -100 "$history_file" | grep "$session_id" | tail -1 \
-    | jq -r --arg sid "$session_id" 'select(.itermSessionId == $sid) | .text | gsub("\n"; " ")' 2>/dev/null)
 
   [[ -z "$text" ]] && text="$(_iterm2_directory_name "$PWD")"
 

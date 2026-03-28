@@ -5,8 +5,8 @@
 # iTerm2 のサブタイトル・タブタイトル・ディレクトリ復元を統合したスクリプト
 #
 # 必要な設定:
-#   1. Settings > Profiles > General > Title に \(user.title) を入力
-#   2. Settings > Profiles > General > Subtitle に \(user.subtitle) を入力
+#   1. Settings > Profiles > General > Title に \(user.currentDir) を入力
+#   2. Settings > Profiles > General > Subtitle に \(user.branch) を入力
 #   3. Settings > Profiles > Terminal > Allow session to set title を有効化
 #
 # 参考:
@@ -98,12 +98,12 @@ _iterm2_set_user_var() {
   printf "\033]1337;SetUserVar=%s=%s\007" "$1" "$(printf '%s' "$2" | base64)"
 }
 
-_iterm2_set_user_title() {
-  _iterm2_set_user_var title "$(_iterm2_directory_name "$PWD")"
+_iterm2_set_user_current_dir() {
+  _iterm2_set_user_var currentDir "$(_iterm2_directory_name "$PWD")"
 }
 
-_iterm2_set_subtitle() {
-  _iterm2_set_user_var subtitle "$(_iterm2_git_branch_label "$PWD")"
+_iterm2_set_user_branch() {
+  _iterm2_set_user_var branch "$(_iterm2_git_branch_label "$PWD")"
 }
 
 _iterm2_set_tab_title() {
@@ -120,8 +120,8 @@ _iterm2_set_tab_title() {
 
 _iterm2_precmd() {
   _iterm2_send_current_dir
-  _iterm2_set_user_title
-  _iterm2_set_subtitle
+  _iterm2_set_user_current_dir
+  _iterm2_set_user_branch
   _iterm2_set_tab_title
 }
 
@@ -131,6 +131,6 @@ precmd_functions=($precmd_functions _iterm2_precmd)
 
 # 初回読み込み時にも情報を送信（シェル起動直後のタブに反映させる）
 _iterm2_send_current_dir
-_iterm2_set_user_title
-_iterm2_set_subtitle
+_iterm2_set_user_current_dir
+_iterm2_set_user_branch
 _iterm2_set_tab_title

@@ -127,8 +127,8 @@ _iterm2_set_user_last_prompt() {
 
   local session_id="${ITERM_SESSION_ID#*:}"
   local text
-  text=$(tail -100 "$history_file" | jq -r --arg sid "$session_id" \
-    'select(.itermSessionId == $sid) | .text' 2>/dev/null | tail -1)
+  text=$(tail -100 "$history_file" | grep "$session_id" | tail -1 \
+    | jq -r --arg sid "$session_id" 'select(.itermSessionId == $sid) | .text' 2>/dev/null)
 
   if [[ "$text" != "$_iterm2_last_prompt_cache" ]]; then
     _iterm2_last_prompt_cache="$text"

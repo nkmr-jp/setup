@@ -159,8 +159,8 @@ _iterm2_set_user_last_prompt() {
 
   if [[ "$_iterm2_last_prompt_cache" != "$dir_name" ]]; then
     _iterm2_last_prompt_cache="$dir_name"
-    _iterm2_set_user_var lastPrompt "$dir_name"
-    printf "\033]0;%s\007" "$dir_name"
+    _iterm2_set_user_var lastPrompt "💬 $dir_name"
+    printf "\033]0;%s\007" "💬 $dir_name"
   fi
 }
 
@@ -184,8 +184,8 @@ _iterm2_start_prompt_watcher() {
         | jq -r --arg sid "$session_id" \
           'select(.itermSessionId == $sid) | .text | gsub("\n"; " ")' 2>/dev/null)
       [[ -z "$text" ]] && continue
-      _iterm2_set_user_var lastPrompt "$text"
-      printf "\033]0;%s\007" "$text"
+      _iterm2_set_user_var lastPrompt "💬 $text"
+      printf "\033]0;%s\007" "💬 $text"
     done
   ) &!
   _iterm2_prompt_watcher_pid=$!

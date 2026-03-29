@@ -138,8 +138,7 @@ _iterm2_directory_icon() {
   local dir="$1"
   [[ -z "$dir" ]] && return
 
-  dir="$(_iterm2_resolve_repo_path "$dir")"
-  _iterm2_hash_icon "${dir##*/}"
+  _iterm2_hash_icon "$(_iterm2_directory_name "$dir")"
 }
 
 _iterm2_dir_icon_cache=""

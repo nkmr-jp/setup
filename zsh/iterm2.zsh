@@ -172,17 +172,30 @@ _iterm2_start_prompt_watcher() {
 
   local history_file="$HOME/.prompt-line/history.jsonl"
   local session_id="${ITERM_SESSION_ID#*:}"
+  local my_tty
+  my_tty=$(tty) || return
 
   (
-    exec >/dev/tty 2>/dev/null
+    local last_count
+    last_count=$(wc -l < "$history_file" 2>/dev/null || echo 0)
+
     fswatch --event Updated -o "$history_file" 2>/dev/null | while read -r _; do
-      # 最後に追加された行が自セッションのものでなければスキップ
-      text=$(tail -1 "$history_file" \
+      local current_count
+      current_count=$(wc -l < "$history_file" 2>/dev/null || echo 0)
+      (( current_count <= last_count )) && { last_count=$current_count; continue; }
+
+      # 新しく追加された行のうち自セッションのもののみ取得
+      local new_lines=$((current_count - last_count))
+      local text
+      text=$(tail -n "$new_lines" "$history_file" \
         | jq -r --arg sid "$session_id" \
-          'select(.itermSessionId == $sid) | .text | gsub("\n"; " ")' 2>/dev/null)
+          'select(.itermSessionId == $sid) | .text | gsub("\n"; " ")' 2>/dev/null \
+        | tail -1)
+      last_count=$current_count
       [[ -z "$text" ]] && continue
-      _iterm2_set_user_var lastPrompt " > $text"
-      printf "\033]0;%s\007" " > $text"
+
+      _iterm2_set_user_var lastPrompt " > $text" > "$my_tty"
+      printf "\033]0;%s\007" " > $text" > "$my_tty"
     done
   ) &!
   _iterm2_prompt_watcher_pid=$!

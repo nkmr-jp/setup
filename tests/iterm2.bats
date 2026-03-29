@@ -111,6 +111,77 @@ setup() {
 }
 
 # ============================================================
+# Group 3.5: _iterm2_directory_icon() - ディレクトリアイコン
+# ============================================================
+
+@test "directory_icon: Go プロジェクトで 🐹 を返す" {
+    local dir="$BATS_TEST_TMPDIR/go-project"
+    mkdir -p "$dir"
+    touch "$dir/go.mod"
+
+    run_iterm2 _iterm2_directory_icon "$dir"
+    [ "$status" -eq 0 ]
+    [ "$output" = "🐹" ]
+}
+
+@test "directory_icon: Node.js プロジェクトで ⬡ を返す" {
+    local dir="$BATS_TEST_TMPDIR/node-project"
+    mkdir -p "$dir"
+    touch "$dir/package.json"
+
+    run_iterm2 _iterm2_directory_icon "$dir"
+    [ "$status" -eq 0 ]
+    [ "$output" = "⬡" ]
+}
+
+@test "directory_icon: Python プロジェクトで 🐍 を返す" {
+    local dir="$BATS_TEST_TMPDIR/py-project"
+    mkdir -p "$dir"
+    touch "$dir/pyproject.toml"
+
+    run_iterm2 _iterm2_directory_icon "$dir"
+    [ "$status" -eq 0 ]
+    [ "$output" = "🐍" ]
+}
+
+@test "directory_icon: Rust プロジェクトで 🦀 を返す" {
+    local dir="$BATS_TEST_TMPDIR/rust-project"
+    mkdir -p "$dir"
+    touch "$dir/Cargo.toml"
+
+    run_iterm2 _iterm2_directory_icon "$dir"
+    [ "$status" -eq 0 ]
+    [ "$output" = "🦀" ]
+}
+
+@test "directory_icon: 不明なプロジェクトで 📁 を返す" {
+    local dir="$BATS_TEST_TMPDIR/unknown-project"
+    mkdir -p "$dir"
+
+    run_iterm2 _iterm2_directory_icon "$dir"
+    [ "$status" -eq 0 ]
+    [ "$output" = "📁" ]
+}
+
+@test "directory_icon: 空文字を渡すと何も返さない" {
+    run_iterm2 _iterm2_directory_icon ""
+    [ "$status" -eq 0 ]
+    [ "$output" = "" ]
+}
+
+@test "directory_icon: worktree パスでは元リポジトリを基に判定する" {
+    local repo="$BATS_TEST_TMPDIR/myrepo"
+    mkdir -p "$repo"
+    touch "$repo/go.mod"
+    local wt_path="${repo}-worktrees/feature"
+    mkdir -p "$wt_path"
+
+    run_iterm2 _iterm2_directory_icon "$wt_path"
+    [ "$status" -eq 0 ]
+    [ "$output" = "🐹" ]
+}
+
+# ============================================================
 # Group 4: _iterm2_set_user_last_prompt() - lastPrompt
 # ============================================================
 
@@ -150,6 +221,8 @@ setup() {
     [[ "$output" == *"SetUserVar=currentDir="* ]]
     # branch ユーザー変数が含まれる
     [[ "$output" == *"SetUserVar=branch="* ]]
+    # dirIcon ユーザー変数が含まれる
+    [[ "$output" == *"SetUserVar=dirIcon="* ]]
     # lastPrompt ユーザー変数が含まれる（初回はディレクトリ名フォールバック）
     [[ "$output" == *"SetUserVar=lastPrompt="* ]]
 }

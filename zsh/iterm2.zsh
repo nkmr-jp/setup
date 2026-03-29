@@ -5,7 +5,7 @@
 # iTerm2 のサブタイトル・タブタイトル・ディレクトリ復元を統合したスクリプト
 #
 # 必要な設定:
-#   1. Settings > Profiles > General > Title に \(user.currentDir) を入力
+#   1. Settings > Profiles > General > Title に \(user.dirIcon) \(user.currentDir) を入力
 #   2. Settings > Profiles > General > Subtitle に \(user.branch) を入力
 #   3. Settings > Profiles > Terminal > Allow session to set title を有効化
 #
@@ -43,6 +43,16 @@ _get_git_branch() {
     symbolic-ref --short HEAD 2>/dev/null
 }
 
+# worktree パスから元リポジトリのパスを返す（非 worktree ならそのまま）
+_iterm2_resolve_repo_path() {
+  local dir="$1"
+  if [[ "$dir" == *"-worktrees/"* ]]; then
+    echo "${dir%%-worktrees/*}"
+  else
+    echo "$dir"
+  fi
+}
+
 # ============================================================
 # サブタイトル用コンポーネント
 # ============================================================
@@ -53,10 +63,7 @@ _iterm2_directory_name() {
     return
   fi
 
-  # gwt.zsh の worktree パス規約: repo-worktrees/branch
-  if [[ "$dir" == *"-worktrees/"* ]]; then
-    dir="${dir%%-worktrees/*}"
-  fi
+  dir="$(_iterm2_resolve_repo_path "$dir")"
 
   local dir_name="${dir##*/}"
 
@@ -104,6 +111,44 @@ _iterm2_set_user_current_dir() {
 
 _iterm2_set_user_branch() {
   _iterm2_set_user_var branch "$(_iterm2_git_branch_label "$PWD")"
+}
+
+_iterm2_directory_icon() {
+  local dir="$1"
+  [[ -z "$dir" ]] && return
+
+  dir="$(_iterm2_resolve_repo_path "$dir")"
+
+  if [[ -f "$dir/go.mod" ]]; then
+    echo "🐹"
+  elif [[ -f "$dir/Cargo.toml" ]]; then
+    echo "🦀"
+  elif [[ -f "$dir/pyproject.toml" ]] || [[ -f "$dir/setup.py" ]] || [[ -f "$dir/requirements.txt" ]]; then
+    echo "🐍"
+  elif [[ -f "$dir/Gemfile" ]]; then
+    echo "💎"
+  elif [[ -f "$dir/dbt_project.yml" ]]; then
+    echo "📊"
+  elif [[ -f "$dir/package.json" ]]; then
+    echo "⬡"
+  elif [[ -f "$dir/Dockerfile" ]] || [[ -f "$dir/docker-compose.yml" ]]; then
+    echo "🐳"
+  elif [[ -f "$dir/Makefile" ]]; then
+    echo "⚙️"
+  else
+    echo "📁"
+  fi
+}
+
+_iterm2_dir_icon_cache=""
+_iterm2_dir_icon_cache_dir=""
+
+_iterm2_set_user_dir_icon() {
+  if [[ "$_iterm2_dir_icon_cache_dir" != "$PWD" ]]; then
+    _iterm2_dir_icon_cache_dir="$PWD"
+    _iterm2_dir_icon_cache="$(_iterm2_directory_icon "$PWD")"
+    _iterm2_set_user_var dirIcon "$_iterm2_dir_icon_cache"
+  fi
 }
 
 _iterm2_last_prompt_cache=""
@@ -161,6 +206,7 @@ _iterm2_precmd() {
   _iterm2_send_current_dir
   _iterm2_set_user_current_dir
   _iterm2_set_user_branch
+  _iterm2_set_user_dir_icon
   _iterm2_set_user_last_prompt
 }
 

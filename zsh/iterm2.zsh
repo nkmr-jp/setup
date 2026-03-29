@@ -113,6 +113,27 @@ _iterm2_set_user_branch() {
   _iterm2_set_user_var branch "$(_iterm2_git_branch_label "$PWD")"
 }
 
+_iterm2_hash_icon() {
+  local name="$1"
+  local icons=(
+    "🔴" "🟠" "🟡" "🟢" "🔵" "🟣" "🟤" "⚫" "⚪"
+    "🔶" "🔷" "🔸" "🔹" "💠" "🔲" "🔳"
+    "❤️" "🧡" "💛" "💚" "💙" "💜" "🖤" "🤍" "🤎"
+    "♠️" "♣️" "♥️" "♦️"
+    "⭐" "🌙" "☀️" "⚡" "🔥" "💧" "🌊" "🍀"
+    "🎯" "🎪" "🎭" "🎨" "🎲" "🎵" "🎸" "🎺"
+    "🌸" "🌺" "🌻" "🌷" "🌹" "🍁" "🍂" "🌿"
+    "🍎" "🍊" "🍋" "🍇" "🍉" "🍓" "🫐" "🥝"
+    "🐝" "🦋" "🐞" "🦊" "🐧" "🦉" "🐙" "🦑"
+    "🏔️" "🌋" "🏝️" "🗻" "🌈" "❄️" "🌪️" "☁️"
+    "💎" "🔮" "🪐" "🛸" "🚀" "⚓" "🧲" "🔔"
+    "📐" "📌" "✏️" "🖊️" "🧪" "🔬" "🔭" "🧬"
+  )
+  local hash=$(printf '%s' "$name" | cksum | awk '{print $1}')
+  local index=$(( hash % ${#icons[@]} + 1 ))
+  echo "${icons[$index]}"
+}
+
 _iterm2_directory_icon() {
   local dir="$1"
   [[ -z "$dir" ]] && return
@@ -136,7 +157,7 @@ _iterm2_directory_icon() {
   elif [[ -f "$dir/Makefile" ]]; then
     echo "⚙️"
   else
-    echo "📁"
+    _iterm2_hash_icon "${dir##*/}"
   fi
 }
 

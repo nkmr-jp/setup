@@ -185,7 +185,7 @@ setup() {
 # Group 4: _iterm2_set_user_last_prompt() - lastPrompt
 # ============================================================
 
-@test "set_user_last_prompt: キャッシュ空ならディレクトリ名をセットする" {
+@test "set_user_last_prompt: ディレクトリ名をセットする" {
     run_iterm2 _iterm2_set_user_last_prompt
     [ "$status" -eq 0 ]
     # lastPrompt にディレクトリ名がセットされる

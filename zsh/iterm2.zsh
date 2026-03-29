@@ -176,7 +176,8 @@ _iterm2_start_prompt_watcher() {
   (
     exec >/dev/tty 2>/dev/null
     fswatch --event Updated -o "$history_file" 2>/dev/null | while read -r _; do
-      text=$(tail -100 "$history_file" | grep "$session_id" | tail -1 \
+      # 最後に追加された行が自セッションのものでなければスキップ
+      text=$(tail -1 "$history_file" \
         | jq -r --arg sid "$session_id" \
           'select(.itermSessionId == $sid) | .text | gsub("\n"; " ")' 2>/dev/null)
       [[ -z "$text" ]] && continue

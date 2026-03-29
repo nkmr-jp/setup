@@ -139,26 +139,7 @@ _iterm2_directory_icon() {
   [[ -z "$dir" ]] && return
 
   dir="$(_iterm2_resolve_repo_path "$dir")"
-
-  if [[ -f "$dir/go.mod" ]]; then
-    echo "🐹"
-  elif [[ -f "$dir/Cargo.toml" ]]; then
-    echo "🦀"
-  elif [[ -f "$dir/pyproject.toml" ]] || [[ -f "$dir/setup.py" ]] || [[ -f "$dir/requirements.txt" ]]; then
-    echo "🐍"
-  elif [[ -f "$dir/Gemfile" ]]; then
-    echo "💎"
-  elif [[ -f "$dir/dbt_project.yml" ]]; then
-    echo "📊"
-  elif [[ -f "$dir/package.json" ]]; then
-    echo "🟢"
-  elif [[ -f "$dir/Dockerfile" ]] || [[ -f "$dir/docker-compose.yml" ]]; then
-    echo "🐳"
-  elif [[ -f "$dir/Makefile" ]]; then
-    echo "⚙️"
-  else
-    _iterm2_hash_icon "${dir##*/}"
-  fi
+  _iterm2_hash_icon "${dir##*/}"
 }
 
 _iterm2_dir_icon_cache=""

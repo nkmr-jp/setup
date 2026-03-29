@@ -159,8 +159,8 @@ _iterm2_set_user_last_prompt() {
 
   if [[ "$_iterm2_last_prompt_cache" != "$dir_name" ]]; then
     _iterm2_last_prompt_cache="$dir_name"
-    _iterm2_set_user_var lastPrompt "💬 $dir_name"
-    printf "\033]0;%s\007" "💬 $dir_name"
+    _iterm2_set_user_var lastPrompt "$dir_name"
+    printf "\033]0;%s\007" "$dir_name"
   fi
 }
 

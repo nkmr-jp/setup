@@ -130,7 +130,7 @@ _iterm2_directory_icon() {
   elif [[ -f "$dir/dbt_project.yml" ]]; then
     echo "📊"
   elif [[ -f "$dir/package.json" ]]; then
-    echo "⬡"
+    echo "🟢"
   elif [[ -f "$dir/Dockerfile" ]] || [[ -f "$dir/docker-compose.yml" ]]; then
     echo "🐳"
   elif [[ -f "$dir/Makefile" ]]; then
@@ -179,8 +179,8 @@ _iterm2_start_prompt_watcher() {
         | jq -r --arg sid "$session_id" \
           'select(.itermSessionId == $sid) | .text | gsub("\n"; " ")' 2>/dev/null)
       [[ -z "$text" ]] && continue
-      _iterm2_set_user_var lastPrompt "💬 $text"
-      printf "\033]0;%s\007" "💬 $text"
+      _iterm2_set_user_var lastPrompt " > $text"
+      printf "\033]0;%s\007" " > $text"
     done
   ) &!
   _iterm2_prompt_watcher_pid=$!

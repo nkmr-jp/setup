@@ -228,4 +228,4 @@ precmd_functions=($precmd_functions _iterm2_precmd)
 _iterm2_precmd
 
 # fswatch によるリアルタイム監視を開始
-_iterm2_start_prompt_watcher
+#_iterm2_start_prompt_watcher

@@ -122,39 +122,68 @@ _gwt_run_post_create_hook() {
 # ========================================
 # JetBrains Recent Projectsから削除
 # ========================================
+_gwt_jetbrains_dir="$HOME/Library/Application Support/JetBrains"
+_gwt_jetbrains_pending_file="$HOME/.cache/gwt/jetbrains_pending_cleanup.txt"
+
+_gwt_is_jetbrains_running() {
+    pgrep -f '/Applications/.+\.app/Contents/MacOS/(goland|idea|pycharm|webstorm|clion|rubymine|rider|phpstorm|datagrip)' > /dev/null 2>&1
+}
+
 _gwt_remove_from_jetbrains_recent() {
     local wt_path="$1"
-    local jetbrains_dir="$HOME/Library/Application Support/JetBrains"
+    [[ ! -d "$_gwt_jetbrains_dir" ]] && return 0
 
-    # JetBrainsディレクトリが存在しない場合はスキップ
-    [[ ! -d "$jetbrains_dir" ]] && return 0
+    # JetBrains IDEが起動中の場合はペンディングファイルに記録
+    if _gwt_is_jetbrains_running; then
+        mkdir -p "$HOME/.cache/gwt"
+        echo "$wt_path" >> "$_gwt_jetbrains_pending_file"
+        echo -e "${YELLOW}⚠ JetBrains IDEが起動中のため、Recent Projects削除を保留しました${RESET}"
+        echo -e "  ${CYAN}IDE終了後に gwt prune を再実行すると削除されます${RESET}"
+        return 0
+    fi
 
-    # $HOME を $USER_HOME$ に変換（JetBrainsのXML形式）
+    _gwt_do_remove_from_jetbrains_recent "$wt_path"
+}
+
+_gwt_do_remove_from_jetbrains_recent() {
+    local wt_path="$1"
+    [[ ! -d "$_gwt_jetbrains_dir" ]] && return 0
+
     local escaped_path="${wt_path/#$HOME/\$USER_HOME\$}"
-    # XMLで使う正規表現用にエスケープ
-    local escaped_for_sed=$(echo "$escaped_path" | sed 's/[\/&]/\\&/g')
-
-    local removed=false
+    local escaped_for_sed="${escaped_path//\//\\/}"
+    escaped_for_sed="${escaped_for_sed//&/\\&}"
 
     # 全てのJetBrains IDEのrecentProjects.xmlを処理
-    find "$jetbrains_dir" -name "recentProjects.xml" -type f 2>/dev/null | while read -r xml_file; do
-        # backupディレクトリはスキップ
+    find "$_gwt_jetbrains_dir" -name "recentProjects.xml" -type f 2>/dev/null | while read -r xml_file; do
         [[ "$xml_file" == *"-backup"* ]] && continue
 
-        # 該当エントリが存在するかチェック
         if grep -q "\"${escaped_path}\"" "$xml_file" 2>/dev/null; then
-            # sedでエントリブロック全体を削除
-            # <entry key="$USER_HOME$/path">...</entry> の形式
-            sed -i '' "/<entry key=\"${escaped_for_sed}\">/,/<\/entry>/d" "$xml_file" 2>/dev/null
-            if [[ $? -eq 0 ]]; then
-                local ide_name=$(echo "$xml_file" | sed 's|.*/JetBrains/\([^/]*\)/.*|\1|')
+            # <entry key="$USER_HOME$/path">...</entry> ブロック全体を削除
+            if sed -i '' "/<entry key=\"${escaped_for_sed}\">/,/<\/entry>/d" "$xml_file" 2>/dev/null; then
+                local ide_name="${xml_file#*JetBrains/}"
+                ide_name="${ide_name%%/*}"
                 echo -e "${GREEN}✓ JetBrains Recent Projectsから削除: ${ide_name}${RESET}"
-                removed=true
             fi
         fi
     done
+}
 
-    return 0
+_gwt_process_jetbrains_pending() {
+    [[ ! -f "$_gwt_jetbrains_pending_file" ]] && return 0
+
+    if _gwt_is_jetbrains_running; then
+        local pending_count=$(( $(wc -l < "$_gwt_jetbrains_pending_file") ))
+        echo -e "${YELLOW}⚠ JetBrains IDEが起動中のため、${pending_count}件のRecent Projects削除が保留中です${RESET}"
+        echo -e "  ${CYAN}IDE終了後に gwt prune を再実行してください${RESET}"
+        return 0
+    fi
+
+    echo -e "${BLUE}保留中のJetBrains Recent Projects削除を実行中...${RESET}"
+    while IFS= read -r wt_path; do
+        [[ -z "$wt_path" ]] && continue
+        _gwt_do_remove_from_jetbrains_recent "$wt_path"
+    done < <(sort -u "$_gwt_jetbrains_pending_file")
+    rm -f "$_gwt_jetbrains_pending_file"
 }
 
 # ========================================
@@ -484,6 +513,8 @@ _gwt_prune() {
     done
 
     echo -e "${CYAN}=== Pruning Worktrees ===${RESET}"
+
+    _gwt_process_jetbrains_pending
 
     # リモートから最新の情報を取得（--pruneで削除済みリモートブランチも反映）
     echo -e "${BLUE}リモートから最新の情報を取得中...${RESET}"

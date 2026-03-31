@@ -28,12 +28,6 @@ function display_greeting() {
     fi
 }
 
-# Run Prompt Line plugin commands from anywhere
-# Usage: prompt-line-plugin install github.com/user/repo[@ref]
-function prompt-line-plugin() {
-    pnpm --dir "$(ghq root)/github.com/nkmr-jp/prompt-line" run "plugin:$1" "${@:2}"
-}
-
 # Auto-run make login if Makefile exists with login target
 function auto_make_login() {
     if [[ -f "Makefile" ]] && grep -q '^login:' Makefile; then

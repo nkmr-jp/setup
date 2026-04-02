@@ -46,3 +46,6 @@ launchctl setenv PATH "$PATH" 2>/dev/null || true
 
 # See: https://opencode.ai/docs/tui/#editor-setup
 export EDITOR="code --wait"
+
+# See: https://code.claude.com/docs/en/fullscreen
+export CLAUDE_CODE_NO_FLICKER=1

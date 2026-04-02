@@ -15,7 +15,7 @@ alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
 alias wind='windsurf'
 alias md="open -a 'Marked 2'"
 alias ob='open "obsidian://open?path=$(pwd)"'
-alias typora="/Applications/Typora.app/Contents/MacOS/Typora"
+alias typora="open -a Typora"
 
 # Shell management
 alias load='exec $SHELL -l'

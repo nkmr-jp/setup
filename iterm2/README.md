@@ -20,6 +20,8 @@ iTerm2 を再起動するとスクリプトが自動実行される。
 |---|---|---|
 | `user.paneCount` | 現在のタブのペイン数 | レイアウト変更時（リアルタイム） |
 | `user.claudeSessionCount` | 起動中の Claude Code インタラクティブセッション数 | 5秒ごとのポーリング |
+| `user.claudeActiveCount` | アクティブ（作業中）の Claude セッション数 | 5秒ごとのポーリング |
+| `user.claudeIdleCount` | アイドル（入力待ち）の Claude セッション数 | 5秒ごとのポーリング |
 
 ### 表示設定
 
@@ -30,7 +32,7 @@ Preferences → Profiles → General → Title で以下のように設定する
 
 例:
 ```
-\(user.paneCount) panes | Claude: \(user.claudeSessionCount)
+\(user.paneCount) panes | Claude: \(user.claudeActiveCount)active \(user.claudeIdleCount)idle
 ```
 
 ### 変数の利用
@@ -42,3 +44,7 @@ Preferences → Profiles → General → Title で以下のように設定する
 
 TTY にアタッチされたフォアグラウンドの `claude` プロセス（`ps` の STAT が `S+`）をカウントする。
 JetBrains ACP 等のバックグラウンドプロセスは除外される。
+
+CPU 使用率で状態を判定する:
+- **Active**: CPU > 0.1%（API通信中、ツール実行中など）
+- **Idle**: CPU ≈ 0%（ユーザー入力待ち）

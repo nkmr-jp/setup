@@ -14,8 +14,12 @@ iTerm2 を再起動するとスクリプトが自動実行される。
 
 ## PaneCount
 
-現在のタブのペイン数をユーザー定義変数 `user.paneCount` に設定するスクリプト。
-`LayoutChangeMonitor` でペインの追加・削除をリアルタイム監視し、自動更新する。
+以下のユーザー定義変数を各セッションに設定するスクリプト。
+
+| 変数 | 説明 | 更新タイミング |
+|---|---|---|
+| `user.paneCount` | 現在のタブのペイン数 | レイアウト変更時（リアルタイム） |
+| `user.claudeSessionCount` | 起動中の Claude Code インタラクティブセッション数 | 5秒ごとのポーリング |
 
 ### 表示設定
 
@@ -26,12 +30,15 @@ Preferences → Profiles → General → Title で以下のように設定する
 
 例:
 ```
-\(user.paneCount) panes
+\(user.paneCount) panes | Claude: \(user.claudeSessionCount)
 ```
-
-これでタブタイトルにペイン数が表示される。
 
 ### 変数の利用
 
-`user.paneCount` は iTerm2 のユーザー定義変数として各セッションに設定されるため、
-タブタイトル以外にも Status Bar やトリガーなど `\(user.paneCount)` 記法が使える場所で利用できる。
+これらの変数は iTerm2 のユーザー定義変数として各セッションに設定されるため、
+タブタイトル以外にも Status Bar やトリガーなど `\(user.変数名)` 記法が使える場所で利用できる。
+
+### Claude セッションの検出方法
+
+TTY にアタッチされたフォアグラウンドの `claude` プロセス（`ps` の STAT が `S+`）をカウントする。
+JetBrains ACP 等のバックグラウンドプロセスは除外される。

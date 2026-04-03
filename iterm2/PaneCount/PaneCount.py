@@ -3,7 +3,7 @@
 
 Variables:
   user.paneCount       - number of panes in the current tab
-  user.claudeSessions  - icon string showing Claude session states (🟡=active, 🔵=idle)
+  user.claudeSessions  - icon string showing Claude session states (🟡=active, 🟢=idle)
 """
 
 import asyncio
@@ -14,7 +14,7 @@ import iterm2
 CLAUDE_POLL_INTERVAL = 5  # seconds
 CPU_ACTIVE_THRESHOLD = 0.1  # % CPU above this is considered active
 ICON_ACTIVE = "🟡"
-ICON_IDLE = "🔵"
+ICON_IDLE = "🟢"
 
 
 def get_claude_session_icons():

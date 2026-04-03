@@ -81,6 +81,15 @@ starship preset pure-preset -o ~/.config/starship.toml
 
 menu -> Install Shell Integration 
 
+#### iTerm2 Scripts
+
+See: [iterm2/README.md](iterm2/README.md)
+
+```sh
+mkdir -p ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch
+ln -s ~/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount
+```
+
 ### Install QucickLook Plugins
 
 ```shell

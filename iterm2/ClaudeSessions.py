@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Set user.claudeSessions to icon string showing Claude session states.
+"""Set user.claudeSessions per-session using jobName matching.
 
-Each interactive Claude Code session is shown as 🟡 (active) or 🟢 (idle).
-Example: "🟡🟡🟢" means 2 active, 1 idle.
-Empty string when no Claude sessions are running.
+Shows 🟡 on sessions where Claude is actively working,
+🟢 on sessions where Claude is idle (waiting for input),
+and empty string on sessions without Claude.
 """
 
 import asyncio
@@ -17,36 +17,44 @@ ICON_ACTIVE = "🟡"
 ICON_IDLE = "🟢"
 
 
-def get_claude_session_icons():
-    """Build icon string from foreground Claude Code CLI processes."""
+def get_claude_tty_icons():
+    """Return dict mapping TTY name to icon based on CPU usage.
+
+    Example: {"ttys003": "🟡", "ttys007": "🟢"}
+    """
     result = subprocess.run(
         ["ps", "-eo", "tty,stat,comm,%cpu"],
         capture_output=True,
         text=True,
     )
-    active = 0
-    idle = 0
+    icons = {}
     for line in result.stdout.splitlines():
         parts = line.split()
         if len(parts) >= 4 and parts[0].startswith("ttys") and "+" in parts[1] and parts[2] == "claude":
             try:
-                if float(parts[3]) > CPU_ACTIVE_THRESHOLD:
-                    active += 1
-                else:
-                    idle += 1
+                icon = ICON_ACTIVE if float(parts[3]) > CPU_ACTIVE_THRESHOLD else ICON_IDLE
             except ValueError:
-                idle += 1
-    return ICON_ACTIVE * active + ICON_IDLE * idle
+                icon = ICON_IDLE
+            icons[parts[0]] = icon
+    return icons
 
 
 async def main(connection):
     while True:
-        icons = get_claude_session_icons()
+        icons = get_claude_tty_icons()
         app = await iterm2.async_get_app(connection)
         for window in app.terminal_windows:
             for tab in window.tabs:
                 for session in tab.sessions:
-                    await session.async_set_variable("user.claudeSessions", icons)
+                    job_name = await session.async_get_variable("jobName")
+                    if job_name == "claude":
+                        tty = await session.async_get_variable("tty")
+                        # tty is "/dev/ttysXXX", ps uses "ttysXXX"
+                        tty_short = tty.replace("/dev/", "") if tty else ""
+                        icon = icons.get(tty_short, ICON_IDLE)
+                        await session.async_set_variable("user.claudeSessions", icon)
+                    else:
+                        await session.async_set_variable("user.claudeSessions", "")
         await asyncio.sleep(POLL_INTERVAL)
 
 

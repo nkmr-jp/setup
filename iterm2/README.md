@@ -7,7 +7,7 @@ iTerm2 Python API を使った AutoLaunch スクリプト集。
 ```sh
 # AutoLaunch ディレクトリにシンボリックリンクを作成
 mkdir -p ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch
-ln -s ~/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount
+ln -s ~/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount/PaneCount.py ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount.py
 ```
 
 iTerm2 を再起動するとスクリプトが自動実行される。

@@ -88,7 +88,6 @@ See: [iterm2/README.md](iterm2/README.md)
 ```sh
 mkdir -p ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch
 ln -s ~/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount.py ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount.py
-ln -s ~/ghq/github.com/nkmr-jp/setup/iterm2/ClaudeSessions.py ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/ClaudeSessions.py
 ```
 
 ### Install QucickLook Plugins

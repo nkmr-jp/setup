@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Set user.claudeSessions per-session using jobName matching.
+"""Set user.claudeSessions per-session using session name matching.
 
 Shows 🟡 on sessions where Claude is actively working,
 🟢 on sessions where Claude is idle (waiting for input),
@@ -15,6 +15,7 @@ POLL_INTERVAL = 5  # seconds
 CPU_ACTIVE_THRESHOLD = 0.1  # % CPU above this is considered active
 ICON_ACTIVE = "🟡"
 ICON_IDLE = "🟢"
+CLAUDE_NAME_MARKER = "Claude Code"
 
 
 def get_claude_tty_icons():
@@ -42,16 +43,17 @@ def get_claude_tty_icons():
 async def main(connection):
     while True:
         icons = get_claude_tty_icons()
+        # Default icon when session is detected but TTY doesn't match ps
+        default_icon = ICON_ACTIVE if icons else ICON_IDLE
         app = await iterm2.async_get_app(connection)
         for window in app.terminal_windows:
             for tab in window.tabs:
                 for session in tab.sessions:
-                    job_name = await session.async_get_variable("jobName")
-                    if job_name == "claude":
+                    name = await session.async_get_variable("name")
+                    if name and CLAUDE_NAME_MARKER in name:
                         tty = await session.async_get_variable("tty")
-                        # tty is "/dev/ttysXXX", ps uses "ttysXXX"
                         tty_short = tty.replace("/dev/", "") if tty else ""
-                        icon = icons.get(tty_short, ICON_IDLE)
+                        icon = icons.get(tty_short, default_icon)
                         await session.async_set_variable("user.claudeSessions", icon)
                     else:
                         await session.async_set_variable("user.claudeSessions", "")

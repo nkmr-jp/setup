@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Session Dashboard — 2026-04-03</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    padding: 24px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+  }
+  .summary {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #8888aa;
+    margin-bottom: 28px;
+  }
+  .summary span {
+    display: inline-block;
+    margin: 0 14px;
+    color: #aab;
+  }
+  .summary strong {
+    color: #7dd3fc;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .card {
+    background: #16213e;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #1e3054;
+  }
+  .card.full { grid-column: 1 / -1; }
+  .card h2 {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #7dd3fc;
+    margin-bottom: 14px;
+  }
+  .chart-wrap { position: relative; width: 100%; }
+  .chart-wrap.tall { height: 520px; }
+  .chart-wrap.short { height: 360px; }
+</style>
+</head>
+<body>
+
+<h1>Claude Code Session Dashboard &mdash; 2026-04-03</h1>
+<div class="summary">
+  <span>Sessions: <strong>27</strong></span>
+  <span>Subagents: <strong>66</strong></span>
+  <span>Projects: <strong>14</strong></span>
+  <span>Output Tokens: <strong>262,727</strong></span>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>1. プロジェクト別 出力トークン</h2>
+    <div class="chart-wrap short"><canvas id="tokensChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>2. プロジェクト別 メッセージ数</h2>
+    <div class="chart-wrap short"><canvas id="messagesChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>3. プロジェクト別 サブエージェント数</h2>
+    <div class="chart-wrap short"><canvas id="subagentChart"></canvas></div>
+  </div>
+  <div class="card full">
+    <h2>4. セッション タイムライン</h2>
+    <div class="chart-wrap tall"><canvas id="timelineChart"></canvas></div>
+  </div>
+</div>
+
+<script>
+const sessions = [
+  { id: 1,  project: 'prompt-line-wt-update-command', start: '2026-04-01T02:11', end: '2026-04-01T04:50', user: 114, asst: 167, sa: 4, tokens: 27307 },
+  { id: 2,  project: 'openai-plugins-ja',             start: '2026-04-02T22:57', end: '2026-04-03T17:07', user: 208, asst: 262, sa: 27, tokens: 40059 },
+  { id: 3,  project: 'codex-plugin-cc-ja',            start: '2026-04-02T22:55', end: '2026-04-03T01:01', user: 72,  asst: 88,  sa: 1,  tokens: 37117 },
+  { id: 4,  project: 'gws-cli-ja',                    start: '2026-04-02T22:56', end: '2026-04-03T01:03', user: 65,  asst: 79,  sa: 9,  tokens: 13877 },
+  { id: 5,  project: 'claude-plugins',                start: '2026-04-02T23:11', end: '2026-04-02T23:17', user: 21,  asst: 23,  sa: 0,  tokens: 3089 },
+  { id: 6,  project: 'xt-wt-fix-gae-error',           start: '2026-04-02T23:16', end: '2026-04-03T19:31', user: 214, asst: 288, sa: 9,  tokens: 73852 },
+  { id: 7,  project: 'prompt-line-wt-changesets',      start: '2026-04-02T23:18', end: '2026-04-03T01:02', user: 40,  asst: 49,  sa: 3,  tokens: 6809 },
+  { id: 8,  project: 'cclinear',                      start: '2026-04-03T00:24', end: '2026-04-03T00:24', user: 7,   asst: 11,  sa: 3,  tokens: 3908 },
+  { id: 9,  project: 'setup',                         start: '2026-04-03T01:09', end: '2026-04-03T01:19', user: 19,  asst: 23,  sa: 3,  tokens: 2618 },
+  { id: 10, project: 'openai-codex-plugin-cc',        start: '2026-04-03T01:04', end: '2026-04-03T01:04', user: 6,   asst: 0,   sa: 0,  tokens: 0 },
+  { id: 11, project: 'claude-plugins',                start: '2026-04-03T16:46', end: '2026-04-03T16:48', user: 24,  asst: 28,  sa: 0,  tokens: 2599 },
+  { id: 12, project: 'prompt-line',                   start: '2026-04-03T17:14', end: '2026-04-03T17:34', user: 32,  asst: 39,  sa: 1,  tokens: 3797 },
+  { id: 13, project: 'prompt-line',                   start: '2026-04-03T17:18', end: '2026-04-03T17:23', user: 25,  asst: 36,  sa: 1,  tokens: 4443 },
+  { id: 14, project: 'xt-wt-fix-gae-error',           start: '2026-04-03T17:49', end: '2026-04-03T17:49', user: 3,   asst: 0,   sa: 0,  tokens: 0 },
+  { id: 15, project: 'xt-wt-fix-gae-error',           start: '2026-04-03T17:51', end: '2026-04-03T17:52', user: 3,   asst: 1,   sa: 0,  tokens: 0 },
+  { id: 16, project: 'claude-plugins',                start: '2026-04-03T18:41', end: '2026-04-03T18:43', user: 13,  asst: 16,  sa: 0,  tokens: 1302 },
+  { id: 17, project: 'setup',                         start: '2026-04-03T18:37', end: '2026-04-03T20:55', user: 53,  asst: 67,  sa: 3,  tokens: 9500 },
+  { id: 18, project: 'api-client',                    start: '2026-04-03T19:20', end: '2026-04-03T19:34', user: 12,  asst: 3,   sa: 1,  tokens: 1048 },
+  { id: 19, project: 'api-client',                    start: '2026-04-03T19:34', end: '2026-04-03T19:34', user: 10,  asst: 1,   sa: 0,  tokens: 96 },
+  { id: 20, project: 'api-client',                    start: '2026-04-03T19:50', end: '2026-04-03T23:04', user: 13,  asst: 18,  sa: 0,  tokens: 2856 },
+  { id: 21, project: 'api-client',                    start: '2026-04-03T20:01', end: '2026-04-03T22:37', user: 80,  asst: 104, sa: 0,  tokens: 10332 },
+  { id: 22, project: 'api-client',                    start: '2026-04-03T20:55', end: '2026-04-03T22:06', user: 8,   asst: 10,  sa: 0,  tokens: 1014 },
+  { id: 23, project: 'zl',                            start: '2026-04-03T20:08', end: '2026-04-03T20:36', user: 43,  asst: 54,  sa: 1,  tokens: 5962 },
+  { id: 24, project: 'zl',                            start: '2026-04-03T20:11', end: '2026-04-03T20:12', user: 6,   asst: 10,  sa: 0,  tokens: 2295 },
+  { id: 25, project: 'prompt-line-wt-update-command',  start: '2026-04-03T23:23', end: '2026-04-03T23:28', user: 6,   asst: 8,   sa: 0,  tokens: 1069 },
+  { id: 26, project: 'prompt-line',                   start: '2026-04-03T23:25', end: '2026-04-03T23:26', user: 21,  asst: 30,  sa: 0,  tokens: 2531 },
+  { id: 27, project: 'setup',                         start: '2026-04-03T23:52', end: '2026-04-03T23:56', user: 12,  asst: 21,  sa: 0,  tokens: 5303 },
+];
+
+// --- Color map ---
+const projectNames = [...new Set(sessions.map(s => s.project))];
+const palette = [
+  '#f472b6','#7dd3fc','#a78bfa','#34d399','#fbbf24','#fb923c',
+  '#f87171','#60a5fa','#c084fc','#4ade80','#facc15','#fb7185',
+  '#38bdf8','#a3e635'
+];
+const colorMap = {};
+projectNames.forEach((p, i) => colorMap[p] = palette[i % palette.length]);
+
+// --- Aggregate by project ---
+const agg = {};
+sessions.forEach(s => {
+  if (!agg[s.project]) agg[s.project] = { tokens: 0, user: 0, asst: 0, sa: 0 };
+  agg[s.project].tokens += s.tokens;
+  agg[s.project].user += s.user;
+  agg[s.project].asst += s.asst;
+  agg[s.project].sa += s.sa;
+});
+const sortedByTokens = Object.entries(agg).sort((a, b) => b[1].tokens - a[1].tokens);
+const labels = sortedByTokens.map(e => e[0]);
+
+// --- Chart defaults ---
+Chart.defaults.color = '#aab';
+Chart.defaults.borderColor = '#1e3054';
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif";
+
+// --- 1. Tokens chart ---
+new Chart(document.getElementById('tokensChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      data: labels.map(l => agg[l].tokens),
+      backgroundColor: labels.map(l => colorMap[l]),
+      borderRadius: 4,
+      barThickness: 18,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: ctx => `${ctx.raw.toLocaleString()} tokens` }
+      }
+    },
+    scales: {
+      x: { grid: { color: '#1e305480' }, ticks: { callback: v => (v/1000)+'K' } },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// --- 2. Messages chart ---
+new Chart(document.getElementById('messagesChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      {
+        label: 'User',
+        data: labels.map(l => agg[l].user),
+        backgroundColor: '#7dd3fc',
+        borderRadius: 4, barThickness: 18,
+      },
+      {
+        label: 'Assistant',
+        data: labels.map(l => agg[l].asst),
+        backgroundColor: '#a78bfa',
+        borderRadius: 4, barThickness: 18,
+      }
+    ]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top', labels: { boxWidth: 12, padding: 16 } }
+    },
+    scales: {
+      x: { stacked: true, grid: { color: '#1e305480' } },
+      y: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// --- 3. Subagent chart ---
+const saLabels = Object.entries(agg).filter(e => e[1].sa > 0).sort((a,b) => b[1].sa - a[1].sa).map(e => e[0]);
+new Chart(document.getElementById('subagentChart'), {
+  type: 'bar',
+  data: {
+    labels: saLabels,
+    datasets: [{
+      data: saLabels.map(l => agg[l].sa),
+      backgroundColor: saLabels.map(l => colorMap[l]),
+      borderRadius: 4, barThickness: 18,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#1e305480' }, ticks: { stepSize: 5 } },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// --- 4. Timeline (Gantt) ---
+const timelineData = sessions.map(s => {
+  let start = new Date(s.start);
+  let end = new Date(s.end);
+  // For very short sessions, add 10 min so they're visible
+  if (end - start < 600000) end = new Date(start.getTime() + 600000);
+  return {
+    x: [start, end],
+    y: `#${s.id} ${s.project}`,
+    project: s.project,
+  };
+});
+
+new Chart(document.getElementById('timelineChart'), {
+  type: 'bar',
+  data: {
+    labels: timelineData.map(d => d.y),
+    datasets: [{
+      data: timelineData.map(d => d.x),
+      backgroundColor: timelineData.map(d => colorMap[d.project]),
+      borderRadius: 3,
+      barThickness: 14,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            const s = sessions[ctx.dataIndex];
+            const fmt = d => new Date(d).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', month: 'numeric', day: 'numeric' });
+            return `${fmt(s.start)} ~ ${fmt(s.end)}  (${s.tokens.toLocaleString()} tokens)`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: 'time',
+        time: { unit: 'hour', displayFormats: { hour: 'M/d HH:mm' } },
+        min: '2026-04-01T00:00',
+        max: '2026-04-04T02:00',
+        grid: { color: '#1e305440' },
+        ticks: { font: { size: 10 }, maxRotation: 45 }
+      },
+      y: {
+        grid: { display: false },
+        ticks: { font: { size: 10, family: "'SF Mono', 'Fira Code', monospace" } }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

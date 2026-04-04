@@ -286,6 +286,8 @@ _gwt_new() {
         _GWT_LAST_WORKTREE_PATH="$worktree_path"
 
         cd "$worktree_path"
+        # iTerm2のCWD追跡を即座に更新（precmd前にSmart Selectionが正しく動作するように）
+        _iterm2_send_current_dir 2>/dev/null
         echo -e "${BLUE}→ 移動しました: $(pwd)${RESET}"
 
         # Post-create hook を実行

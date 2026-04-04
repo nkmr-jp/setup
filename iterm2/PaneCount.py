@@ -9,8 +9,11 @@ async def update_pane_counts(connection):
     app = await iterm2.async_get_app(connection)
     for window in app.terminal_windows:
         for tab in window.tabs:
-            count = len(tab.sessions)
-            for session in tab.sessions:
+            # tab.sessionsは最大化時に表示中のセッションのみ返すため、
+            # tab.root.sessionsで非表示ペインも含めた全セッションを取得する
+            all_sessions = tab.root.sessions
+            count = len(all_sessions)
+            for session in all_sessions:
                 await session.async_set_variable("user.paneCount", count)
 
 

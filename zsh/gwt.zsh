@@ -738,8 +738,8 @@ _gwt_prune() {
             echo -e "${BLUE}メインリポジトリに移動: ${_main_repo_path}${RESET}"
         fi
 
-        # worktreeを削除（--forceなしで安全に削除）
-        if git worktree remove "$wt_path" 2>/dev/null; then
+        # worktreeを削除（マージ済みなので--forceで確実に削除）
+        if git worktree remove "$wt_path" --force 2>/dev/null; then
             echo -e "${GREEN}✓ Worktreeを削除: ${wt_path}${RESET}"
             ((deleted_count++))
             _gwt_remove_from_jetbrains_recent "$wt_path"

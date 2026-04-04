@@ -48,12 +48,23 @@ async def monitor_focus(connection):
 
 
 async def monitor_current_dir(connection):
-    """user.currentDirの変更を監視"""
+    """各セッションのuser.currentDir変更を監視"""
+    app = await iterm2.async_get_app(connection)
+    tasks = []
+    for window in app.terminal_windows:
+        for tab in window.tabs:
+            for session in tab.all_sessions:
+                tasks.append(_watch_session_dir(connection, session.session_id))
+    await asyncio.gather(*tasks)
+
+
+async def _watch_session_dir(connection, session_id):
+    """単一セッションのcurrentDir変更を監視"""
     async with iterm2.VariableMonitor(
         connection,
         iterm2.VariableScopes.SESSION,
         "user.currentDir",
-        None,
+        session_id,
     ) as monitor:
         while True:
             await monitor.async_get()

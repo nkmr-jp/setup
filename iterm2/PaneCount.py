@@ -21,9 +21,7 @@ async def update_tab_info(connection):
             for session in all_sessions:
                 name = await session.async_get_variable("user.currentDir") or ""
                 if session.session_id == active_id:
-                    name = f"[{name}]"
-                else:
-                    name = name[:1]
+                    name = f"*{name}"
                 dirs.append(name)
             tab_dirs = " ".join(dirs)
 

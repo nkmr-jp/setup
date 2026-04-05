@@ -44,3 +44,4 @@ settings.local.json
 CLAUDE.local.md
 .claude/tmp
 .agentsws
+.prompt-line

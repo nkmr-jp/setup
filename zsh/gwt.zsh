@@ -45,6 +45,7 @@ fi
 # → この時点でiTerm2のCWDが更新済み → コマンドを自動実行
 _GWT_DEFERRED_CMD=""
 _GWT_DEFERRED_RETURN=""
+_GWT_RETURN_AFTER=""
 
 _gwt_zle_auto_execute() {
     if [[ -n "$_GWT_DEFERRED_CMD" ]]; then
@@ -53,18 +54,30 @@ _gwt_zle_auto_execute() {
         _GWT_DEFERRED_CMD=""
         _GWT_DEFERRED_RETURN=""
 
-        # BUFFERにコマンドを設定してaccept-lineで自動実行
-        # プロンプト表示後なのでiTerm2のCWDは更新済み
+        # 復帰先をprecmdで処理するため変数に退避（BUFFERに旧パスを含めない）
         if [[ -n "$return_dir" ]]; then
-            BUFFER="${cmd} && cd '${return_dir}'"
-        else
-            BUFFER="$cmd"
+            _GWT_RETURN_AFTER="$return_dir"
         fi
+
+        # accept-line直前にOSC 1337を送出してiTerm2のCWDを確実に更新
+        _iterm2_send_current_dir 2>/dev/null
+
+        BUFFER="$cmd"
         zle accept-line
     fi
 }
 zle -N _gwt_zle_auto_execute
 zle -N zle-line-init _gwt_zle_auto_execute
+
+# コマンド完了後にprecmdで元ディレクトリに復帰
+_gwt_return_after_precmd() {
+    if [[ -n "$_GWT_RETURN_AFTER" ]]; then
+        local dir="$_GWT_RETURN_AFTER"
+        _GWT_RETURN_AFTER=""
+        cd "$dir"
+    fi
+}
+precmd_functions=($precmd_functions _gwt_return_after_precmd)
 
 # ========================================
 # Post-create hook 実行

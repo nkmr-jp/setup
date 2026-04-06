@@ -610,6 +610,30 @@ _gwt_prune() {
 
     echo -e "${CYAN}=== Pruning Worktrees ===${RESET}"
 
+    # ワークツリー内にいる場合はメインディレクトリに移動
+    local current_repo_name=$(basename $(git rev-parse --show-toplevel))
+    if [[ "$current_repo_name" == *"-wt-"* ]]; then
+        local -a _main_entries
+        while IFS= read -r _line; do
+            local _wt_dir=$(basename "$(echo "$_line" | awk '{print $1}')")
+            if [[ "$_wt_dir" != *"-wt-"* ]]; then
+                _main_entries+=("$_line")
+            fi
+        done < <(git worktree list)
+
+        if [[ ${#_main_entries[@]} -eq 1 ]]; then
+            local _main_path=$(echo "${_main_entries[1]}" | awk '{print $1}')
+            echo -e "${BLUE}→ メインディレクトリに移動: ${_main_path}${RESET}"
+            cd "$_main_path"
+        elif [[ ${#_main_entries[@]} -gt 1 ]]; then
+            echo -e "${RED}Error: wtなしのディレクトリが複数見つかりました${RESET}"
+            for _entry in "${_main_entries[@]}"; do
+                echo -e "  ${YELLOW}${_entry}${RESET}"
+            done
+            return 1
+        fi
+    fi
+
     _gwt_process_jetbrains_pending
 
     # リモートから最新の情報を取得（--pruneで削除済みリモートブランチも反映）

@@ -249,16 +249,90 @@ gwt() {
 }
 
 # ========================================
+# ベースブランチの自動解決
+# ========================================
+# ワークツリーにいる場合、wtなしのメインディレクトリのブランチを
+# 最新化してベースブランチとして返す
+_gwt_resolve_base_branch() {
+    local current_repo_name=$(basename $(git rev-parse --show-toplevel))
+
+    # 現在のディレクトリがワークツリー（-wt-を含む）でなければ現在のブランチを返す
+    if [[ "$current_repo_name" != *"-wt-"* ]]; then
+        git branch --show-current
+        return 0
+    fi
+
+    # ワークツリー一覧からwtなしのディレクトリを探す
+    local -a main_entries
+    while IFS= read -r line; do
+        local wt_path=$(echo "$line" | awk '{print $1}')
+        local wt_dir=$(basename "$wt_path")
+        if [[ "$wt_dir" != *"-wt-"* ]]; then
+            main_entries+=("$line")
+        fi
+    done < <(git worktree list)
+
+    # wtなしのディレクトリが複数ある場合は警告して終了
+    if [[ ${#main_entries[@]} -gt 1 ]]; then
+        echo -e "${RED}Error: wtなしのディレクトリが複数見つかりました:${RESET}" >&2
+        for entry in "${main_entries[@]}"; do
+            echo -e "  ${YELLOW}${entry}${RESET}" >&2
+        done
+        return 1
+    fi
+
+    if [[ ${#main_entries[@]} -eq 0 ]]; then
+        echo -e "${RED}Error: メインのワークツリーが見つかりません${RESET}" >&2
+        return 1
+    fi
+
+    # メインディレクトリのブランチを取得
+    local main_branch=$(echo "${main_entries[1]}" | grep -o '\[.*\]' | tr -d '[]')
+
+    if [[ -z "$main_branch" ]]; then
+        echo -e "${RED}Error: メインのワークツリーがdetached HEAD状態です${RESET}" >&2
+        return 1
+    fi
+
+    # ブランチを最新化
+    echo -e "${BLUE}ベースブランチ '${main_branch}' を最新化中...${RESET}" >&2
+    if git fetch origin "$main_branch:$main_branch" 2>/dev/null; then
+        echo -e "${GREEN}✓ ${main_branch} を最新化しました${RESET}" >&2
+    else
+        # チェックアウト中の場合はmerge --ff-onlyで試行
+        local main_path=$(echo "${main_entries[1]}" | awk '{print $1}')
+        if (cd "$main_path" && git merge --ff-only "origin/$main_branch" 2>/dev/null); then
+            echo -e "${GREEN}✓ ${main_branch} を最新化しました${RESET}" >&2
+        else
+            echo -e "${YELLOW}⚠ ${main_branch} の最新化をスキップしました（fast-forward不可）${RESET}" >&2
+        fi
+    fi
+
+    echo "$main_branch"
+    return 0
+}
+
+# ========================================
 # 1. 新しいworktreeを作成してそこに移動
 # ========================================
 _gwt_new() {
     local branch_name="$1"
-    local base_branch="${2:-$(git branch --show-current)}"
 
     if [[ -z "$branch_name" ]]; then
         echo -e "${RED}Error: ブランチ名を指定してください${RESET}"
         echo "Usage: gwt new <branch-name> [base-branch]"
         return 1
+    fi
+
+    # ベースブランチの決定: 明示指定 > 自動解決 > 現在のブランチ
+    local base_branch
+    if [[ -n "$2" ]]; then
+        base_branch="$2"
+    else
+        base_branch=$(_gwt_resolve_base_branch)
+        if [[ $? -ne 0 ]]; then
+            return 1
+        fi
     fi
 
     # Gitリポジトリかチェック
@@ -498,13 +572,23 @@ _gwt_info() {
 # ========================================
 _gwt_quick() {
     local prefix="$1"
-    local base_branch="${2:-$(git branch --show-current)}"
 
     if [[ -z "$prefix" ]]; then
         echo -e "${RED}Error: プレフィックスを指定してください${RESET}"
         echo "Usage: gwt quick <prefix> [base-branch]"
         echo "Example: gwt quick feature/login"
         return 1
+    fi
+
+    # ベースブランチの決定: 明示指定 > 自動解決 > 現在のブランチ
+    local base_branch
+    if [[ -n "$2" ]]; then
+        base_branch="$2"
+    else
+        base_branch=$(_gwt_resolve_base_branch)
+        if [[ $? -ne 0 ]]; then
+            return 1
+        fi
     fi
 
     # 日付時刻サフィックス (MMDDHHmm形式)

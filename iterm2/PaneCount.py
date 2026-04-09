@@ -16,7 +16,7 @@ async def update_tab_info(connection):
             count = len(all_sessions)
             active_id = tab.active_session_id
 
-            # 各セッションのcurrentDirを取得し、アクティブなペインは[]で囲む
+            # 各セッションのcurrentDirを取得し、アクティブなペインは*プレフィックス
             dirs = []
             for session in all_sessions:
                 name = await session.async_get_variable("user.currentDir") or ""
@@ -48,27 +48,61 @@ async def monitor_focus(connection):
 
 
 async def monitor_current_dir(connection):
-    """各セッションのuser.currentDir変更を監視"""
-    app = await iterm2.async_get_app(connection)
-    tasks = []
-    for window in app.terminal_windows:
-        for tab in window.tabs:
-            for session in tab.all_sessions:
-                tasks.append(_watch_session_dir(connection, session.session_id))
-    await asyncio.gather(*tasks)
+    """各セッションのuser.currentDir変更を監視
+
+    レイアウト変更のたびに監視対象を再構築し、
+    新しいペインの追加やペインの削除に対応する。
+    """
+    watched_ids = set()
+    tasks = {}
+
+    async def _refresh_watchers():
+        """現在のセッション一覧に合わせてwatcherを追加・削除"""
+        nonlocal watched_ids, tasks
+        app = await iterm2.async_get_app(connection)
+        current_ids = set()
+        for window in app.terminal_windows:
+            for tab in window.tabs:
+                for session in tab.all_sessions:
+                    current_ids.add(session.session_id)
+
+        # 新しいセッションのwatcherを追加
+        for sid in current_ids - watched_ids:
+            task = asyncio.ensure_future(_watch_session_dir(connection, sid))
+            tasks[sid] = task
+
+        # 閉じたセッションのwatcherをキャンセル
+        for sid in watched_ids - current_ids:
+            if sid in tasks:
+                tasks[sid].cancel()
+                del tasks[sid]
+
+        watched_ids = current_ids
+
+    await _refresh_watchers()
+
+    # レイアウト変更を監視してwatcherを再構築
+    async with iterm2.LayoutChangeMonitor(connection) as monitor:
+        while True:
+            await monitor.async_get()
+            await _refresh_watchers()
 
 
 async def _watch_session_dir(connection, session_id):
     """単一セッションのcurrentDir変更を監視"""
-    async with iterm2.VariableMonitor(
-        connection,
-        iterm2.VariableScopes.SESSION,
-        "user.currentDir",
-        session_id,
-    ) as monitor:
-        while True:
-            await monitor.async_get()
-            await update_tab_info(connection)
+    try:
+        async with iterm2.VariableMonitor(
+            connection,
+            iterm2.VariableScopes.SESSION,
+            "user.currentDir",
+            session_id,
+        ) as monitor:
+            while True:
+                await monitor.async_get()
+                await update_tab_info(connection)
+    except (iterm2.RPCException, asyncio.CancelledError):
+        # セッションが閉じられた場合やキャンセル時は静かに終了
+        pass
 
 
 async def main(connection):

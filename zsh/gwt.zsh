@@ -957,8 +957,8 @@ _gwt_claude() {
 
     # Claude Codeを遅延実行（関数リターン → precmd発火 → CWD更新 → claude起動）
     echo -e "${CYAN}→ Claude Code を起動します ($(pwd))...${RESET}"
-    _GWT_DEFERRED_CMD="claude"
-    _GWT_DEFERRED_RETURN="$original_dir"
+    claude
+    cd "$original_dir"
 }
 
 # ========================================
@@ -993,8 +993,8 @@ _gwt_yolo() {
 
     # Claude Code (yolo) を遅延実行
     echo -e "${CYAN}→ Claude Code (dangerously-skip-permissions) を起動します ($(pwd))...${RESET}"
-    _GWT_DEFERRED_CMD="claude --dangerously-skip-permissions"
-    _GWT_DEFERRED_RETURN="$original_dir"
+    claude --dangerously-skip-permissions
+    cd "$original_dir"
 }
 
 # ========================================

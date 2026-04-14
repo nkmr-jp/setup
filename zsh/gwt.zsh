@@ -83,37 +83,17 @@ precmd_functions=($precmd_functions _gwt_return_after_precmd)
 # Post-create hook 実行
 # ========================================
 _gwt_run_post_create_hook() {
-    local worktree_path="$1"
-    local branch_name="$2"
-    local base_branch="$3"
-    local base_path="$4"
-
-    # 環境変数を設定
-    export GWT_WORKTREE_PATH="$worktree_path"
-    export GWT_BRANCH_NAME="$branch_name"
-    export GWT_BASE_BRANCH="$base_branch"
-    export GWT_BASE_PATH="$base_path"
-
     local hook_executed=false
-
-    # 1. SETUP_DIR のスクリプトを実行（優先）
-    if [[ -n "$SETUP_DIR" ]]; then
-        local setup_hook="${SETUP_DIR}/zsh/gwt/post-create.sh"
-        if [[ -f "$setup_hook" && -x "$setup_hook" ]]; then
-            echo -e "${CYAN}→ SETUP_DIR post-create hook を実行中...${RESET}"
-            if "$setup_hook"; then
-                echo -e "${GREEN}✓ SETUP_DIR hook 完了${RESET}"
-            else
-                echo -e "${YELLOW}⚠ SETUP_DIR hook がエラーで終了しました (exit code: $?)${RESET}"
-            fi
-            hook_executed=true
-        fi
-    fi
 
     # 2. リポジトリルートのスクリプトを実行
     local repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
     local repo_hook="${repo_root}/.gwt-post-create.sh"
     if [[ -f "$repo_hook" && -x "$repo_hook" ]]; then
+        # 環境変数を設定
+        export GWT_WORKTREE_PATH="$1"
+        export GWT_BRANCH_NAME="$2"
+        export GWT_BASE_BRANCH="$3"
+        export GWT_BASE_PATH="$4"
         echo -e "${CYAN}→ リポジトリ post-create hook を実行中...${RESET}"
         if "$repo_hook"; then
             echo -e "${GREEN}✓ リポジトリ hook 完了${RESET}"
@@ -121,10 +101,10 @@ _gwt_run_post_create_hook() {
             echo -e "${YELLOW}⚠ リポジトリ hook がエラーで終了しました (exit code: $?)${RESET}"
         fi
         hook_executed=true
-    fi
 
-    # 環境変数をクリア
-    unset GWT_WORKTREE_PATH GWT_BRANCH_NAME GWT_BASE_BRANCH GWT_BASE_PATH
+        # 環境変数をクリア
+        unset GWT_WORKTREE_PATH GWT_BRANCH_NAME GWT_BASE_BRANCH GWT_BASE_PATH
+    fi
 
     if [[ "$hook_executed" == false ]]; then
         # hookが見つからなかった場合は何も表示しない（通常動作）
@@ -405,6 +385,7 @@ _gwt_switch() {
     if [[ -n "$worktree" ]]; then
         local wt_path=$(echo "$worktree" | awk '{print $1}')
         cd "$wt_path"
+#        _iterm2_precmd 2>/dev/null
         echo -e "${GREEN}→ 切り替えました: $(pwd)${RESET}"
     fi
 }
@@ -965,36 +946,8 @@ _gwt_claude() {
 # 11. worktreeを作成してClaude Code (dangerously-skip-permissions) を起動
 # ========================================
 _gwt_yolo() {
-    local prefix="$1"
-    shift
-
-    if [[ -z "$prefix" ]]; then
-        echo -e "${RED}Error: プレフィックスを指定してください${RESET}"
-        echo "Usage: gwt yolo <prefix> [base-branch]"
-        echo "Example: gwt yolo feature/login"
-        return 1
-    fi
-
-    local base_branch="$1"
     local original_dir="$(pwd)"
-
-    # quickでworktreeを作成
-    _GWT_LAST_WORKTREE_PATH=""
-    _gwt_quick "$prefix" ${base_branch:+"$base_branch"}
-    if [[ $? -ne 0 ]]; then
-        return 1
-    fi
-
-    # 作成されたworktreeのパスを保持
-    local worktree_dir="$_GWT_LAST_WORKTREE_PATH"
-    if [[ -n "$worktree_dir" && -d "$worktree_dir" ]]; then
-        cd "$worktree_dir"
-    fi
-
-    # Claude Code (yolo) を遅延実行
-    echo -e "${CYAN}→ Claude Code (dangerously-skip-permissions) を起動します ($(pwd))...${RESET}"
-    _GWT_DEFERRED_CMD="claude --dangerously-skip-permissions"
-    _GWT_DEFERRED_RETURN="$original_dir"
+    _gwt_quick $1 && claude --dangerously-skip-permissions && cd ${original_dir}
 }
 
 # ========================================

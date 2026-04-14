@@ -353,14 +353,17 @@ _gwt_new() {
         _GWT_LAST_WORKTREE_PATH="$worktree_path"
 
         cd "$worktree_path"
-        # iTerm2のCWD追跡を即座に更新（precmd前にSmart Selectionが正しく動作するように）
+        # iTerm2のCWD追跡を即座に更新
         _iterm2_send_current_dir 2>/dev/null
+        # iTerm2ユーザー変数にworktreeパスを設定（path変数はCWDポーリングで汚染されるため）
+        _iterm2_set_user_var gwtCwd "$worktree_path" 2>/dev/null
         echo -e "${BLUE}→ 移動しました: $(pwd)${RESET}"
 
         # Post-create hook を実行
         _gwt_run_post_create_hook "$worktree_path" "$branch_name" "$base_branch" "$base_path"
-        # hook実行後に再度CWDを通知（hookの出力行にも正しいCWDが紐づくように）
+        # hook実行後に再度CWDを通知
         _iterm2_send_current_dir 2>/dev/null
+        _iterm2_set_user_var gwtCwd "$worktree_path" 2>/dev/null
     else
         echo -e "${RED}Error: Worktreeの作成に失敗しました${RESET}"
         return 1

@@ -219,6 +219,8 @@ _iterm2_precmd() {
   _iterm2_set_user_branch
   _iterm2_set_user_dir_icon
   _iterm2_set_user_last_prompt
+  # Smart Selection用のCWD（path変数はCWDポーリングで汚染されるためユーザー変数で管理）
+  _iterm2_set_user_var gwtCwd "$PWD"
 }
 
 # precmd_functions 配列にフックを登録

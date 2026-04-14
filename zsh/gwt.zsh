@@ -1016,6 +1016,27 @@ ${YELLOW}Post-create Hook:${RESET}
   ${CYAN}例 (.gwt-post-create.sh):${RESET}
     #!/bin/bash
     npm install  # 依存関係をインストール
+
+${YELLOW}iTerm2 Smart Selection (IDE起動連携):${RESET}
+  Claude Codeのstatusline等の "Edit" テキストをクリックしてIDEを起動できます。
+  iTerm2のpath変数はCWDポーリングで汚染されるため、ユーザー変数 gwtCwd を使用します。
+
+  ${CYAN}設定手順:${RESET}
+    1. iTerm2 > Settings > Profiles > Advanced > Smart Selection Actions
+       "Use interpolated strings for parameters" を有効にする
+
+    2. Smart Selection Rules に以下を追加:
+       - Notes: Edit
+       - Regex: Edit
+       - Precision: Normal
+       - Actions:
+         Title: Edit
+         Action: Run Command...
+         Parameter: "/path/to/land" \\(user.gwtCwd)
+
+  ${CYAN}例 (GoLand + VSCode):${RESET}
+    Edit:       "path/to/land" \\(user.gwtCwd)
+    Edit VSCode: /usr/local/bin/code \\(user.gwtCwd)
 EOF
 }
 

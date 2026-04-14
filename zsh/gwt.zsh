@@ -1000,8 +1000,7 @@ ${YELLOW}Post-create Hook:${RESET}
   worktree作成後に自動的にスクリプトを実行できます。
 
   ${CYAN}スクリプトの配置場所 (実行順序):${RESET}
-    1. \$SETUP_DIR/zsh/gwt/post-create.sh  (setup リポジトリで管理)
-    2. <repo-root>/.gwt-post-create.sh     (リポジトリ固有)
+    1. <repo-root>/.gwt-post-create.sh     (リポジトリ固有)
 
   ${CYAN}利用可能な環境変数:${RESET}
     GWT_WORKTREE_PATH   作成されたworktreeのパス

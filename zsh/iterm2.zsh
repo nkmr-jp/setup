@@ -213,7 +213,7 @@ trap '_iterm2_stop_prompt_watcher' EXIT
 # ============================================================
 
 _iterm2_precmd() {
-  echo "_iterm2_precmd"
+#  echo "_iterm2_precmd"
   _iterm2_send_current_dir
   _iterm2_set_user_current_dir
   _iterm2_set_user_branch

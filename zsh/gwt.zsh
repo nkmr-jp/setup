@@ -359,6 +359,8 @@ _gwt_new() {
 
         # Post-create hook を実行
         _gwt_run_post_create_hook "$worktree_path" "$branch_name" "$base_branch" "$base_path"
+        # hook実行後に再度CWDを通知（hookの出力行にも正しいCWDが紐づくように）
+        _iterm2_send_current_dir 2>/dev/null
     else
         echo -e "${RED}Error: Worktreeの作成に失敗しました${RESET}"
         return 1
@@ -947,7 +949,7 @@ _gwt_claude() {
 # ========================================
 _gwt_yolo() {
     local original_dir="$(pwd)"
-    _gwt_quick $1 && claude --dangerously-skip-permissions && cd ${original_dir}
+    _gwt_quick $1 && claude --dangerously-skip-permissions && cd ${original_dir} && _iterm2_send_current_dir 2>/dev/null
 }
 
 # ========================================

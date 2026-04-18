@@ -217,8 +217,8 @@ gwt() {
         claude|cc)
             _gwt_claude "$@"
             ;;
-        auto|a)
-            _gwt_auto "$@"
+        yolo|y)
+            _gwt_yolo "$@"
             ;;
         help|h|"")
             _gwt_help
@@ -948,9 +948,9 @@ _gwt_claude() {
 }
 
 # ========================================
-# 11. worktreeを作成してClaude Code (auto mode) を起動
+# 11. worktreeを作成してClaude Code (dangerously-skip-permissions) を起動
 # ========================================
-_gwt_auto() {
+_gwt_yolo() {
     local original_dir="$(pwd)"
     _gwt_quick $1 && claude --dangerously-skip-permissions && cd ${original_dir} && _iterm2_send_current_dir 2>/dev/null
 }
@@ -976,7 +976,7 @@ ${YELLOW}コマンド:${RESET}
   quick, q <prefix> [base]   日付付きでworktreeを素早く作成
   prune, p [-f|--force]      worktreeのクリーンアップ（-f: 確認スキップ）
   claude, cc <prefix> [base] 日付付きworktreeを作成してClaude Codeを起動
-  auto, a <prefix> [base]    日付付きworktreeを作成してClaude Code (auto mode) を起動
+  yolo, y <prefix> [base]    日付付きworktreeを作成してClaude Code (yolo) を起動
   help, h                    このヘルプを表示
 
 ${YELLOW}使用例:${RESET}
@@ -986,7 +986,7 @@ ${YELLOW}使用例:${RESET}
   gwt status                        # 全worktreeの状態を確認
   gwt remove                        # 不要なworktreeを削除
   gwt claude feature/login develop  # 日付付きworktreeを作成してClaude Codeを起動
-  gwt auto feature/login develop    # 日付付きworktreeを作成してClaude Code (auto mode) を起動
+  gwt yolo feature/login develop    # 日付付きworktreeを作成してClaude Code (yolo) を起動
 
 ${YELLOW}短縮形:${RESET}
   gwt n    = gwt new
@@ -999,7 +999,7 @@ ${YELLOW}短縮形:${RESET}
   gwt q    = gwt quick
   gwt p    = gwt prune
   gwt cc   = gwt claude
-  gwt a    = gwt auto
+  gwt y    = gwt yolo
 
 ${YELLOW}Post-create Hook:${RESET}
   worktree作成後に自動的にスクリプトを実行できます。
@@ -1056,7 +1056,7 @@ _gwt_completion() {
         'quick:日付付きでworktreeを素早く作成'
         'prune:worktreeのクリーンアップ'
         'claude:worktreeを作成してClaude Codeを起動'
-        'auto:worktreeを作成してClaude Code (auto mode) を起動'
+        'yolo:worktreeを作成してClaude Code (yolo) を起動'
         'help:ヘルプを表示'
     )
 
@@ -1072,7 +1072,7 @@ _gwt_completion() {
         'q:quick'
         'p:prune'
         'cc:claude'
-        'a:auto'
+        'y:yolo'
         'h:help'
     )
 
@@ -1097,4 +1097,4 @@ alias gs='gwt s'
 alias gn='gwt n'
 alias gcc='gwt cc'
 alias claudew='gwt cc'
-alias ga='gwt a'
+alias gy='gwt y'

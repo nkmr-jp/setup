@@ -65,7 +65,11 @@ brew install redis-stack
 brew install --cask iterm2
 brew install --cask github
 brew install --cask licecap
-brew install orbstack amazon-q miniserve 
+brew install orbstack amazon-q miniserve
+brew install --cask ghostty
+brew tap manaflow-ai/cmux
+brew install --cask cmux
+sudo ln -sf "/Applications/cmux.app/Contents/Resources/bin/cmux" /usr/local/bin/cmux
 
 # Install fzf widget
 # See: https://junegunn.github.io/fzf/

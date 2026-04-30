@@ -367,6 +367,8 @@ ln -s ~/ghq/github.com/nkmr-jp/setup/yazi/yazi.toml ~/.config/yazi/yazi.toml
 
 ### ghostty
 
+See: [ghostty/README.md](ghostty/README.md)
+
 ```sh
 mkdir -p ~/.config/ghostty
 ln -sf ~/ghq/github.com/nkmr-jp/setup/ghostty/config ~/.config/ghostty/config

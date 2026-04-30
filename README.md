@@ -365,6 +365,20 @@ mkdir -p ~/.config/yazi
 ln -s ~/ghq/github.com/nkmr-jp/setup/yazi/yazi.toml ~/.config/yazi/yazi.toml
 ```
 
+### ghostty
+
+```sh
+mkdir -p ~/Library/Application\ Support/com.mitchellh.ghostty
+ln -sf ~/ghq/github.com/nkmr-jp/setup/ghostty/config ~/Library/Application\ Support/com.mitchellh.ghostty/config
+```
+
+### cmux
+
+```sh
+mkdir -p ~/.config/cmux
+ln -sf ~/ghq/github.com/nkmr-jp/setup/cmux/settings.json ~/.config/cmux/settings.json
+```
+
 ### pack
 
 See: https://buildpacks.io/docs/tools/pack/

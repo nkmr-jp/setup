@@ -106,3 +106,9 @@ keybind = cmd+enter=toggle_split_zoom
 keybind = cmd+comma=open_config
 # cmux: reloadConfiguration (cmd+shift+,)
 keybind = cmd+shift+comma=reload_config
+
+# ============================================================
+# Behavior
+# ============================================================
+# タブ/ペインを閉じる際の確認ポップアップを無効化
+confirm-close-surface = false

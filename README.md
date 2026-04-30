@@ -368,8 +368,8 @@ ln -s ~/ghq/github.com/nkmr-jp/setup/yazi/yazi.toml ~/.config/yazi/yazi.toml
 ### ghostty
 
 ```sh
-mkdir -p ~/Library/Application\ Support/com.mitchellh.ghostty
-ln -sf ~/ghq/github.com/nkmr-jp/setup/ghostty/config ~/Library/Application\ Support/com.mitchellh.ghostty/config
+mkdir -p ~/.config/ghostty
+ln -sf ~/ghq/github.com/nkmr-jp/setup/ghostty/config ~/.config/ghostty/config
 ```
 
 ### cmux

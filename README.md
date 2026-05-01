@@ -85,14 +85,10 @@ starship preset pure-preset -o ~/.config/starship.toml
 
 menu -> Install Shell Integration 
 
-#### iTerm2 Scripts
+### Terminal app configs
 
-See: [iterm2/README.md](iterm2/README.md)
-
-```sh
-mkdir -p ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch
-ln -s ~/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount.py ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount.py
-```
+ghostty / iTerm2 Scripts / cmux の設定は別リポジトリで管理している。
+See: [nkmr-jp/claude](https://github.com/nkmr-jp/claude)
 
 ### Install QucickLook Plugins
 
@@ -363,22 +359,6 @@ curl -sS https://starship.rs/install.sh | sh
 ```sh
 mkdir -p ~/.config/yazi
 ln -s ~/ghq/github.com/nkmr-jp/setup/yazi/yazi.toml ~/.config/yazi/yazi.toml
-```
-
-### ghostty
-
-See: [ghostty/README.md](ghostty/README.md)
-
-```sh
-mkdir -p ~/.config/ghostty
-ln -sf ~/ghq/github.com/nkmr-jp/setup/ghostty/config ~/.config/ghostty/config
-```
-
-### cmux
-
-```sh
-mkdir -p ~/.config/cmux
-ln -sf ~/ghq/github.com/nkmr-jp/setup/cmux/settings.json ~/.config/cmux/settings.json
 ```
 
 ### pack

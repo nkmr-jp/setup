@@ -32,6 +32,11 @@ source "$SETUP_DIR/zsh/keybindings.zsh"
 source "$SETUP_DIR/zsh/iterm2.zsh"
 #test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh" # iTerm公式
 
+# cmux サイドバーへの cwd 表示 (cmux 内でのみ)
+if [[ -n "$CMUX_SHELL_INTEGRATION" ]]; then
+    source "$SETUP_DIR/cmux/sidebar-cwd.zsh"
+fi
+
 # Initialize tools
 eval "$(anyenv init -)"
 eval "$(uv generate-shell-completion zsh)"

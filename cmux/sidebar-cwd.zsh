@@ -21,5 +21,9 @@ if [[ -n "${ZSH_VERSION:-}" ]]; then
   autoload -Uz add-zsh-hook
   add-zsh-hook chpwd _cmux_update_cwd_status
   add-zsh-hook zshexit _cmux_clear_cwd_status
+  # pane が閉じられた際の SIGHUP/SIGTERM では zshexit が走らないので
+  # シグナルトラップでも pill を消す。
+  TRAPHUP()  { _cmux_clear_cwd_status; return $((128 + 1)) }
+  TRAPTERM() { _cmux_clear_cwd_status; return $((128 + 15)) }
   _cmux_update_cwd_status
 fi

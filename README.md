@@ -87,8 +87,18 @@ menu -> Install Shell Integration
 
 ### Terminal app configs
 
-ghostty / iTerm2 Scripts / cmux の設定は別リポジトリで管理している。
-See: [nkmr-jp/claude](https://github.com/nkmr-jp/claude)
+ghostty / iTerm2 Scripts / cmux の設定は本リポジトリ配下で管理している。詳細とインストール手順は各 README を参照:
+
+- [ghostty/README.md](ghostty/README.md)
+- [cmux/README.md](cmux/README.md)
+- [iterm2/README.md](iterm2/README.md)
+
+```sh
+mkdir -p ~/.config/ghostty ~/.config/cmux ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch
+ln -sf ~/ghq/github.com/nkmr-jp/setup/ghostty/config ~/.config/ghostty/config
+ln -sf ~/ghq/github.com/nkmr-jp/setup/cmux/settings.json ~/.config/cmux/settings.json
+ln -sf ~/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount.py ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount.py
+```
 
 ### Install QucickLook Plugins
 

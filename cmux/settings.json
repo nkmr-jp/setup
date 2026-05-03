@@ -81,14 +81,14 @@
   //     "tintOpacity" : 0.17999999999999999
   //   },
 
-  //   "automation" : {
-  //     "claudeBinaryPath" : "",
-  //     "claudeCodeIntegration" : true,
-  //     "portBase" : 9100,
-  //     "portRange" : 10,
-  //     "socketControlMode" : "cmuxOnly",
-  //     "socketPassword" : ""
-  //   },
+    "automation" : {
+      // "claudeBinaryPath" : "",
+      // "claudeCodeIntegration" : true,
+      // "portBase" : 9100,
+      // "portRange" : 10,
+      "socketControlMode" : "automation",
+      // "socketPassword" : ""
+    },
 
   //   "customCommands" : {
   //     "trustedDirectories" : [

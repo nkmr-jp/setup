@@ -21,7 +21,7 @@ key="cwd_${CMUX_PANEL_ID}"
 case "$state" in
   running)    icon=bolt.fill; color='#4C8DFF' ;;
   awaiting)   icon=bell.fill; color='#FF9500' ;;
-  idle|clear) icon=folder;    color=''        ;;
+  idle|clear) icon=pause.circle; color=''     ;;
   *) exit 0 ;;
 esac
 

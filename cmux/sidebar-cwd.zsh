@@ -5,20 +5,20 @@
 #
 #   running  -> bolt.fill (#4C8DFF)
 #   awaiting -> bell.fill (#FF9500)
-#   idle/none -> folder
+#   idle/none -> pause.circle
 #
 # precmd は &! で background 化して prompt 遅延を排除する。
 # 強制クローズで残った pill は、各 shell が spawn する独立な sweeper が
 # 数秒おきに workspace を sweep して回収する。
 
 typeset -g _CMUX_LAST_SIG=""
-typeset -gra _CMUX_PILL_PREFIXES=(cwd_ claude_)  # claude_: 旧版 pill の sweep 用
+typeset -gra _CMUX_PILL_PREFIXES=(cwd_ claude_ run_)  # claude_/run_: 旧版 pill の sweep 用
 
 _cmux_update_cwd_status() {
   (( ${+commands[cmux]} )) || return 0
   local panel="${CMUX_PANEL_ID:-default}"
   local sf="${TMPDIR:-/tmp}/cmux-pane-state/${panel}"
-  local state="" icon=folder color=""
+  local state="" icon=pause.circle color=""
   [[ -r "$sf" ]] && read -r state < "$sf"
   case "$state" in
     running)  icon=bolt.fill; color='#4C8DFF' ;;
@@ -102,6 +102,9 @@ if [[ -n "${ZSH_VERSION:-}" ]]; then
   add-zsh-hook chpwd _cmux_update_cwd_status
   add-zsh-hook precmd _cmux_update_cwd_status
   add-zsh-hook zshexit _cmux_clear_pane_status
+  # 旧 run_<panel> pill が残っていたら回収する (one-time migration)。
+  (( ${+commands[cmux]} )) \
+    && cmux clear-status "run_${CMUX_PANEL_ID:-default}" >/dev/null 2>&1 &!
   _cmux_update_cwd_status
   _cmux_spawn_gc_sweeper
 fi

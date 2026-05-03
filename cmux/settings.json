@@ -24,15 +24,15 @@
   //     "warnBeforeQuit" : true
   //   },
 
-    "notifications" : {
-      "dockBadge" : false,
-      "paneFlash" : false,
-      "sound" : "none",
-      "unreadPaneRing" : false
-      // "command" : "",
-      // "customSoundFilePath" : "",
-      // "showInMenuBar" : true
-    },
+  //   "notifications" : {
+  //     "command" : "",
+  //     "customSoundFilePath" : "",
+  //     "dockBadge" : true,
+  //     "paneFlash" : true,
+  //     "showInMenuBar" : true,
+  //     "sound" : "default",
+  //     "unreadPaneRing" : true
+  //   },
 
     "sidebar" : {
       // "branchLayout" : "vertical",

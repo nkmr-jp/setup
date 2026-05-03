@@ -4,20 +4,20 @@
 #
 # 強制クローズで残った pill は、各 shell が spawn する独立な sweeper が
 # 数秒おきに workspace を sweep して回収する。precmd には何も置かないので
-# プロンプト遅延もなく、ユーザー入力を待たずに自動的に追従する。
+# プロンプト遅延ゼロ、入力不要で追従する。
 
-_cmux_status_key() {
-  print -r -- "cwd_${CMUX_PANEL_ID:-default}"
-}
+typeset -gr _CMUX_PILL_PREFIX=cwd_
 
 _cmux_update_cwd_status() {
   (( ${+commands[cmux]} )) || return 0
-  cmux set-status "$(_cmux_status_key)" "${PWD:t}" --icon folder >/dev/null 2>&1
+  cmux set-status "${_CMUX_PILL_PREFIX}${CMUX_PANEL_ID:-default}" \
+    "${PWD:t}" --icon folder >/dev/null 2>&1
 }
 
 _cmux_clear_cwd_status() {
   (( ${+commands[cmux]} )) || return 0
-  cmux clear-status "$(_cmux_status_key)" >/dev/null 2>&1
+  cmux clear-status "${_CMUX_PILL_PREFIX}${CMUX_PANEL_ID:-default}" \
+    >/dev/null 2>&1
 }
 
 _cmux_spawn_gc_sweeper() {
@@ -33,10 +33,9 @@ _cmux_spawn_gc_sweeper() {
   local socket_path="${CMUX_SOCKET_PATH:-}"
   local cmux_bin="${commands[cmux]}"
   local interval="${CMUX_CWD_SWEEP_INTERVAL:-3}"
+  local prefix="$_CMUX_PILL_PREFIX"
 
-  # 親 shell が生きている間、interval 秒おきに workspace 内の cwd_* pill を
-  # sweep する。既存 surface に紐付かない key を clear-status で消す。
-  # HUP/INT/TERM を ignore して pane close を生き延びる。
+  # HUP/INT/TERM を ignore して pane close を生き延びるための独立 process。
   {
     trap '' HUP INT TERM PIPE QUIT
     exec </dev/null >/dev/null 2>&1
@@ -46,27 +45,25 @@ _cmux_spawn_gc_sweeper() {
       local -a cwd_keys=()
       local line
       while IFS= read -r line; do
-        [[ "$line" == cwd_* ]] || continue
-        cwd_keys+=("${line%%=*}")
+        [[ "$line" == ${prefix}* ]] && cwd_keys+=("${line%%=*}")
       done < <("$cmux_bin" list-status 2>/dev/null)
+      (( ${#cwd_keys} == 0 )) && { sleep "$interval"; continue }
 
-      if (( ${#cwd_keys} > 0 )); then
-        local json
-        json="$("$cmux_bin" rpc surface.list "{\"workspace_id\":\"$workspace_id\"}" 2>/dev/null)"
-        if [[ -n "$json" ]]; then
-          local active_ids=$'\n'
-          active_ids+="$(print -r -- "$json" \
-            | /usr/bin/grep -oE '"id"[[:space:]]*:[[:space:]]*"[^"]+"' \
-            | /usr/bin/awk -F'"' '{print $4}')"$'\n'
+      local json
+      json="$("$cmux_bin" rpc surface.list \
+        "{\"workspace_id\":\"$workspace_id\"}" 2>/dev/null)"
+      [[ -z "$json" ]] && { sleep "$interval"; continue }
 
-          local key uuid
-          for key in "${cwd_keys[@]}"; do
-            uuid="${key#cwd_}"
-            [[ "$active_ids" == *$'\n'"$uuid"$'\n'* ]] && continue
-            "$cmux_bin" clear-status "$key" >/dev/null 2>&1
-          done
-        fi
-      fi
+      local active_ids=$'\n'
+      active_ids+="$(print -r -- "$json" \
+        | /usr/bin/awk -F'"' '/"id"[[:space:]]*:/{print $4}')"$'\n'
+
+      local key uuid
+      for key in "${cwd_keys[@]}"; do
+        uuid="${key#$prefix}"
+        [[ "$active_ids" == *$'\n'"$uuid"$'\n'* ]] && continue
+        "$cmux_bin" clear-status "$key" >/dev/null 2>&1
+      done
 
       sleep "$interval"
     done
@@ -77,7 +74,6 @@ _cmux_spawn_gc_sweeper() {
 if [[ -n "${ZSH_VERSION:-}" ]]; then
   autoload -Uz add-zsh-hook
   add-zsh-hook chpwd _cmux_update_cwd_status
-  # 通常終了 (`exit` / EOF) は即座にクリア。強制クローズは sweeper が拾う。
   add-zsh-hook zshexit _cmux_clear_cwd_status
   _cmux_update_cwd_status
   _cmux_spawn_gc_sweeper

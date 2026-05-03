@@ -28,7 +28,7 @@ source ~/ghq/github.com/nkmr-jp/setup/cmux/sidebar-cwd.zsh
 | --- | --- | --- | --- |
 | Running | `bolt.fill` | `#4C8DFF` | `UserPromptSubmit` |
 | Awaiting | `bell.fill` | `#FF9500` | `Notification` |
-| Idle / なし | `pause.circle` | — | `SessionStart` / `Stop` / `SessionEnd` / shell 起動時 / `chpwd` / `precmd` |
+| デフォルト | `folder` | — | state file 不在時 (shell 起動直後など) |
 
 状態は `${TMPDIR}/cmux-pane-state/<panel-id>` に永続化され、Claude hook と zsh 側の precmd/chpwd の両方が読み取ってアイコンを揃える。cmux 標準の workspace 単位の `claude_code` pill は複数 pane で 1 つにまとまるため、こちらの pane 別 pill で代替する。
 

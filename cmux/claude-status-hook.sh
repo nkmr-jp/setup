@@ -1,9 +1,9 @@
 #!/usr/bin/env sh
 # cmux サイドバーの cwd pill のアイコンを Claude Code の状態に合わせて切り替える。
-# Claude Code の hooks (SessionStart / UserPromptSubmit / Stop / Notification / SessionEnd)
-# から呼ばれる薄いラッパー。
+# UserPromptSubmit -> running, Notification -> awaiting の 2 つだけを扱い、
+# state file が無い (= 初期状態) のときは zsh 側で folder アイコンに戻る。
 #
-# Usage: claude-status-hook.sh <running|idle|awaiting|clear>
+# Usage: claude-status-hook.sh <running|awaiting>
 #
 # 状態は ${TMPDIR}/cmux-pane-state/<panel-id> に保存し、zsh 側の precmd/chpwd でも
 # 同じアイコンを再描画できるようにする（state→icon の写像は両側で同期）。
@@ -20,7 +20,8 @@ state="$1"
 command -v cmux >/dev/null 2>&1 || exit 0
 
 case "$state" in
-  running|awaiting|idle|clear) ;;
+  running)  icon=bolt.fill;  color='#4C8DFF' ;;
+  awaiting) icon=bell.fill;  color='#FF9500' ;;
   *) exit 0 ;;
 esac
 
@@ -55,25 +56,9 @@ is_newer=$(awk -v a="$my_time" -v b="$existing_time" 'BEGIN{print (a+0 > b+0) ? 
 [ "$is_newer" = 1 ] || exit 0
 
 printf '%s\n' "$my_time" > "$time_file"
-
-if [ "$state" = clear ]; then
-  rm -f "$state_file" "$time_file"
-  cmux clear-status "claude_${CMUX_PANEL_ID}" 2>/dev/null
-  cmux clear-status "$key" 2>/dev/null
-  exit 0
-fi
-
 printf '%s\n' "$state" > "$state_file"
-
-case "$state" in
-  running)  icon=bolt.fill;     color='#4C8DFF' ;;
-  awaiting) icon=bell.fill;     color='#FF9500' ;;
-  idle)     icon=pause.circle;  color=''        ;;
-esac
 
 # 旧バージョンの per-pane Claude pill が残っていたら回収しておく。
 cmux clear-status "claude_${CMUX_PANEL_ID}" 2>/dev/null
 
-set -- --icon "$icon"
-[ -n "$color" ] && set -- "$@" --color "$color"
-cmux set-status "$key" "$(basename "$PWD")" "$@"
+cmux set-status "$key" "$(basename "$PWD")" --icon "$icon" --color "$color"

@@ -83,7 +83,9 @@
 
     "automation" : {
       // "claudeBinaryPath" : "",
-      // "claudeCodeIntegration" : true,
+      // 標準の workspace 単位 `claude_code` pill (Running/Awaiting) を抑止する。
+      // pane 別の `cwd_<panel-id>` pill (sidebar-cwd.zsh + agent-plugins/cmux) で代替。
+      "claudeCodeIntegration" : false,
       // "portBase" : 9100,
       // "portRange" : 10,
       "socketControlMode" : "automation",

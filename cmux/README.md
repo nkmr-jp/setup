@@ -30,7 +30,7 @@ Claude Code 側のフック (`UserPromptSubmit` / `Notification`) は [`agent-pl
 | Awaiting | `bell.fill` | `#FF9500` | `Notification` |
 | デフォルト | `folder` | — | state file 不在時 (shell 起動直後など) |
 
-状態は `${TMPDIR}/cmux-pane-state/<panel-id>` に永続化され、Claude hook と zsh 側の precmd/chpwd の両方が読み取ってアイコンを揃える。cmux 標準の workspace 単位の `claude_code` pill は複数 pane で 1 つにまとまるため、こちらの pane 別 pill で代替する。
+状態は `${TMPDIR}/cmux-pane-state/<panel-id>` に永続化され、Claude hook と zsh 側の precmd/chpwd の両方が読み取ってアイコンを揃える。cmux 標準の workspace 単位の `claude_code` pill は複数 pane で 1 つにまとまるため、こちらの pane 別 pill で代替する。標準 pill は `automation.claudeCodeIntegration: false` で抑止する。
 
 workspace 名は手動設定（`cmd+shift+r` でリネーム）。強制クローズで残った pill は独立 sweeper が数秒おきに回収する。
 

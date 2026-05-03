@@ -1,31 +1,45 @@
 #!/usr/bin/env zsh
-# cmux サイドバーに pane 別の状態 pill を表示する。
-#   cwd_<panel-id>    : 現在ディレクトリの basename（chpwd / precmd で更新）
-#   claude_<panel-id> : Claude Code セッションの状態
-#                       （Claude Code hooks → claude-status-hook.sh で更新）
+# cmux サイドバーに pane 別の cwd pill を表示する。値はカレントディレクトリの
+# basename。アイコンは Claude Code の状態（claude-status-hook.sh が
+# ${TMPDIR}/cmux-pane-state/<panel-id> に書き込む）に応じて切り替わる。
+#
+#   running  -> bolt.fill (#4C8DFF)
+#   awaiting -> bell.fill (#FF9500)
+#   idle/none -> folder
 #
 # precmd は &! で background 化して prompt 遅延を排除する。
-# 強制クローズや Claude crash で残った pill は、各 shell が spawn する独立な
-# sweeper が数秒おきに workspace を sweep して回収する。
+# 強制クローズで残った pill は、各 shell が spawn する独立な sweeper が
+# 数秒おきに workspace を sweep して回収する。
 
-typeset -gra _CMUX_PILL_PREFIXES=(cwd_ claude_)
-
-_cmux_set_async() {  # $1=key $2=value $3=icon
-  (( ${+commands[cmux]} )) || return 0
-  cmux set-status "$1" "$2" --icon "$3" >/dev/null 2>&1 &!
-}
+typeset -g _CMUX_LAST_SIG=""
+typeset -gra _CMUX_PILL_PREFIXES=(cwd_ claude_)  # claude_: 旧版 pill の sweep 用
 
 _cmux_update_cwd_status() {
-  _cmux_set_async "cwd_${CMUX_PANEL_ID:-default}" "${PWD:t}" folder
+  (( ${+commands[cmux]} )) || return 0
+  local panel="${CMUX_PANEL_ID:-default}"
+  local sf="${TMPDIR:-/tmp}/cmux-pane-state/${panel}"
+  local state="" icon=folder color=""
+  [[ -r "$sf" ]] && read -r state < "$sf"
+  case "$state" in
+    running)  icon=bolt.fill; color='#4C8DFF' ;;
+    awaiting) icon=bell.fill; color='#FF9500' ;;
+  esac
+  local sig="${PWD}|${state}"
+  [[ "$sig" == "$_CMUX_LAST_SIG" ]] && return
+  _CMUX_LAST_SIG="$sig"
+  local -a args=("cwd_${panel}" "${PWD:t}" --icon "$icon")
+  [[ -n "$color" ]] && args+=(--color "$color")
+  cmux set-status "${args[@]}" >/dev/null 2>&1 &!
 }
 
 _cmux_clear_pane_status() {
   # zshexit から呼ばれるので同期実行。&! だと shell 終了時に reap されない。
   (( ${+commands[cmux]} )) || return 0
-  local p
+  local panel="${CMUX_PANEL_ID:-default}" p
   for p in "${_CMUX_PILL_PREFIXES[@]}"; do
-    cmux clear-status "${p}${CMUX_PANEL_ID:-default}" >/dev/null 2>&1
+    cmux clear-status "${p}${panel}" >/dev/null 2>&1
   done
+  rm -f "${TMPDIR:-/tmp}/cmux-pane-state/${panel}" 2>/dev/null
 }
 
 _cmux_spawn_gc_sweeper() {

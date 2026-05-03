@@ -88,6 +88,11 @@ mdfind -onlyin ~ 'kMDItemLastUsedDate >= $time.today(-7)' | head -100 > ~/.promp
 ghq list > ~/.prompt-line/ghq.txt
 
 
+# zshexit の挙動確認
+zshexit() {
+    echo "[zshexit] shell PID=$$ exiting at $(date '+%H:%M:%S')"
+}
+
 iterm-run() {
   osascript -e "
   tell application \"iTerm2\"

@@ -98,7 +98,10 @@ _cmux_spawn_gc_sweeper() {
   _CMUX_GC_SWEEPER_PID=$!
 }
 
-if [[ -n "${ZSH_VERSION:-}" ]]; then
+# 非対話 zsh (Bash ツールから起動された zsh -c, スクリプト実行など) では何も登録しない。
+# 特に zshexit でサブシェル終了の度に pane の pill / state file を消してしまうのを防ぐ。
+# 強制クローズで残った pill は sweeper が数秒おきに回収するので副作用はない。
+if [[ -n "${ZSH_VERSION:-}" ]] && [[ -o interactive ]]; then
   autoload -Uz add-zsh-hook
   add-zsh-hook chpwd _cmux_update_cwd_status
   add-zsh-hook precmd _cmux_update_cwd_status

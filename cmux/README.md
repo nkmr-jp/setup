@@ -22,16 +22,17 @@ source ~/ghq/github.com/nkmr-jp/setup/cmux/sidebar-cwd.zsh
 
 加えて `~/.claude/settings.json` の `hooks` に `claude-status-hook.sh` を登録（本リポジトリの `claude/settings.json` に同梱済み）。
 
-表示される pill:
+単一 pill `cwd_<panel-id>`（値=ディレクトリ basename）のアイコンを Claude Code 状態で切り替える設計:
 
-| key | 表示内容 | 更新タイミング |
-| --- | --- | --- |
-| `cwd_<panel-id>` | カレントディレクトリの basename | shell 起動時 / `chpwd` / `precmd` |
-| `claude_<panel-id>` | Claude Code セッションの状態（`Running` / `Idle` / `Awaiting`） | Claude Code hooks（`SessionStart` / `UserPromptSubmit` / `Stop` / `Notification` / `SessionEnd`） |
+| Claude 状態 | アイコン | 色 | トリガ |
+| --- | --- | --- | --- |
+| Running | `bolt.fill` | `#4C8DFF` | `UserPromptSubmit` |
+| Awaiting | `bell.fill` | `#FF9500` | `Notification` |
+| Idle / なし | `folder` | — | `SessionStart` / `Stop` / `SessionEnd` / shell 起動時 / `chpwd` / `precmd` |
 
-cmux 標準の workspace 単位の `claude_code` pill は複数 pane を同居させると 1 つにまとまってしまうため、pane 別キー (`claude_<panel-id>`) で別途 pill を立てている。
+状態は `${TMPDIR}/cmux-pane-state/<panel-id>` に永続化され、Claude hook と zsh 側の precmd/chpwd の両方が読み取ってアイコンを揃える。cmux 標準の workspace 単位の `claude_code` pill は複数 pane で 1 つにまとまるため、こちらの pane 別 pill で代替する。
 
-workspace 名は手動設定（`cmd+shift+r` でリネーム）。強制クローズや Claude crash で残った pill は独立 sweeper が数秒おきに回収する（`claude_` prefix も sweep 対象）。
+workspace 名は手動設定（`cmd+shift+r` でリネーム）。強制クローズで残った pill は独立 sweeper が数秒おきに回収する。
 
 ## settings.json
 

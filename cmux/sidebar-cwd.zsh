@@ -1,34 +1,22 @@
 #!/usr/bin/env zsh
 # cmux サイドバーに pane 別の状態 pill を表示する。
-#   cwd_<panel-id> : 現在ディレクトリの basename（chpwd で更新）
-#   run_<panel-id> : 実行中コマンドの先頭1語（preexec で表示、precmd で消去）
+#   cwd_<panel-id>    : 現在ディレクトリの basename（chpwd / precmd で更新）
+#   claude_<panel-id> : Claude Code セッションの状態
+#                       （Claude Code hooks → claude-status-hook.sh で更新）
 #
-# preexec/precmd は &! で backgound 化して prompt 遅延を排除する。
-# 強制クローズで残った pill は、各 shell が spawn する独立な sweeper が
-# 数秒おきに workspace を sweep して回収する。
+# precmd は &! で background 化して prompt 遅延を排除する。
+# 強制クローズや Claude crash で残った pill は、各 shell が spawn する独立な
+# sweeper が数秒おきに workspace を sweep して回収する。
 
-typeset -gra _CMUX_PILL_PREFIXES=(cwd_ run_)
+typeset -gra _CMUX_PILL_PREFIXES=(cwd_ claude_)
 
 _cmux_set_async() {  # $1=key $2=value $3=icon
   (( ${+commands[cmux]} )) || return 0
   cmux set-status "$1" "$2" --icon "$3" >/dev/null 2>&1 &!
 }
 
-_cmux_clear_async() {  # $1=key
-  (( ${+commands[cmux]} )) || return 0
-  cmux clear-status "$1" >/dev/null 2>&1 &!
-}
-
 _cmux_update_cwd_status() {
   _cmux_set_async "cwd_${CMUX_PANEL_ID:-default}" "${PWD:t}" folder
-}
-
-_cmux_set_running() {
-  _cmux_set_async "run_${CMUX_PANEL_ID:-default}" "${1%% *}" play.fill
-}
-
-_cmux_clear_running() {
-  _cmux_clear_async "run_${CMUX_PANEL_ID:-default}"
 }
 
 _cmux_clear_pane_status() {
@@ -98,8 +86,7 @@ _cmux_spawn_gc_sweeper() {
 if [[ -n "${ZSH_VERSION:-}" ]]; then
   autoload -Uz add-zsh-hook
   add-zsh-hook chpwd _cmux_update_cwd_status
-  add-zsh-hook preexec _cmux_set_running
-  add-zsh-hook precmd _cmux_clear_running
+  add-zsh-hook precmd _cmux_update_cwd_status
   add-zsh-hook zshexit _cmux_clear_pane_status
   _cmux_update_cwd_status
   _cmux_spawn_gc_sweeper

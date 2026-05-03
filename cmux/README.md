@@ -14,20 +14,24 @@ ln -sf ~/ghq/github.com/nkmr-jp/setup/cmux/settings.json ~/.config/cmux/settings
 
 ### サイドバーに pane 別ステータスを表示
 
-`showBranchDirectory: false` でフルパス表示を抑止し、代わりに zsh フックから `cmux set-status` で pane 別の pill を送る。`~/.zshrc` に以下を追加:
+`showBranchDirectory: false` でフルパス表示を抑止し、代わりに pane 別の pill をサイドバーに並べる。`~/.zshrc` に以下を追加:
 
 ```sh
 source ~/ghq/github.com/nkmr-jp/setup/cmux/sidebar-cwd.zsh
 ```
 
+加えて `~/.claude/settings.json` の `hooks` に `claude-status-hook.sh` を登録（本リポジトリの `claude/settings.json` に同梱済み）。
+
 表示される pill:
 
 | key | 表示内容 | 更新タイミング |
 | --- | --- | --- |
-| `cwd_<panel-id>` | カレントディレクトリの basename | `chpwd`（`cd` するたび） |
-| `run_<panel-id>` | 実行中コマンドの先頭 1 語 | `preexec` で表示、`precmd` で消去 |
+| `cwd_<panel-id>` | カレントディレクトリの basename | shell 起動時 / `chpwd` / `precmd` |
+| `claude_<panel-id>` | Claude Code セッションの状態（`Running` / `Idle` / `Awaiting`） | Claude Code hooks（`SessionStart` / `UserPromptSubmit` / `Stop` / `Notification` / `SessionEnd`） |
 
-workspace 名は手動設定（`cmd+shift+r` でリネーム）。強制クローズで残った pill は独立 sweeper が数秒おきに回収する。
+cmux 標準の workspace 単位の `claude_code` pill は複数 pane を同居させると 1 つにまとまってしまうため、pane 別キー (`claude_<panel-id>`) で別途 pill を立てている。
+
+workspace 名は手動設定（`cmd+shift+r` でリネーム）。強制クローズや Claude crash で残った pill は独立 sweeper が数秒おきに回収する（`claude_` prefix も sweep 対象）。
 
 ## settings.json
 

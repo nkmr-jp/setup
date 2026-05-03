@@ -39,7 +39,8 @@ _cmux_clear_pane_status() {
   for p in "${_CMUX_PILL_PREFIXES[@]}"; do
     cmux clear-status "${p}${panel}" >/dev/null 2>&1
   done
-  rm -f "${TMPDIR:-/tmp}/cmux-pane-state/${panel}" 2>/dev/null
+  local sd="${TMPDIR:-/tmp}/cmux-pane-state"
+  rm -rf "${sd}/${panel}" "${sd}/${panel}.time" "${sd}/${panel}.lock" 2>/dev/null
 }
 
 _cmux_spawn_gc_sweeper() {

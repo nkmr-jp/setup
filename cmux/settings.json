@@ -44,7 +44,7 @@
       // "showLog" : true,
       // "showNotificationMessage" : true,
       // "showPorts" : true,
-      // "showProgress" : true,
+       "showProgress" : false,
       // "showPullRequests" : true,
       // "showSSH" : true
     },

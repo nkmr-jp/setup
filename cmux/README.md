@@ -12,15 +12,22 @@ ln -sf ~/ghq/github.com/nkmr-jp/setup/cmux/settings.json ~/.config/cmux/settings
 `~/.config/cmux/settings.json` は Application Support 側の設定ファイルより優先される。
 設定を反映するには cmux を再起動するか、`cmd+shift+,` で reload する。
 
-### サイドバーに cwd basename を表示
+### サイドバーに pane 別ステータスを表示
 
-`showBranchDirectory: false` でフルパス表示を抑止し、代わりに zsh フックから `cmux set-status` でカレントディレクトリの basename を pill として送る。`~/.zshrc` に以下を追加:
+`showBranchDirectory: false` でフルパス表示を抑止し、代わりに zsh フックから `cmux set-status` で pane 別の pill を送る。`~/.zshrc` に以下を追加:
 
 ```sh
 source ~/ghq/github.com/nkmr-jp/setup/cmux/sidebar-cwd.zsh
 ```
 
-workspace 名は手動設定（`cmd+shift+r` でリネーム）。pill は cd するたびに更新される。
+表示される pill:
+
+| key | 表示内容 | 更新タイミング |
+| --- | --- | --- |
+| `cwd_<panel-id>` | カレントディレクトリの basename | `chpwd`（`cd` するたび） |
+| `run_<panel-id>` | 実行中コマンドの先頭 1 語 | `preexec` で表示、`precmd` で消去 |
+
+workspace 名は手動設定（`cmd+shift+r` でリネーム）。強制クローズで残った pill は独立 sweeper が数秒おきに回収する。
 
 ## settings.json
 

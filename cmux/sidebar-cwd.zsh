@@ -1,23 +1,43 @@
 #!/usr/bin/env zsh
-# cmux サイドバーに現在ディレクトリの basename を pill として表示する。
-# pane ごとにユニークな key を使い、複数 pane でそれぞれの pill を並べる。
+# cmux サイドバーに pane 別の状態 pill を表示する。
+#   cwd_<panel-id> : 現在ディレクトリの basename（chpwd で更新）
+#   run_<panel-id> : 実行中コマンドの先頭1語（preexec で表示、precmd で消去）
 #
+# preexec/precmd は &! で backgound 化して prompt 遅延を排除する。
 # 強制クローズで残った pill は、各 shell が spawn する独立な sweeper が
-# 数秒おきに workspace を sweep して回収する。precmd には何も置かないので
-# プロンプト遅延ゼロ、入力不要で追従する。
+# 数秒おきに workspace を sweep して回収する。
 
-typeset -gr _CMUX_PILL_PREFIX=cwd_
+typeset -gra _CMUX_PILL_PREFIXES=(cwd_ run_)
 
-_cmux_update_cwd_status() {
+_cmux_set_async() {  # $1=key $2=value $3=icon
   (( ${+commands[cmux]} )) || return 0
-  cmux set-status "${_CMUX_PILL_PREFIX}${CMUX_PANEL_ID:-default}" \
-    "${PWD:t}" --icon folder >/dev/null 2>&1
+  cmux set-status "$1" "$2" --icon "$3" >/dev/null 2>&1 &!
 }
 
-_cmux_clear_cwd_status() {
+_cmux_clear_async() {  # $1=key
   (( ${+commands[cmux]} )) || return 0
-  cmux clear-status "${_CMUX_PILL_PREFIX}${CMUX_PANEL_ID:-default}" \
-    >/dev/null 2>&1
+  cmux clear-status "$1" >/dev/null 2>&1 &!
+}
+
+_cmux_update_cwd_status() {
+  _cmux_set_async "cwd_${CMUX_PANEL_ID:-default}" "${PWD:t}" folder
+}
+
+_cmux_set_running() {
+  _cmux_set_async "run_${CMUX_PANEL_ID:-default}" "${1%% *}" play.fill
+}
+
+_cmux_clear_running() {
+  _cmux_clear_async "run_${CMUX_PANEL_ID:-default}"
+}
+
+_cmux_clear_pane_status() {
+  # zshexit から呼ばれるので同期実行。&! だと shell 終了時に reap されない。
+  (( ${+commands[cmux]} )) || return 0
+  local p
+  for p in "${_CMUX_PILL_PREFIXES[@]}"; do
+    cmux clear-status "${p}${CMUX_PANEL_ID:-default}" >/dev/null 2>&1
+  done
 }
 
 _cmux_spawn_gc_sweeper() {
@@ -33,7 +53,7 @@ _cmux_spawn_gc_sweeper() {
   local socket_path="${CMUX_SOCKET_PATH:-}"
   local cmux_bin="${commands[cmux]}"
   local interval="${CMUX_CWD_SWEEP_INTERVAL:-3}"
-  local prefix="$_CMUX_PILL_PREFIX"
+  local -a prefixes=("${_CMUX_PILL_PREFIXES[@]}")
 
   # HUP/INT/TERM を ignore して pane close を生き延びるための独立 process。
   {
@@ -42,12 +62,17 @@ _cmux_spawn_gc_sweeper() {
     while kill -0 "$shell_pid" 2>/dev/null; do
       [[ -z "$socket_path" || -S "$socket_path" ]] || break
 
-      local -a cwd_keys=()
-      local line
+      local -a pane_keys=() pane_uuids=()
+      local line k p
       while IFS= read -r line; do
-        [[ "$line" == ${prefix}* ]] && cwd_keys+=("${line%%=*}")
+        k="${line%%=*}"
+        for p in "${prefixes[@]}"; do
+          [[ "$k" == ${p}* ]] && {
+            pane_keys+=("$k"); pane_uuids+=("${k#$p}"); break
+          }
+        done
       done < <("$cmux_bin" list-status 2>/dev/null)
-      (( ${#cwd_keys} == 0 )) && { sleep "$interval"; continue }
+      (( ${#pane_keys} == 0 )) && { sleep "$interval"; continue }
 
       local json
       json="$("$cmux_bin" rpc surface.list \
@@ -58,11 +83,10 @@ _cmux_spawn_gc_sweeper() {
       active_ids+="$(print -r -- "$json" \
         | /usr/bin/awk -F'"' '/"id"[[:space:]]*:/{print $4}')"$'\n'
 
-      local key uuid
-      for key in "${cwd_keys[@]}"; do
-        uuid="${key#$prefix}"
-        [[ "$active_ids" == *$'\n'"$uuid"$'\n'* ]] && continue
-        "$cmux_bin" clear-status "$key" >/dev/null 2>&1
+      local i
+      for (( i = 1; i <= ${#pane_keys}; i++ )); do
+        [[ "$active_ids" == *$'\n'"${pane_uuids[i]}"$'\n'* ]] && continue
+        "$cmux_bin" clear-status "${pane_keys[i]}" >/dev/null 2>&1
       done
 
       sleep "$interval"
@@ -74,7 +98,9 @@ _cmux_spawn_gc_sweeper() {
 if [[ -n "${ZSH_VERSION:-}" ]]; then
   autoload -Uz add-zsh-hook
   add-zsh-hook chpwd _cmux_update_cwd_status
-  add-zsh-hook zshexit _cmux_clear_cwd_status
+  add-zsh-hook preexec _cmux_set_running
+  add-zsh-hook precmd _cmux_clear_running
+  add-zsh-hook zshexit _cmux_clear_pane_status
   _cmux_update_cwd_status
   _cmux_spawn_gc_sweeper
 fi

@@ -115,6 +115,10 @@ keybind = cmd+comma=open_config
 # cmux: reloadConfiguration (cmd+shift+,)
 keybind = cmd+shift+comma=reload_config
 
+# --- External editors ---
+# 現在ディレクトリで VS Code を開く。`text:` でシェルへ `code .\n` を送る。
+keybind = cmd+ctrl+e=text:code .\n
+
 # ============================================================
 # Behavior
 # ============================================================

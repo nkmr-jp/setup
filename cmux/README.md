@@ -20,7 +20,7 @@ ln -sf ~/ghq/github.com/nkmr-jp/setup/cmux/settings.json ~/.config/cmux/settings
 source ~/ghq/github.com/nkmr-jp/setup/cmux/sidebar-cwd.zsh
 ```
 
-加えて `~/.claude/settings.json` の `hooks` に `claude-status-hook.sh` を登録（本リポジトリの `claude/settings.json` に同梱済み）。
+Claude Code 側のフック (`UserPromptSubmit` / `Notification`) は [`agent-plugins/plugins/cmux`](https://github.com/nkmr-jp/agent-plugins/tree/master/plugins/cmux) プラグインで管理する。`cmux@agent-plugins` を有効化すると `claude-status-hook.sh` が自動登録される。
 
 単一 pill `cwd_<panel-id>`（値=ディレクトリ basename）のアイコンを Claude Code 状態で切り替える設計:
 

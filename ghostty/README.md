@@ -36,7 +36,6 @@ ln -sf ~/ghq/github.com/nkmr-jp/setup/ghostty/config ~/.config/ghostty/config
 | 分割ズーム切替 | `cmd+enter` |
 | 設定を開く | `cmd+,` |
 | 設定をリロード | `cmd+shift+,` |
-| 現在ディレクトリで VS Code を開く | `cmd+ctrl+e` |
 
 ### Behavior
 

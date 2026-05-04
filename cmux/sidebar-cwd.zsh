@@ -52,7 +52,6 @@ _cmux_spawn_gc_sweeper() {
   fi
 
   local shell_pid=$$
-  local workspace_id="$CMUX_WORKSPACE_ID"
   local socket_path="${CMUX_SOCKET_PATH:-}"
   local cmux_bin="${commands[cmux]}"
   local interval="${CMUX_CWD_SWEEP_INTERVAL:-3}"
@@ -77,14 +76,27 @@ _cmux_spawn_gc_sweeper() {
       done < <("$cmux_bin" list-status 2>/dev/null)
       (( ${#pane_keys} == 0 )) && { sleep "$interval"; continue }
 
-      local json
-      json="$("$cmux_bin" rpc surface.list \
-        "{\"workspace_id\":\"$workspace_id\"}" 2>/dev/null)"
-      [[ -z "$json" ]] && { sleep "$interval"; continue }
+      # surface.list は workspace 単位スコープなので、workspace.list で全 workspace
+      # を列挙してから集約する。自分の workspace のみで sweep すると、別 workspace
+      # の pill を「消えた pane」と判定して clear-status で消してしまい、
+      # サイドバーから basename pill が消える原因になる。
+      local ws_json
+      ws_json="$("$cmux_bin" rpc workspace.list "{}" 2>/dev/null)"
+      [[ -z "$ws_json" ]] && { sleep "$interval"; continue }
 
-      local active_ids=$'\n'
-      active_ids+="$(print -r -- "$json" \
-        | /usr/bin/awk -F'"' '/"id"[[:space:]]*:/{print $4}')"$'\n'
+      local active_ids=$'\n' ws_id sjson
+      while IFS= read -r ws_id; do
+        [[ -z "$ws_id" ]] && continue
+        sjson="$("$cmux_bin" rpc surface.list \
+          "{\"workspace_id\":\"$ws_id\"}" 2>/dev/null)"
+        [[ -z "$sjson" ]] && continue
+        active_ids+="$(print -r -- "$sjson" \
+          | /usr/bin/awk -F'"' '/"id"[[:space:]]*:/{print $4}')"$'\n'
+      done < <(print -r -- "$ws_json" \
+        | /usr/bin/awk -F'"' '/"id"[[:space:]]*:/{print $4}')
+
+      # workspace 列挙が無に帰した場合は誤って全 pill を消さないよう skip。
+      [[ "$active_ids" == $'\n' ]] && { sleep "$interval"; continue }
 
       local i
       for (( i = 1; i <= ${#pane_keys}; i++ )); do

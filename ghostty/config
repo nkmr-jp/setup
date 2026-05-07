@@ -120,3 +120,5 @@ keybind = cmd+shift+comma=reload_config
 # ============================================================
 # タブ/ペインを閉じる際の確認ポップアップを無効化
 confirm-close-surface = false
+
+theme = 0x96f

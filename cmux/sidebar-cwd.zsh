@@ -3,8 +3,9 @@
 # basename。アイコンは Claude Code の状態（claude-status-hook.sh が
 # ${TMPDIR}/cmux-pane-state/<panel-id> に書き込む）に応じて切り替わる。
 #
-#   running  -> bolt.fill (#4C8DFF)  UserPromptSubmit
+#   running  -> bolt.fill (#4C8DFF)  UserPromptSubmit / PreToolUse
 #   awaiting -> bell.fill (#FF9500)  Notification
+#   idle     -> pause.fill (#8E8E93) Stop (応答完了・次の入力待ち)
 #   none     -> folder               state file 不在時のデフォルト
 #
 # precmd は &! で background 化して prompt 遅延を排除する。
@@ -21,8 +22,9 @@ _cmux_update_cwd_status() {
   local state="" icon=folder color=""
   [[ -r "$sf" ]] && read -r state < "$sf"
   case "$state" in
-    running)  icon=bolt.fill; color='#4C8DFF' ;;
-    awaiting) icon=bell.fill; color='#FF9500' ;;
+    running)  icon=bolt.fill;  color='#4C8DFF' ;;
+    awaiting) icon=bell.fill;  color='#FF9500' ;;
+    idle)     icon=pause.fill; color='#8E8E93' ;;
   esac
   local sig="${PWD}|${state}"
   [[ "$sig" == "$_CMUX_LAST_SIG" ]] && return

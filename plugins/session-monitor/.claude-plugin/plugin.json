@@ -1,0 +1,9 @@
+{
+  "name": "session-monitor",
+  "version": "0.1.0",
+  "description": "Claude Code の全セッションを hooks で監視し、active/awaiting/idle 状態を sessions.jsonl に集約。SwiftBar からメニューバーで一覧表示できる",
+  "author": {
+    "name": "nkmr-jp"
+  },
+  "keywords": ["claude-code", "monitoring", "session", "swiftbar", "hooks"]
+}

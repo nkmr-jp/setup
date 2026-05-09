@@ -9,6 +9,11 @@
       "name": "cmux",
       "source": "./plugins/cmux",
       "description": "cmux (manaflow-ai/cmux) のネイティブ macOS ターミナル CLI を制御するスキル + サイドバー cwd pill を Claude Code 状態 (running/awaiting/idle/clear) に同期する hooks"
+    },
+    {
+      "name": "session-monitor",
+      "source": "./plugins/session-monitor",
+      "description": "Claude Code の進行中セッションを hooks で監視し、SwiftBar のメニューバーから ⚡running / 🔔awaiting / ⏸idle を一覧表示する"
     }
   ]
 }

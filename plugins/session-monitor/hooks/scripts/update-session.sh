@@ -95,6 +95,16 @@ term_program="${TERM_PROGRAM:-}"
 cmux_panel_id="${CMUX_PANEL_ID:-}"
 cmux_workspace_id="${CMUX_WORKSPACE_ID:-}"
 
+# UserPromptSubmit のときは hook stdin に .prompt が直接入る。これは「ユーザーが
+# 今しがた入力したテキスト」そのもので、transcript に書き込まれる前に hook が
+# 呼ばれることがあるため、即時反映するためここで取り出して transcript 解析より
+# 優先採用する (後述の last_prompt 上書き)。
+hook_prompt=""
+if [ "$hook_event" = "UserPromptSubmit" ]; then
+  hook_prompt=$(jq -r '(.prompt // "") | gsub("[\\n\\r\\t]"; " ")' \
+    < "$input_file" 2>/dev/null | head -c 4000)
+fi
+
 if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
   # 末尾 400 行に絞ることで巨大セッションでも一定時間で完了する。
   tail_buf=$(tail -n 400 "$transcript_path" 2>/dev/null)
@@ -130,6 +140,10 @@ if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
   # 最新の gitBranch (空文字も来るので非空のみ拾う)
   git_branch=$(printf '%s\n' "$tail_buf" | jq -r 'select((.gitBranch // "") != "") | .gitBranch' 2>/dev/null | tail -n 1)
 fi
+
+# UserPromptSubmit の hook 入力にプロンプトがあれば、transcript からの抽出より
+# 優先する (transcript への書き込みより先に hook が来るので、こちらが最新)。
+[ -n "$hook_prompt" ] && last_prompt="$hook_prompt"
 
 now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 

@@ -102,7 +102,7 @@ fmt_elapsed() {
 }
 
 # 整形ロジックは jq に集約してまとめて出す。各レコードを 1 行 TSV にして読み込む。
-# Field: rank \t status \t cwd \t git_branch \t model \t last_prompt \t in_tokens \t out_tokens \t cache_read \t updated_at \t transcript_path
+# Field: rank \t status \t cwd \t git_branch \t model \t last_prompt \t in_tokens \t out_tokens \t cache_read \t updated_at \t transcript_path \t term_program \t cmux_panel_id
 records=$(jq -r '
   def rank: if .status=="running" then 0 elif .status=="awaiting" then 1 elif .status=="idle" then 2 else 3 end;
   [(rank|tostring),
@@ -115,11 +115,28 @@ records=$(jq -r '
    ((.output_tokens // 0)|tostring),
    ((.cache_read_input_tokens // 0)|tostring),
    (.updated_at // ""),
-   (.transcript_path // "")
+   (.transcript_path // ""),
+   (.term_program // ""),
+   (.cmux_panel_id // "")
   ] | @tsv
 ' "$SESSIONS_FILE" 2>/dev/null | sort -t$'\t' -k1,1n -k10,10r)
 
-print -r -- "$records" | while IFS=$'\t' read -r rank s_status cwd branch model prompt in_tokens out_tokens cache_read updated_at transcript; do
+CMUX_CLI="/Applications/cmux.app/Contents/Resources/bin/cmux"
+
+# TERM_PROGRAM → macOS bundle ID へのマッピング (空白を避けるため bundle ID を使う)。
+bundle_for_term() {
+  case "$1" in
+    iTerm.app)      print -- "com.googlecode.iterm2" ;;
+    Apple_Terminal) print -- "com.apple.Terminal" ;;
+    vscode)         print -- "com.microsoft.VSCode" ;;
+    cursor)         print -- "com.todesktop.230313mzl4w4u92" ;;
+    ghostty)        print -- "com.mitchellh.ghostty" ;;
+    WezTerm)        print -- "com.github.wez.wezterm" ;;
+    *) ;;
+  esac
+}
+
+print -r -- "$records" | while IFS=$'\t' read -r rank s_status cwd branch model prompt in_tokens out_tokens cache_read updated_at transcript term_program cmux_panel_id; do
   [[ -z "$s_status" ]] && continue
 
   # ステータス絵文字 (zsh の予約変数 $status と衝突しないよう s_status を使う)
@@ -135,7 +152,23 @@ print -r -- "$records" | while IFS=$'\t' read -r rank s_status cwd branch model 
 
   elapsed=$(fmt_elapsed "$updated_at")
 
-  # 一行目: アイコン + 最後のユーザープロンプト + 経過時間 (クリックで cwd を Finder で開く)
+  # メインクリック動作: cmux pane があればそこへフォーカス、なければ TERM_PROGRAM のアプリを前面に。
+  # どちらも分からなければ Finder で cwd を開く (従来挙動にフォールバック)。
+  if [[ -n "$cmux_panel_id" && -x "$CMUX_CLI" ]]; then
+    click_action="shell=${CMUX_CLI} param1=focus-panel param2=--panel param3=${cmux_panel_id} terminal=false"
+    launcher_label="cmux"
+  else
+    bundle_id=$(bundle_for_term "$term_program")
+    if [[ -n "$bundle_id" ]]; then
+      click_action="shell=open param1=-b param2=${bundle_id} terminal=false"
+      launcher_label="$term_program"
+    else
+      click_action="shell=open param1=${cwd} terminal=false"
+      launcher_label=""
+    fi
+  fi
+
+  # 一行目: アイコン + 最後のユーザープロンプト + 経過時間
   if [[ -n "$prompt" ]]; then
     short_prompt="${prompt:0:80}"
     [[ ${#prompt} -gt 80 ]] && short_prompt+="…"
@@ -143,10 +176,11 @@ print -r -- "$records" | while IFS=$'\t' read -r rank s_status cwd branch model 
   else
     label="${short_cwd}"
   fi
-  print -- "${icon} ${label} · ${elapsed} ago | shell=open param1=${cwd} terminal=false"
+  print -- "${icon} ${label} · ${elapsed} ago | ${click_action}"
 
   # サブメニュー (-- prefix)
   print -- "-- cwd: ${short_cwd} | size=11"
+  [[ -n "$launcher_label" ]] && print -- "-- launcher: ${launcher_label} | size=11"
   [[ -n "$branch" ]] && print -- "-- branch: ${branch} | size=11"
   [[ -n "$model" ]]  && print -- "-- model:  ${model} | size=11"
 

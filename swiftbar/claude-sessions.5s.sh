@@ -135,19 +135,20 @@ print -r -- "$records" | while IFS=$'\t' read -r rank s_status cwd branch model 
 
   elapsed=$(fmt_elapsed "$updated_at")
 
-  # 一行目: アイコン + cwd + 経過時間 (クリックで cwd を Finder で開く)
-  print -- "${icon} ${short_cwd} · ${elapsed} ago | shell=open param1=${cwd} terminal=false"
-
-  # サブメニュー (-- prefix)
-  [[ -n "$branch" ]] && print -- "-- branch: ${branch} | size=11"
-  [[ -n "$model" ]]  && print -- "-- model:  ${model} | size=11"
-
+  # 一行目: アイコン + 最後のユーザープロンプト + 経過時間 (クリックで cwd を Finder で開く)
   if [[ -n "$prompt" ]]; then
-    # 80 char で切る (jq 側で改行は除去済み)
     short_prompt="${prompt:0:80}"
     [[ ${#prompt} -gt 80 ]] && short_prompt+="…"
-    print -- "-- 💬 ${short_prompt} | size=11"
+    label="${short_prompt}"
+  else
+    label="${short_cwd}"
   fi
+  print -- "${icon} ${label} · ${elapsed} ago | shell=open param1=${cwd} terminal=false"
+
+  # サブメニュー (-- prefix)
+  print -- "-- cwd: ${short_cwd} | size=11"
+  [[ -n "$branch" ]] && print -- "-- branch: ${branch} | size=11"
+  [[ -n "$model" ]]  && print -- "-- model:  ${model} | size=11"
 
   # トークン: cache_read を含めて表示
   if [[ "$in_tokens" != "0" || "$out_tokens" != "0" ]]; then

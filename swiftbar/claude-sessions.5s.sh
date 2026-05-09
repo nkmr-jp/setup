@@ -183,10 +183,11 @@ print -r -- "$records" | while IFS=$'\t' read -r rank s_status session_id cwd br
     fi
   fi
 
-  # 一行目: アイコン + [id8] + 短縮プロンプト + 経過時間
+  # 一行目: アイコン + [id8] + 短縮プロンプト + 経過時間。全文はサブメニューに
+  # 折り返し表示されるので、ここは短く保つ。
   if [[ -n "$prompt" ]]; then
-    short_prompt="${prompt:0:80}"
-    [[ ${#prompt} -gt 80 ]] && short_prompt+="…"
+    short_prompt="${prompt:0:40}"
+    [[ ${#prompt} -gt 40 ]] && short_prompt+="…"
     label="${short_prompt}"
   else
     label="${short_cwd}"

@@ -107,12 +107,23 @@ if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
     last_assistant_ts=$(printf '%s' "$last_assistant" | jq -r '.timestamp // ""')
   fi
 
-  # 最新ユーザープロンプト (sidechain / hook 由来は除外、純粋な user input のみ)
+  # 最新ユーザープロンプト。Claude Code transcript 上で「ユーザーが入力欄から
+  # タイプしたメッセージ」だけを残すには、以下を全部除外する必要がある:
+  #   - sidechain (subagent 内の user role メッセージ)
+  #   - isMeta=true (Stop hook 注入 / Skill 起動 / "Continue from where..." 等)
+  #   - toolUseResult あり (Bash 等のツール結果として後付けされた user role)
+  # SwiftBar 側で全文表示するため上限は緩めに (極端に長い貼り付けを抑える程度)。
   last_prompt=$(printf '%s\n' "$tail_buf" | jq -r '
-    select(.type=="user" and (.isSidechain // false)==false)
+    select(.type=="user"
+           and (.isSidechain // false)==false
+           and (.isMeta // false)==false
+           and (.toolUseResult // null)==null)
     | (.message.content // "")
-    | if type=="string" then . else (.[]? | select(.type=="text") | .text // "") end
-  ' 2>/dev/null | grep -v '^$' | grep -v '^<' | tail -n 1 | head -c 120)
+    | if type=="string" then .
+      else ([.[] | select(.type=="text") | .text // ""] | join(" ")) end
+    | select(. != "")
+    | gsub("[\\n\\r\\t]"; " ")
+  ' 2>/dev/null | tail -n 1 | head -c 4000)
 
   # 最新の gitBranch (空文字も来るので非空のみ拾う)
   git_branch=$(printf '%s\n' "$tail_buf" | jq -r 'select((.gitBranch // "") != "") | .gitBranch' 2>/dev/null | tail -n 1)

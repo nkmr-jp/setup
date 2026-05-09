@@ -14,6 +14,13 @@
 
 set -u
 PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
+# SwiftBar 経由で起動されると LANG が空になり、zsh の ${var:0:N} 等が
+# バイト単位になって日本語が壊れるので UTF-8 を明示する。
+export LANG="${LANG:-en_US.UTF-8}"
+export LC_ALL="${LC_ALL:-en_US.UTF-8}"
+
+SCRIPT_DIR="${0:A:h}"
+HANDLER="$SCRIPT_DIR/click-handler.sh"
 
 ANCHOR="$HOME/.claude/session-monitor/data-dir"
 DATA_DIR=""
@@ -102,11 +109,13 @@ fmt_elapsed() {
 }
 
 # 整形ロジックは jq に集約してまとめて出す。各レコードを 1 行 TSV にして読み込む。
-# Field: rank \t status \t cwd \t git_branch \t model \t last_prompt \t in_tokens \t out_tokens \t cache_read \t updated_at \t transcript_path \t term_program \t cmux_panel_id
+# Field: rank \t status \t session_id \t cwd \t git_branch \t model \t last_prompt \t in_tokens \t out_tokens \t cache_read \t updated_at \t transcript_path \t term_program \t cmux_panel_id
+# last_prompt 内の改行/タブは TSV を壊すので space に潰す (SwiftBar 表示時に折り返す)。
 records=$(jq -r '
   def rank: if .status=="running" then 0 elif .status=="awaiting" then 1 elif .status=="idle" then 2 else 3 end;
   [(rank|tostring),
    (.status // ""),
+   (.session_id // ""),
    (.cwd // ""),
    (.git_branch // ""),
    (.model // ""),
@@ -119,9 +128,7 @@ records=$(jq -r '
    (.term_program // ""),
    (.cmux_panel_id // "")
   ] | @tsv
-' "$SESSIONS_FILE" 2>/dev/null | sort -t$'\t' -k1,1n -k10,10r)
-
-CMUX_CLI="/Applications/cmux.app/Contents/Resources/bin/cmux"
+' "$SESSIONS_FILE" 2>/dev/null | sort -t$'\t' -k1,1n -k11,11r)  # k11 = updated_at
 
 # TERM_PROGRAM → macOS bundle ID へのマッピング (空白を避けるため bundle ID を使う)。
 bundle_for_term() {
@@ -136,8 +143,12 @@ bundle_for_term() {
   esac
 }
 
-print -r -- "$records" | while IFS=$'\t' read -r rank s_status cwd branch model prompt in_tokens out_tokens cache_read updated_at transcript term_program cmux_panel_id; do
+print -r -- "$records" | while IFS=$'\t' read -r rank s_status session_id cwd branch model prompt in_tokens out_tokens cache_read updated_at transcript term_program cmux_panel_id; do
   [[ -z "$s_status" ]] && continue
+
+  # SwiftBar の menu item は `text | k=v ...` 形式なので、prompt 内の `|` は
+  # param と衝突する。一度だけ潰しておく。
+  prompt="${prompt//|/ }"
 
   # ステータス絵文字 (zsh の予約変数 $status と衝突しないよう s_status を使う)
   case "$s_status" in
@@ -149,26 +160,27 @@ print -r -- "$records" | while IFS=$'\t' read -r rank s_status cwd branch model 
 
   short_cwd=$(basename -- "$cwd" 2>/dev/null)
   [[ -z "$short_cwd" ]] && short_cwd="?"
+  id8="${session_id:0:8}"
 
   elapsed=$(fmt_elapsed "$updated_at")
 
   # メインクリック動作: cmux pane があればそこへフォーカス、なければ TERM_PROGRAM のアプリを前面に。
   # どちらも分からなければ Finder で cwd を開く (従来挙動にフォールバック)。
-  if [[ -n "$cmux_panel_id" && -x "$CMUX_CLI" ]]; then
-    click_action="shell=${CMUX_CLI} param1=focus-panel param2=--panel param3=${cmux_panel_id} terminal=false"
+  if [[ -n "$cmux_panel_id" ]]; then
+    click_action="bash=${HANDLER} param1=cmux param2=${cmux_panel_id} terminal=false"
     launcher_label="cmux"
   else
     bundle_id=$(bundle_for_term "$term_program")
     if [[ -n "$bundle_id" ]]; then
-      click_action="shell=open param1=-b param2=${bundle_id} terminal=false"
+      click_action="bash=${HANDLER} param1=bundle param2=${bundle_id} terminal=false"
       launcher_label="$term_program"
     else
-      click_action="shell=open param1=${cwd} terminal=false"
+      click_action="bash=${HANDLER} param1=finder param2=${cwd} terminal=false"
       launcher_label=""
     fi
   fi
 
-  # 一行目: アイコン + 最後のユーザープロンプト + 経過時間
+  # 一行目: アイコン + [id8] + 短縮プロンプト + 経過時間
   if [[ -n "$prompt" ]]; then
     short_prompt="${prompt:0:80}"
     [[ ${#prompt} -gt 80 ]] && short_prompt+="…"
@@ -176,13 +188,24 @@ print -r -- "$records" | while IFS=$'\t' read -r rank s_status cwd branch model 
   else
     label="${short_cwd}"
   fi
-  print -- "${icon} ${label} · ${elapsed} ago | ${click_action}"
+  print -- "${icon} [${id8}] ${label} · ${elapsed} ago | ${click_action}"
 
   # サブメニュー (-- prefix)
+  print -- "-- session: ${session_id} | size=11 color=gray"
   print -- "-- cwd: ${short_cwd} | size=11"
   [[ -n "$launcher_label" ]] && print -- "-- launcher: ${launcher_label} | size=11"
   [[ -n "$branch" ]] && print -- "-- branch: ${branch} | size=11"
   [[ -n "$model" ]]  && print -- "-- model:  ${model} | size=11"
+
+  # 最後のユーザープロンプト全文を 80 文字単位で折り返し表示。
+  if [[ -n "$prompt" ]]; then
+    print -- "-- 💬 last prompt: | size=11 color=gray"
+    remaining="$prompt"
+    while [[ -n "$remaining" ]]; do
+      print -- "-- ${remaining:0:80} | size=11"
+      remaining="${remaining:80}"
+    done
+  fi
 
   # トークン: cache_read を含めて表示
   if [[ "$in_tokens" != "0" || "$out_tokens" != "0" ]]; then
@@ -192,9 +215,9 @@ print -r -- "$records" | while IFS=$'\t' read -r rank s_status cwd branch model 
   print -- "-- updated: ${updated_at} | size=11 color=gray"
 
   if [[ -n "$transcript" ]]; then
-    print -- "-- Open transcript | shell=open param1=${transcript} terminal=false"
+    print -- "-- Open transcript | bash=${HANDLER} param1=finder param2=${transcript} terminal=false"
   fi
-  print -- "-- Open cwd in Finder | shell=open param1=${cwd} terminal=false"
+  print -- "-- Open cwd in Finder | bash=${HANDLER} param1=finder param2=${cwd} terminal=false"
 done
 
 print -- "---"

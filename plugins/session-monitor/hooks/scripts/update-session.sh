@@ -184,4 +184,9 @@ fi
 
 mv "$tmp_file" "$sessions_file"
 
+# SwiftBar に即時再描画を要求する。`open` は非同期に URL ハンドラへ
+# 投げるだけで block しないので hook タイムアウトに影響しない。
+# (SwiftBar が動いていない / 未インストールでもエラーは無視される)
+/usr/bin/open "swiftbar://refreshplugin?name=claude-sessions.5s.sh" >/dev/null 2>&1 &
+
 exit 0

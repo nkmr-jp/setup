@@ -88,10 +88,12 @@ out_tokens=0
 cache_read=0
 last_assistant_ts=""
 
-# cmux 内では TERM_PROGRAM=ghostty になるので CMUX_PANEL_ID を別途記録し、
-# SwiftBar 側で cmux focus-panel を優先できるようにする。
+# cmux 内では TERM_PROGRAM=ghostty になるので CMUX_* を別途記録し、
+# SwiftBar 側で cmux select-workspace + focus-panel を組み合わせて
+# 該当ワークスペース/ペインへ正確にジャンプできるようにする。
 term_program="${TERM_PROGRAM:-}"
 cmux_panel_id="${CMUX_PANEL_ID:-}"
+cmux_workspace_id="${CMUX_WORKSPACE_ID:-}"
 
 if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
   # 末尾 400 行に絞ることで巨大セッションでも一定時間で完了する。
@@ -144,6 +146,7 @@ new_record=$(jq -nc \
   --arg lats "$last_assistant_ts" \
   --arg term_program "$term_program" \
   --arg cmux_panel_id "$cmux_panel_id" \
+  --arg cmux_workspace_id "$cmux_workspace_id" \
   --argjson it "${in_tokens:-0}" \
   --argjson ot "${out_tokens:-0}" \
   --argjson cr "${cache_read:-0}" \
@@ -151,6 +154,7 @@ new_record=$(jq -nc \
     last_prompt:$prompt, updated_at:$ts, last_event:$event,
     transcript_path:$tp, last_assistant_at:$lats,
     term_program:$term_program, cmux_panel_id:$cmux_panel_id,
+    cmux_workspace_id:$cmux_workspace_id,
     input_tokens:$it, output_tokens:$ot, cache_read_input_tokens:$cr}')
 
 # Per-file mutex (mkdir は POSIX で atomic)。1 秒以上経過したロックは stale。

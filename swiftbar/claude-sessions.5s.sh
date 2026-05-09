@@ -109,7 +109,7 @@ fmt_elapsed() {
 }
 
 # 整形ロジックは jq に集約してまとめて出す。各レコードを 1 行 TSV にして読み込む。
-# Field: rank \t status \t session_id \t cwd \t git_branch \t model \t last_prompt \t in_tokens \t out_tokens \t cache_read \t updated_at \t transcript_path \t term_program \t cmux_panel_id
+# Field: rank \t status \t session_id \t cwd \t git_branch \t model \t last_prompt \t in_tokens \t out_tokens \t cache_read \t updated_at \t transcript_path \t term_program \t cmux_panel_id \t cmux_workspace_id
 # last_prompt 内の改行/タブは TSV を壊すので space に潰す (SwiftBar 表示時に折り返す)。
 records=$(jq -r '
   def rank: if .status=="running" then 0 elif .status=="awaiting" then 1 elif .status=="idle" then 2 else 3 end;
@@ -126,7 +126,8 @@ records=$(jq -r '
    (.updated_at // ""),
    (.transcript_path // ""),
    (.term_program // ""),
-   (.cmux_panel_id // "")
+   (.cmux_panel_id // ""),
+   (.cmux_workspace_id // "")
   ] | @tsv
 ' "$SESSIONS_FILE" 2>/dev/null | sort -t$'\t' -k1,1n -k11,11r)  # k11 = updated_at
 
@@ -143,7 +144,7 @@ bundle_for_term() {
   esac
 }
 
-print -r -- "$records" | while IFS=$'\t' read -r rank s_status session_id cwd branch model prompt in_tokens out_tokens cache_read updated_at transcript term_program cmux_panel_id; do
+print -r -- "$records" | while IFS=$'\t' read -r rank s_status session_id cwd branch model prompt in_tokens out_tokens cache_read updated_at transcript term_program cmux_panel_id cmux_workspace_id; do
   [[ -z "$s_status" ]] && continue
 
   # SwiftBar の menu item は `text | k=v ...` 形式なので、prompt 内の `|` は
@@ -167,7 +168,9 @@ print -r -- "$records" | while IFS=$'\t' read -r rank s_status session_id cwd br
   # メインクリック動作: cmux pane があればそこへフォーカス、なければ TERM_PROGRAM のアプリを前面に。
   # どちらも分からなければ Finder で cwd を開く (従来挙動にフォールバック)。
   if [[ -n "$cmux_panel_id" ]]; then
-    click_action="bash=${HANDLER} param1=cmux param2=${cmux_panel_id} terminal=false"
+    click_action="bash=${HANDLER} param1=cmux param2=${cmux_panel_id}"
+    [[ -n "$cmux_workspace_id" ]] && click_action+=" param3=${cmux_workspace_id}"
+    click_action+=" terminal=false"
     launcher_label="cmux"
   else
     bundle_id=$(bundle_for_term "$term_program")

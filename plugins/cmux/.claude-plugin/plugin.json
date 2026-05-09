@@ -1,0 +1,10 @@
+{
+  "name": "cmux",
+  "version": "0.4.0",
+  "description": "cmux (manaflow-ai/cmux) のネイティブ macOS ターミナル CLI を制御するスキル。ワークスペース・ペイン・サーフェス・通知・agent-browser などを操作可能",
+  "author": {
+    "name": "nkmr-jp"
+  },
+  "homepage": "https://github.com/manaflow-ai/cmux",
+  "keywords": ["cmux", "terminal", "macos", "claude-code", "agent", "workspace"]
+}

@@ -11,8 +11,11 @@ cmux は複数の AI コーディングエージェント CLI を縦型タブ・
 
 ## インストール
 
+setup リポジトリの marketplace を追加して install する:
+
 ```bash
-claude plugin add ~/ghq/github.com/nkmr-jp/setup/plugins/cmux
+claude plugin marketplace add ~/ghq/github.com/nkmr-jp/setup
+claude plugin install cmux@setup
 ```
 
 ## 含まれるスキル

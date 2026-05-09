@@ -1,0 +1,14 @@
+{
+  "name": "setup",
+  "description": "nkmr-jp のローカル開発環境セットアップに付随する Claude Code プラグイン群",
+  "owner": {
+    "name": "nkmr-jp"
+  },
+  "plugins": [
+    {
+      "name": "cmux",
+      "source": "./plugins/cmux",
+      "description": "cmux (manaflow-ai/cmux) のネイティブ macOS ターミナル CLI を制御するスキル + サイドバー cwd pill を Claude Code 状態 (running/awaiting/idle/clear) に同期する hooks"
+    }
+  ]
+}

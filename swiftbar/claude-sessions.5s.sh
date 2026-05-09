@@ -31,13 +31,8 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
-# jsonl が無い場合は 0 セッション扱い
-if [[ ! -f "$SESSIONS_FILE" ]]; then
-  print -- "⏸ 0"
-  print -- "---"
-  print -- "Claude Code セッションは検出されていません | color=gray"
-  print -- "data: $SESSIONS_FILE | size=10 color=gray"
-  print -- "Refresh | refresh=true"
+# jsonl が無い / 空 (0 行) の場合は何も表示しない
+if [[ ! -s "$SESSIONS_FILE" ]]; then
   exit 0
 fi
 

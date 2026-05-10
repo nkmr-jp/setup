@@ -41,7 +41,7 @@ fi
 # jsonl が無い / 空 (0 行) の場合でも、バーにアイコンだけは出して
 # 「動いているが空」だと分かるようにする (完全非表示だと故障と区別できない)。
 if [[ ! -s "$SESSIONS_FILE" ]]; then
-  print -- "💤 0"
+  print -- "💤"
   print -- "---"
   print -- "セッションデータがありません | color=gray"
   print -- "data dir: ${DATA_DIR} | size=11 color=gray"

@@ -139,6 +139,18 @@ ghq get coderabbitai/git-worktree-runner
 ln -s "$(pwd)/bin/git-gtr" ~/src/bin/git-gtr
 ```
 
+### opg - Open GitHub repository in browser
+
+`bin/opg` は origin リモートの GitHub リポジトリをブラウザで開く。現在のブランチが `main` / `master` 以外なら、そのブランチの tree ページを開く。
+
+```sh
+# カレントディレクトリのリポジトリを開く
+opg
+
+# 指定したディレクトリのリポジトリを開く
+opg ~/ghq/github.com/nkmr-jp/setup
+```
+
 ## Repository Structure
 
 This repository uses a modular approach for Zsh configuration:

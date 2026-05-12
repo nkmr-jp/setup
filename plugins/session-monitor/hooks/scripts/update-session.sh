@@ -198,9 +198,11 @@ fi
 
 mv "$tmp_file" "$sessions_file"
 
-# SwiftBar に即時再描画を要求する。`open` は非同期に URL ハンドラへ
-# 投げるだけで block しないので hook タイムアウトに影響しない。
+# SwiftBar に即時再描画を要求する。`open -g` は URL ハンドラへ投げるだけで
+# アプリをフォアグラウンドに上げないので、ターミナル等の現在のフォアグラウンド
+# アプリから入力フォーカスを奪わない。`-g` 無しだと SwiftBar がアクティブ化
+# されて、hook 発火のたびに入力フォーカスが奪われてしまう。
 # (SwiftBar が動いていない / 未インストールでもエラーは無視される)
-/usr/bin/open "swiftbar://refreshplugin?name=claude-sessions.5s.sh" >/dev/null 2>&1 &
+/usr/bin/open -g "swiftbar://refreshplugin?name=claude-sessions.5s.sh" >/dev/null 2>&1 &
 
 exit 0

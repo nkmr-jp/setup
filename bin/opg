@@ -3,6 +3,10 @@
 
 set -e
 
+if [[ -n "$1" ]]; then
+    cd "$1" || exit 1
+fi
+
 remote_url=$(git remote get-url origin 2>/dev/null) || {
     echo "Error: Not a git repository or no remote 'origin' found" >&2
     exit 1

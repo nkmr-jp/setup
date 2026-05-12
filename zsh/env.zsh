@@ -31,6 +31,9 @@ export PATH="/usr/local/Caskroom/miniconda/base/bin:$PATH"
 # For installing Command binaries
 export PATH="$HOME/src/bin:$PATH"
 
+# setup repo scripts (shell functions exposed as commands for GUI apps, cron, other tools)
+export PATH="$SETUP_DIR/bin:$PATH"
+
 # Added by Windsurf
 export PATH="$HOME/.codeium/windsurf/bin:$PATH"
 

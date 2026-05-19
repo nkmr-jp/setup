@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
-# SwiftBar から呼ばれるクリックハンドラ。menu item 内に長い shell= 構文を埋めると
-# SwiftBar の引数パースで取りこぼしが起きやすいので、ここに集約する。
+# xbar から呼ばれるクリックハンドラ。menu item 内に長い bash= 構文を埋めると
+# xbar の引数パースで取りこぼしが起きやすいので、ここに集約する。
 #
 # 使い方: click-handler.sh <mode> <identifier> [workspace_id]
 #   mode = cmux   : identifier = panel (= surface) id, workspace_id = 任意

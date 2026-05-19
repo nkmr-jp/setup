@@ -1,12 +1,10 @@
 #!/usr/bin/env zsh
-# <bitbar.title>Claude Sessions</bitbar.title>
-# <bitbar.version>v0.1.0</bitbar.version>
-# <bitbar.author>nkmr-jp</bitbar.author>
-# <bitbar.author.github>nkmr-jp</bitbar.author.github>
-# <bitbar.desc>Claude Code の進行中セッションを ⚡running / 🔔awaiting / ⏸idle で集約表示する</bitbar.desc>
-# <bitbar.dependencies>jq, Claude Code (session-monitor plugin)</bitbar.dependencies>
-# <swiftbar.hideAbout>true</swiftbar.hideAbout>
-# <swiftbar.hideRunInTerminal>true</swiftbar.hideRunInTerminal>
+# <xbar.title>Claude Sessions</xbar.title>
+# <xbar.version>v0.1.0</xbar.version>
+# <xbar.author>nkmr-jp</xbar.author>
+# <xbar.author.github>nkmr-jp</xbar.author.github>
+# <xbar.desc>Claude Code の進行中セッションを ⚡running / 🔔awaiting / ⏸idle で集約表示する</xbar.desc>
+# <xbar.dependencies>jq, Claude Code (session-monitor plugin)</xbar.dependencies>
 #
 # session-monitor プラグインの hook が ${CLAUDE_PLUGIN_DATA}/sessions.jsonl を更新する。
 # ここでは ~/.claude/session-monitor/data-dir に書かれた anchor からその実パスを解決し、
@@ -14,7 +12,7 @@
 
 set -u
 PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
-# SwiftBar 経由で起動されると LANG が空になり、zsh の ${var:0:N} 等が
+# xbar 経由で起動されると LANG が空になり、zsh の ${var:0:N} 等が
 # バイト単位になって日本語が壊れるので UTF-8 を明示する。
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
@@ -34,7 +32,7 @@ if ! command -v jq >/dev/null 2>&1; then
   print -- "⚠️ no jq"
   print -- "---"
   print -- "jq が見つかりません | color=red"
-  print -- "brew install jq | shell=brew param1=install param2=jq terminal=true"
+  print -- "brew install jq | bash=brew param1=install param2=jq terminal=true"
   exit 0
 fi
 
@@ -47,11 +45,10 @@ if [[ ! -s "$SESSIONS_FILE" ]]; then
   print -- "data dir: ${DATA_DIR} | size=11 color=gray"
   print -- "---"
   print -- "Refresh | refresh=true"
-  print -- "Open data dir | shell=open param1=${DATA_DIR} terminal=false"
+  print -- "Open data dir | bash=open param1=${DATA_DIR} terminal=false"
   exit 0
 fi
 
-# ステータス別カウント
 counts=$(jq -s '
   group_by(.status) | map({key:.[0].status, value:length}) | from_entries
 ' "$SESSIONS_FILE" 2>/dev/null)
@@ -69,7 +66,6 @@ n_awaiting=$(print -r -- "$counts" | jq -r '.awaiting // 0')
 n_idle=$(print -r -- "$counts" | jq -r '.idle // 0')
 n_total=$(( n_running + n_awaiting + n_idle ))
 
-# メニューバー: 0 件なら淡く、件数があればステータスを並べる
 if (( n_total == 0 )); then
   print -- "⏸ 0"
 else
@@ -81,7 +77,6 @@ else
 fi
 print -- "---"
 
-# ヘッダ
 print -- "Sessions: ${n_total}  (⚡${n_running} 🔔${n_awaiting} ⏸${n_idle}) | size=11 color=gray"
 print -- "---"
 
@@ -89,16 +84,6 @@ if (( n_total == 0 )); then
   print -- "アクティブなセッションはありません | color=gray"
   print -- "---"
 fi
-
-# ステータス順 (running -> awaiting -> idle) → updated_at 降順 で並べる
-status_rank() {
-  case "$1" in
-    running)  print 0 ;;
-    awaiting) print 1 ;;
-    idle)     print 2 ;;
-    *)        print 3 ;;
-  esac
-}
 
 now_epoch=$(date -u +%s)
 
@@ -118,7 +103,7 @@ fmt_elapsed() {
 
 # 整形ロジックは jq に集約してまとめて出す。各レコードを 1 行 TSV にして読み込む。
 # Field: rank \t status \t session_id \t cwd \t git_branch \t model \t last_prompt \t in_tokens \t out_tokens \t cache_read \t updated_at \t transcript_path \t term_program \t cmux_panel_id \t cmux_workspace_id
-# last_prompt 内の改行/タブは TSV を壊すので space に潰す (SwiftBar 表示時に折り返す)。
+# last_prompt 内の改行/タブは TSV を壊すので space に潰す (xbar 表示時に折り返す)。
 records=$(jq -r '
   def rank: if .status=="running" then 0 elif .status=="awaiting" then 1 elif .status=="idle" then 2 else 3 end;
   [(rank|tostring),
@@ -155,7 +140,7 @@ bundle_for_term() {
 print -r -- "$records" | while IFS=$'\t' read -r rank s_status session_id cwd branch model prompt in_tokens out_tokens cache_read updated_at transcript term_program cmux_panel_id cmux_workspace_id; do
   [[ -z "$s_status" ]] && continue
 
-  # SwiftBar の menu item は `text | k=v ...` 形式なので、prompt 内の `|` は
+  # xbar の menu item は `text | k=v ...` 形式なので、prompt 内の `|` は
   # param と衝突する。一度だけ潰しておく。
   prompt="${prompt//|/ }"
 
@@ -167,7 +152,7 @@ print -r -- "$records" | while IFS=$'\t' read -r rank s_status session_id cwd br
     *)        icon="•" ;;
   esac
 
-  short_cwd=$(basename -- "$cwd" 2>/dev/null)
+  short_cwd="${cwd##*/}"
   [[ -z "$short_cwd" ]] && short_cwd="?"
   id8="${session_id:0:8}"
 
@@ -209,7 +194,6 @@ print -r -- "$records" | while IFS=$'\t' read -r rank s_status session_id cwd br
   [[ -n "$branch" ]] && print -- "-- branch: ${branch} | size=11"
   [[ -n "$model" ]]  && print -- "-- model:  ${model} | size=11"
 
-  # 最後のユーザープロンプト全文を 80 文字単位で折り返し表示。
   if [[ -n "$prompt" ]]; then
     print -- "-- 💬 last prompt: | size=11 color=gray"
     remaining="$prompt"
@@ -219,7 +203,6 @@ print -r -- "$records" | while IFS=$'\t' read -r rank s_status session_id cwd br
     done
   fi
 
-  # トークン: cache_read を含めて表示
   if [[ "$in_tokens" != "0" || "$out_tokens" != "0" ]]; then
     print -- "-- tokens: in ${in_tokens} / out ${out_tokens} / cache ${cache_read} | size=11 color=gray"
   fi
@@ -234,4 +217,4 @@ done
 
 print -- "---"
 print -- "Refresh | refresh=true"
-print -- "Open data dir | shell=open param1=${DATA_DIR} terminal=false"
+print -- "Open data dir | bash=open param1=${DATA_DIR} terminal=false"

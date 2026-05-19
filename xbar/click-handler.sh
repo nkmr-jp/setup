@@ -11,6 +11,13 @@ mode="${1:-}"
 ident="${2:-}"
 workspace_id="${3:-}"
 
+# DEBUG: xbar からどう呼ばれているか調べる用 (確認後に削除する)
+{
+  print -- "$(date '+%F %T') argc=$# mode='${mode}' ident='${ident}' workspace_id='${workspace_id}' all='$*'"
+  print -- "  PATH=$PATH"
+  print -- "  CMUX_BUNDLED_CLI_PATH='${CMUX_BUNDLED_CLI_PATH:-}'"
+} >> /tmp/xbar-click-handler.log 2>&1
+
 CMUX_BUNDLE_ID="com.cmuxterm.app"
 CMUX_CLI="${CMUX_BUNDLED_CLI_PATH:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
 

@@ -14,12 +14,15 @@
 # 同じアイコンを再描画できるようにする（state→icon の写像は両側で同期）。
 #
 # cmux 0.61+ は子プロセスに CMUX_PANEL_ID 等を継承しなくなったため、空の場合は
-# stdin の session_id を cache key にして cmux identify CLI から focused.surface_ref
-# を取得・保存する (session-monitor の cmux identify fallback と同じ方式)。
-# SessionStart / UserPromptSubmit のタイミングでだけ identify を呼び、PreToolUse
-# 等の高頻度 hook では cache だけ参照する。focused は cmux 全体で前面のペインを
-# 指すので、ユーザー操作直後でないと別ペインを掴む可能性があるため。SessionEnd で
-# cache も掃除する。
+# stdin の session_id を cache key にして cmux RPC から focused surface の UUID を
+# 取得・保存する。pill key は `cwd_<UUID>` 形式 (zsh 側 sidebar-cwd.zsh の sweeper
+# が surface.list の `id` フィールドと照合するため、ref 形式 `surface:N` ではなく
+# UUID でなければ即 sweep されて pill が消える)。
+# 取得経路: identify -> focused.workspace_ref -> workspace.list で workspace UUID
+# -> surface.list で focused:true の surface UUID。
+# SessionStart / UserPromptSubmit のタイミングでだけ取得し、PreToolUse 等の高頻度
+# hook では cache だけ参照する (focused は cmux 全体で前面なので、ユーザー操作
+# 直後でないと別ペインを掴む可能性があるため)。SessionEnd で cache も掃除する。
 #
 # 並列・近接して呼ばれた hook が cmux daemon で逆順に処理されると古い state で
 # pill が固定化するため、event 時刻 (perl で nanosecond) を各 hook が起動直後に
@@ -75,17 +78,35 @@ if [ -z "${CMUX_PANEL_ID:-}" ] && [ -n "$session_id" ]; then
      && command -v jq >/dev/null 2>&1; then
     cmux_cli="${CMUX_BUNDLED_CLI_PATH:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
     if [ -x "$cmux_cli" ]; then
-      identify_json=$("$cmux_cli" identify --no-caller 2>/dev/null)
-      if [ -n "$identify_json" ]; then
-        # focus-panel CLI は surface_ref (surface:N) を要求するため、pane_ref では
-        # なく surface_ref を保存する (session-monitor 側で c0a6236 で踏んだ罠)。
-        new_panel=$(printf '%s' "$identify_json" | jq -r '.focused.surface_ref // empty' 2>/dev/null)
-        [ -n "$new_panel" ] && printf '%s\n' "$new_panel" > "$panel_cache"
+      # 1. identify で focused workspace_ref (workspace:N) を取得
+      ws_ref=$("$cmux_cli" identify --no-caller 2>/dev/null \
+        | jq -r '.focused.workspace_ref // empty' 2>/dev/null)
+      if [ -n "$ws_ref" ]; then
+        # 2. workspace.list で ref -> UUID 変換
+        ws_id=$("$cmux_cli" rpc workspace.list "{}" 2>/dev/null \
+          | jq -r --arg ref "$ws_ref" \
+            '.workspaces[]? | select(.ref == $ref) | .id // empty' 2>/dev/null \
+          | head -n 1)
+        if [ -n "$ws_id" ]; then
+          # 3. surface.list で focused:true の surface UUID を取得 (= zsh 側
+          #    sidebar-cwd.zsh が pill key として使う UUID と一致)
+          new_panel=$("$cmux_cli" rpc surface.list \
+              "{\"workspace_id\":\"$ws_id\"}" 2>/dev/null \
+            | jq -r '.surfaces[]? | select(.focused == true) | .id // empty' 2>/dev/null \
+            | head -n 1)
+          [ -n "$new_panel" ] && printf '%s\n' "$new_panel" > "$panel_cache"
+        fi
       fi
     fi
   fi
 
-  [ -f "$panel_cache" ] && CMUX_PANEL_ID=$(cat "$panel_cache" 2>/dev/null)
+  if [ -f "$panel_cache" ]; then
+    CMUX_PANEL_ID=$(cat "$panel_cache" 2>/dev/null)
+    # ref 形式 (surface:N) の旧 cache が残っていたら捨てる。UUID は `:` を含まない。
+    case "$CMUX_PANEL_ID" in
+      *:*) CMUX_PANEL_ID=""; rm -f "$panel_cache" ;;
+    esac
+  fi
 fi
 
 [ -n "${CMUX_PANEL_ID:-}" ] || exit 0

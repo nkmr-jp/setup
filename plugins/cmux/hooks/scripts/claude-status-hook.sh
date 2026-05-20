@@ -81,14 +81,19 @@ panel_cache=""
 if [ -z "${CMUX_PANEL_ID:-}" ] && [ -n "$session_id" ]; then
   panel_cache="$state_dir/session-${session_id}.panel"
 
+  # SessionStart のときは cache を強制再生成する。過去の壊れた実装で書き込まれた
+  # 別 workspace の UUID が残っている可能性があるため。
+  [ "$hook_event" = "SessionStart" ] && rm -f "$panel_cache"
+
   if [ ! -f "$panel_cache" ] \
      && [ "${TERM_PROGRAM:-}" = "ghostty" ] \
      && [ "${__CFBundleIdentifier:-}" = "com.cmuxterm.app" ] \
      && command -v jq >/dev/null 2>&1; then
     cmux_cli="${CMUX_BUNDLED_CLI_PATH:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
     if [ -x "$cmux_cli" ]; then
-      # 1. cmux top で全 process と所属 surface を取得し、自分の PID から親方向に
-      #    辿って `process <PID> <surface:N>` 行に当たった surface ref を確定する。
+      # 1. cmux top で全 process / surface / pane / workspace の階層を取得し、
+      #    自分の PID から親方向に辿って `process <PID> <surface:N>` 行に当たった
+      #    surface ref を確定する。
       top_tsv=$("$cmux_cli" top --all --processes --format tsv 2>/dev/null)
       surface_ref=""
       probe_pid=$$
@@ -99,27 +104,38 @@ if [ -z "${CMUX_PANEL_ID:-}" ] && [ -n "$session_id" ]; then
           $4 == "process" && $5 == pid && $6 ~ /^surface:/ { print $6; exit }')
         [ -n "$surface_ref" ] && break
         next_pid=$(ps -o ppid= -p "$probe_pid" 2>/dev/null | tr -d ' ')
-        [ -z "$next_pid" ] || [ "$next_pid" = "$probe_pid" ] && break
+        { [ -z "$next_pid" ] || [ "$next_pid" = "$probe_pid" ]; } && break
         probe_pid="$next_pid"
         probe_attempts=$((probe_attempts + 1))
       done
 
       if [ -n "$surface_ref" ]; then
-        # 2. surface_ref が属する workspace を見つけて surface UUID を取得する
-        #    (workspace_id は事前にわからないので workspace.list を walk する)。
-        ws_list=$("$cmux_cli" rpc workspace.list "{}" 2>/dev/null)
-        for ws_id_candidate in $(printf '%s' "$ws_list" | jq -r '.workspaces[].id // empty' 2>/dev/null); do
-          [ -n "$ws_id_candidate" ] || continue
-          new_panel=$("$cmux_cli" rpc surface.list \
-              "{\"workspace_id\":\"$ws_id_candidate\"}" 2>/dev/null \
-            | jq -r --arg ref "$surface_ref" \
-              '.surfaces[]? | select(.ref == $ref) | .id // empty' 2>/dev/null \
+        # 2. surface -> pane -> workspace を TSV 上で辿って workspace ref を確定する。
+        #    surface ref (`surface:N`) は workspace 内ローカル番号で別 workspace に
+        #    同名の surface ref が存在しうるため、workspace.list を盲目的に walk
+        #    して `ref` 一致だけで UUID を取ると別ペインを掴むリスクがある。
+        pane_ref=$(printf '%s\n' "$top_tsv" | awk -F'\t' -v sref="$surface_ref" '
+          $4 == "surface" && $5 == sref && $6 ~ /^pane:/ { print $6; exit }')
+        ws_ref=""
+        if [ -n "$pane_ref" ]; then
+          ws_ref=$(printf '%s\n' "$top_tsv" | awk -F'\t' -v pref="$pane_ref" '
+            $4 == "pane" && $5 == pref && $6 ~ /^workspace:/ { print $6; exit }')
+        fi
+        if [ -n "$ws_ref" ]; then
+          # 3. workspace ref -> UUID -> surface UUID
+          ws_id=$("$cmux_cli" rpc workspace.list "{}" 2>/dev/null \
+            | jq -r --arg ref "$ws_ref" \
+              '.workspaces[]? | select(.ref == $ref) | .id // empty' 2>/dev/null \
             | head -n 1)
-          if [ -n "$new_panel" ]; then
-            printf '%s\n' "$new_panel" > "$panel_cache"
-            break
+          if [ -n "$ws_id" ]; then
+            new_panel=$("$cmux_cli" rpc surface.list \
+                "{\"workspace_id\":\"$ws_id\"}" 2>/dev/null \
+              | jq -r --arg ref "$surface_ref" \
+                '.surfaces[]? | select(.ref == $ref) | .id // empty' 2>/dev/null \
+              | head -n 1)
+            [ -n "$new_panel" ] && printf '%s\n' "$new_panel" > "$panel_cache"
           fi
-        done
+        fi
       fi
     fi
   fi

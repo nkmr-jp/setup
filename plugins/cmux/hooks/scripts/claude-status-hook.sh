@@ -13,17 +13,22 @@
 # 状態は ${TMPDIR}/cmux-pane-state/<panel-id> に保存し、zsh 側の precmd/chpwd でも
 # 同じアイコンを再描画できるようにする（state→icon の写像は両側で同期）。
 #
-# cmux 0.61+ は子プロセスに CMUX_PANEL_ID 等を継承しなくなったため、空の場合は
-# stdin の session_id を cache key にして cmux RPC から hook 自身のペインの surface
-# UUID を取得・保存する。pill key は `cwd_<UUID>` 形式 (zsh 側 sidebar-cwd.zsh の
-# sweeper が surface.list の `id` フィールドと照合するため、ref 形式 `surface:N`
-# ではなく UUID でなければ即 sweep されて pill が消える)。
-# 取得経路: `cmux identify` の caller フィールド (= hook プロセスを起動したペイン
-# 自身。focused は cmux 全体で前面のペインを指すので、ユーザーが別ペインに focus
-# を移していると別ワークスペースを掴んでしまう) -> caller.workspace_ref ->
-# workspace.list で workspace UUID -> surface.list で caller.surface_ref と一致
-# する surface の UUID。SessionStart で 1 回だけ identify を呼んで cache し、
-# 以降の高頻度 hook では cache hit のみで済ませる。SessionEnd で cache を掃除。
+# cmux 0.61+ は子プロセスに CMUX_PANEL_ID / CMUX_SURFACE_ID / CMUX_WORKSPACE_ID
+# のいずれも継承しないため、空の場合は session_id 別 cache に hook 自身のペインの
+# surface UUID を解決して保存する。pill key は `cwd_<UUID>` 形式 (zsh 側
+# sidebar-cwd.zsh の sweeper が surface.list の `id` フィールドと照合するため、
+# ref 形式 `surface:N` ではなく UUID でなければ即 sweep されて pill が消える)。
+#
+# 解決アプローチは複数試行した:
+#   - `cmux identify` の focused フィールド -> ユーザーが別ペインに focus を
+#     移していると別ワークスペースを掴んでしまうため使えない
+#   - `cmux identify` の caller フィールド -> CMUX_SURFACE_ID / CMUX_WORKSPACE_ID
+#     環境変数が hook プロセスに無いと caller が null になるため使えない
+#   - ★採用: `cmux top --all --processes --format tsv` の TSV 出力で各 process が
+#     どの surface に属するかをツリーで返してくれる。hook 自身の PID から ps で
+#     parent をたどり、TSV の `process <PID> <surface:N>` 行に当たった時点で確定。
+#     その後 workspace.list / surface.list を walk して surface UUID に変換する。
+# cache が無い間はどの hook event でも実行する。SessionEnd で cache を掃除。
 #
 # 並列・近接して呼ばれた hook が cmux daemon で逆順に処理されると古い state で
 # pill が固定化するため、event 時刻 (perl で nanosecond) を各 hook が起動直後に
@@ -67,41 +72,54 @@ if command -v jq >/dev/null 2>&1; then
 fi
 
 # CMUX_PANEL_ID が継承されない cmux 0.61+ 対策: session_id 別 cache + cmux identify。
-# 初回 SessionStart / UserPromptSubmit で identify を呼び、surface_ref を cache する。
-# 以降の高頻度 hook は cache hit のみで済ませて identify の CLI コストを抑える。
+# cache が無ければ caller ベースで identify を呼んで作る。SessionStart に限らず
+# どの hook event でも安全 (caller は呼び出したプロセス自身のペインを返すので
+# focused のような「ユーザーが今前面にしているペイン = 別ペインの可能性」リスクが
+# 無い)。SessionStart 限定にすると、既に動いているセッションでスクリプトが更新
+# された場合に永遠に cache が作られなくなるため、event を限定しない。
 panel_cache=""
 if [ -z "${CMUX_PANEL_ID:-}" ] && [ -n "$session_id" ]; then
   panel_cache="$state_dir/session-${session_id}.panel"
 
-  if [ "$hook_event" = "SessionStart" ] \
+  if [ ! -f "$panel_cache" ] \
      && [ "${TERM_PROGRAM:-}" = "ghostty" ] \
      && [ "${__CFBundleIdentifier:-}" = "com.cmuxterm.app" ] \
      && command -v jq >/dev/null 2>&1; then
     cmux_cli="${CMUX_BUNDLED_CLI_PATH:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
     if [ -x "$cmux_cli" ]; then
-      # 1. identify の caller (= hook 自身のペイン) から workspace/surface ref を取得。
-      #    --no-caller は付けない (それを付けると caller が消えて focused にしか
-      #    頼れなくなり、ユーザーが別ペインに focus を移していると別ワークスペース
-      #    を掴む)。
-      identify_json=$("$cmux_cli" identify 2>/dev/null)
-      ws_ref=$(printf '%s' "$identify_json" | jq -r '.caller.workspace_ref // empty' 2>/dev/null)
-      surface_ref=$(printf '%s' "$identify_json" | jq -r '.caller.surface_ref // empty' 2>/dev/null)
-      if [ -n "$ws_ref" ] && [ -n "$surface_ref" ]; then
-        # 2. workspace.list で ws_ref -> UUID 変換
-        ws_id=$("$cmux_cli" rpc workspace.list "{}" 2>/dev/null \
-          | jq -r --arg ref "$ws_ref" \
-            '.workspaces[]? | select(.ref == $ref) | .id // empty' 2>/dev/null \
-          | head -n 1)
-        if [ -n "$ws_id" ]; then
-          # 3. surface.list で caller surface_ref と一致する surface の UUID を取得
-          #    (= zsh 側 sidebar-cwd.zsh が pill key として使う UUID と一致)。
+      # 1. cmux top で全 process と所属 surface を取得し、自分の PID から親方向に
+      #    辿って `process <PID> <surface:N>` 行に当たった surface ref を確定する。
+      top_tsv=$("$cmux_cli" top --all --processes --format tsv 2>/dev/null)
+      surface_ref=""
+      probe_pid=$$
+      probe_attempts=0
+      while [ -n "$probe_pid" ] && [ "$probe_pid" != "0" ] \
+         && [ "$probe_pid" != "1" ] && [ "$probe_attempts" -lt 20 ]; do
+        surface_ref=$(printf '%s\n' "$top_tsv" | awk -F'\t' -v pid="$probe_pid" '
+          $4 == "process" && $5 == pid && $6 ~ /^surface:/ { print $6; exit }')
+        [ -n "$surface_ref" ] && break
+        next_pid=$(ps -o ppid= -p "$probe_pid" 2>/dev/null | tr -d ' ')
+        [ -z "$next_pid" ] || [ "$next_pid" = "$probe_pid" ] && break
+        probe_pid="$next_pid"
+        probe_attempts=$((probe_attempts + 1))
+      done
+
+      if [ -n "$surface_ref" ]; then
+        # 2. surface_ref が属する workspace を見つけて surface UUID を取得する
+        #    (workspace_id は事前にわからないので workspace.list を walk する)。
+        ws_list=$("$cmux_cli" rpc workspace.list "{}" 2>/dev/null)
+        for ws_id_candidate in $(printf '%s' "$ws_list" | jq -r '.workspaces[].id // empty' 2>/dev/null); do
+          [ -n "$ws_id_candidate" ] || continue
           new_panel=$("$cmux_cli" rpc surface.list \
-              "{\"workspace_id\":\"$ws_id\"}" 2>/dev/null \
+              "{\"workspace_id\":\"$ws_id_candidate\"}" 2>/dev/null \
             | jq -r --arg ref "$surface_ref" \
               '.surfaces[]? | select(.ref == $ref) | .id // empty' 2>/dev/null \
             | head -n 1)
-          [ -n "$new_panel" ] && printf '%s\n' "$new_panel" > "$panel_cache"
-        fi
+          if [ -n "$new_panel" ]; then
+            printf '%s\n' "$new_panel" > "$panel_cache"
+            break
+          fi
+        done
       fi
     fi
   fi

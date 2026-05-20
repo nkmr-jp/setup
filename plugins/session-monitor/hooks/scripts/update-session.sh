@@ -89,11 +89,43 @@ cache_read=0
 last_assistant_ts=""
 
 # cmux 内では TERM_PROGRAM=ghostty になるので CMUX_* を別途記録し、
-# SwiftBar 側で cmux select-workspace + focus-panel を組み合わせて
+# xbar 側で cmux select-workspace + focus-panel を組み合わせて
 # 該当ワークスペース/ペインへ正確にジャンプできるようにする。
 term_program="${TERM_PROGRAM:-}"
 cmux_panel_id="${CMUX_PANEL_ID:-}"
 cmux_workspace_id="${CMUX_WORKSPACE_ID:-}"
+
+# cmux アプリは子プロセスに CMUX_PANEL_ID 等を継承しないため、cmux 配下と判定できる
+# 場合 (TERM_PROGRAM=ghostty かつ親が cmux.app) は cmux identify CLI を呼んで
+# focused のペイン/ワークスペースを取得する。focused は cmux 全体での前面ペインを
+# 指すので、ユーザー操作直後 (SessionStart / UserPromptSubmit) のときだけ取得する。
+# PostToolUse 等は連続発火する上、focused が別ペインに移っている可能性があるので、
+# 後段の既存値引き継ぎロジックに任せる。
+if [ -z "$cmux_panel_id" ] && [ "$term_program" = "ghostty" ] \
+   && [ "${__CFBundleIdentifier:-}" = "com.cmuxterm.app" ] \
+   && { [ "$hook_event" = "SessionStart" ] || [ "$hook_event" = "UserPromptSubmit" ]; }; then
+  cmux_cli="${CMUX_BUNDLED_CLI_PATH:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
+  if [ -x "$cmux_cli" ]; then
+    identify_json=$("$cmux_cli" identify --no-caller 2>/dev/null)
+    if [ -n "$identify_json" ]; then
+      cmux_panel_id=$(printf '%s' "$identify_json" | jq -r '.focused.pane_ref // ""' 2>/dev/null)
+      cmux_workspace_id=$(printf '%s' "$identify_json" | jq -r '.focused.workspace_ref // ""' 2>/dev/null)
+    fi
+  fi
+fi
+
+# 取得できなかったときは jsonl の既存レコードから引き継ぐ。一度取得した値は
+# セッション中保持される (ユーザーがペインを移動しない限り正しい)。
+if [ -z "$cmux_panel_id" ] && [ -f "$sessions_file" ]; then
+  existing=$(jq -r --arg sid "$session_id" \
+    'select(.session_id == $sid)
+     | [(.cmux_panel_id // ""), (.cmux_workspace_id // "")] | @tsv' \
+    "$sessions_file" 2>/dev/null | head -n 1)
+  if [ -n "$existing" ]; then
+    cmux_panel_id=$(printf '%s' "$existing" | cut -f1)
+    [ -z "$cmux_workspace_id" ] && cmux_workspace_id=$(printf '%s' "$existing" | cut -f2)
+  fi
+fi
 
 # UserPromptSubmit のときは hook stdin に .prompt が直接入る。これは「ユーザーが
 # 今しがた入力したテキスト」そのもので、transcript に書き込まれる前に hook が

@@ -108,7 +108,9 @@ if [ -z "$cmux_panel_id" ] && [ "$term_program" = "ghostty" ] \
   if [ -x "$cmux_cli" ]; then
     identify_json=$("$cmux_cli" identify --no-caller 2>/dev/null)
     if [ -n "$identify_json" ]; then
-      cmux_panel_id=$(printf '%s' "$identify_json" | jq -r '.focused.pane_ref // ""' 2>/dev/null)
+      # focus-panel CLI は surface_ref (surface:N) を期待する。pane_ref を渡すと
+      # `not_found: Workspace not found` で失敗するので、必ず surface_ref を保存する。
+      cmux_panel_id=$(printf '%s' "$identify_json" | jq -r '.focused.surface_ref // ""' 2>/dev/null)
       cmux_workspace_id=$(printf '%s' "$identify_json" | jq -r '.focused.workspace_ref // ""' 2>/dev/null)
     fi
   fi

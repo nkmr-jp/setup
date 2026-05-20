@@ -13,6 +13,14 @@
 # 状態は ${TMPDIR}/cmux-pane-state/<panel-id> に保存し、zsh 側の precmd/chpwd でも
 # 同じアイコンを再描画できるようにする（state→icon の写像は両側で同期）。
 #
+# cmux 0.61+ は子プロセスに CMUX_PANEL_ID 等を継承しなくなったため、空の場合は
+# stdin の session_id を cache key にして cmux identify CLI から focused.surface_ref
+# を取得・保存する (session-monitor の cmux identify fallback と同じ方式)。
+# SessionStart / UserPromptSubmit のタイミングでだけ identify を呼び、PreToolUse
+# 等の高頻度 hook では cache だけ参照する。focused は cmux 全体で前面のペインを
+# 指すので、ユーザー操作直後でないと別ペインを掴む可能性があるため。SessionEnd で
+# cache も掃除する。
+#
 # 並列・近接して呼ばれた hook が cmux daemon で逆順に処理されると古い state で
 # pill が固定化するため、event 時刻 (perl で nanosecond) を各 hook が起動直後に
 # 記録し、pane 単位の lock 内で「自分の時刻が直近に適用された時刻より新しい場合
@@ -28,7 +36,6 @@
 exec >/dev/null 2>&1
 
 state="$1"
-[ -n "$CMUX_PANEL_ID" ] || exit 0
 command -v cmux >/dev/null 2>&1 || exit 0
 
 case "$state" in
@@ -39,12 +46,60 @@ case "$state" in
   *) exit 0 ;;
 esac
 
+state_dir="${TMPDIR:-/tmp}/cmux-pane-state"
+mkdir -p "$state_dir" 2>/dev/null
+
+# stdin の JSON を一時ファイルに保存して session_id / hook_event_name を抽出する。
+# CMUX_PANEL_ID fallback の cache key と SessionEnd 時の cache 掃除に使う。
+input_file="$state_dir/hook-input-$$"
+trap 'rm -f "$input_file"' EXIT INT TERM HUP
+cat > "$input_file" 2>/dev/null
+
+session_id=""
+hook_event=""
+if command -v jq >/dev/null 2>&1; then
+  session_id=$(jq -r '.session_id // empty' < "$input_file" 2>/dev/null)
+  hook_event=$(jq -r '.hook_event_name // empty' < "$input_file" 2>/dev/null)
+fi
+
+# CMUX_PANEL_ID が継承されない cmux 0.61+ 対策: session_id 別 cache + cmux identify。
+# 初回 SessionStart / UserPromptSubmit で identify を呼び、surface_ref を cache する。
+# 以降の高頻度 hook は cache hit のみで済ませて identify の CLI コストを抑える。
+panel_cache=""
+if [ -z "${CMUX_PANEL_ID:-}" ] && [ -n "$session_id" ]; then
+  panel_cache="$state_dir/session-${session_id}.panel"
+
+  if { [ "$hook_event" = "SessionStart" ] || [ "$hook_event" = "UserPromptSubmit" ]; } \
+     && [ "${TERM_PROGRAM:-}" = "ghostty" ] \
+     && [ "${__CFBundleIdentifier:-}" = "com.cmuxterm.app" ] \
+     && command -v jq >/dev/null 2>&1; then
+    cmux_cli="${CMUX_BUNDLED_CLI_PATH:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
+    if [ -x "$cmux_cli" ]; then
+      identify_json=$("$cmux_cli" identify --no-caller 2>/dev/null)
+      if [ -n "$identify_json" ]; then
+        # focus-panel CLI は surface_ref (surface:N) を要求するため、pane_ref では
+        # なく surface_ref を保存する (session-monitor 側で c0a6236 で踏んだ罠)。
+        new_panel=$(printf '%s' "$identify_json" | jq -r '.focused.surface_ref // empty' 2>/dev/null)
+        [ -n "$new_panel" ] && printf '%s\n' "$new_panel" > "$panel_cache"
+      fi
+    fi
+  fi
+
+  [ -f "$panel_cache" ] && CMUX_PANEL_ID=$(cat "$panel_cache" 2>/dev/null)
+fi
+
+[ -n "${CMUX_PANEL_ID:-}" ] || exit 0
+
 # SessionEnd は Claude Code 側に時間制約があり (1 秒未満)、lock 競合で sleep
 # すると "Hook cancelled" として打ち切られる。clear だけは即時に親へ制御を
 # 返し、実処理は detach した子プロセスで race-safe lock を取って実行する。
 # 親 session が消えても cmux daemon への set-status は子プロセスから完了する。
-if [ "$state" = clear ] && [ -z "$CMUX_STATUS_HOOK_BG" ]; then
-  CMUX_STATUS_HOOK_BG=1 nohup "$0" "$@" </dev/null >/dev/null 2>&1 &
+# CMUX_PANEL_ID は環境変数で子プロセスに引き継ぐ (stdin は /dev/null になる)。
+if [ "$state" = clear ] && [ -z "${CMUX_STATUS_HOOK_BG:-}" ]; then
+  # SessionEnd では panel cache も掃除しておく (次回 SessionStart で再取得)。
+  [ "$hook_event" = "SessionEnd" ] && [ -n "$panel_cache" ] && rm -f "$panel_cache"
+  CMUX_STATUS_HOOK_BG=1 CMUX_PANEL_ID="$CMUX_PANEL_ID" \
+    nohup "$0" "$@" </dev/null >/dev/null 2>&1 &
   exit 0
 fi
 
@@ -54,13 +109,10 @@ fi
 label=$(basename "$PWD" 2>/dev/null)
 [ -n "$label" ] || label="."
 
-state_dir="${TMPDIR:-/tmp}/cmux-pane-state"
 state_file="$state_dir/$CMUX_PANEL_ID"
 time_file="$state_file.time"
 lock_dir="$state_file.lock"
 key="cwd_${CMUX_PANEL_ID}"
-
-mkdir -p "$state_dir" 2>/dev/null
 
 # Lock contention 前に event 時刻を採取する (lock 取得順 ≠ event 順序を補正)。
 my_time=$(perl -MTime::HiRes -e 'printf "%d", Time::HiRes::time*1e9' 2>/dev/null)
@@ -76,7 +128,7 @@ while ! mkdir "$lock_dir" 2>/dev/null; do
   fi
   sleep 0.02
 done
-trap 'rmdir "$lock_dir" 2>/dev/null' EXIT INT TERM HUP
+trap 'rmdir "$lock_dir" 2>/dev/null; rm -f "$input_file"' EXIT INT TERM HUP
 
 # 既に新しい event が反映済みなら自分は古いので set-status をスキップ。
 existing_time=$(cat "$time_file" 2>/dev/null)
@@ -105,7 +157,7 @@ fi
 # Lock を解放してから daemon を叩く (cmux set-status の socket I/O 待ちで
 # lock が長く握られ、後続 hook の起動が遅延するのを避ける)。
 rmdir "$lock_dir" 2>/dev/null
-trap - EXIT INT TERM HUP
+trap 'rm -f "$input_file"' EXIT INT TERM HUP
 
 if [ "$state" = clear ]; then
   cmux set-status "$key" "$label" --icon "$icon"

@@ -400,3 +400,8 @@ See: https://qiita.com/numanomanu/items/513d62fb4a7921880085
 bind main    B !git rebase -i %(commit)
 bind diff    B !git rebase -i %(commit)
 ```
+
+### obsidian
+```sh
+ln -s "$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/vault" "$HOME/vault"
+```

@@ -103,3 +103,6 @@ iterm-run() {
     end tell
   end tell"
 }
+
+# obsidian
+export OBSIDIAN_VAULT="$HOME/vault"

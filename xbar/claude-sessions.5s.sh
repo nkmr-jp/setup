@@ -101,9 +101,14 @@ fmt_elapsed() {
   fi
 }
 
-# 整形ロジックは jq に集約してまとめて出す。各レコードを 1 行 TSV にして読み込む。
-# Field: rank \t status \t session_id \t cwd \t git_branch \t model \t last_prompt \t in_tokens \t out_tokens \t cache_read \t updated_at \t transcript_path \t term_program \t cmux_panel_id \t cmux_workspace_id
-# last_prompt 内の改行/タブは TSV を壊すので space に潰す (xbar 表示時に折り返す)。
+# 整形ロジックは jq に集約してまとめて出す。各レコードを 1 行にして読み込む。
+# Field: rank | status | session_id | cwd | git_branch | model | last_prompt | in_tokens | out_tokens | cache_read | updated_at | transcript_path | term_program | cmux_panel_id | cmux_workspace_id
+# last_prompt 内の改行/タブは行を壊すので space に潰す (xbar 表示時に折り返す)。
+#
+# 区切りに ASCII Unit Separator (\x1f) を使う。タブだと zsh の read が
+# IFS_WHITE 挙動で連続区切りを 1 つに潰し、空フィールド (git_branch="" 等)
+# 以降が前にズレる。非空白文字を IFS にすれば空フィールドが保持される。
+SEP=$'\x1f'
 records=$(jq -r '
   def rank: if .status=="running" then 0 elif .status=="awaiting" then 1 elif .status=="idle" then 2 else 3 end;
   [(rank|tostring),
@@ -121,8 +126,8 @@ records=$(jq -r '
    (.term_program // ""),
    (.cmux_panel_id // ""),
    (.cmux_workspace_id // "")
-  ] | @tsv
-' "$SESSIONS_FILE" 2>/dev/null | sort -t$'\t' -k1,1n -k11,11r)  # k11 = updated_at
+  ] | join("")
+' "$SESSIONS_FILE" 2>/dev/null | sort -t"$SEP" -k1,1n -k11,11r)  # k11 = updated_at
 
 # TERM_PROGRAM → macOS bundle ID へのマッピング (空白を避けるため bundle ID を使う)。
 bundle_for_term() {
@@ -137,7 +142,7 @@ bundle_for_term() {
   esac
 }
 
-print -r -- "$records" | while IFS=$'\t' read -r rank s_status session_id cwd branch model prompt in_tokens out_tokens cache_read updated_at transcript term_program cmux_panel_id cmux_workspace_id; do
+print -r -- "$records" | while IFS="$SEP" read -r rank s_status session_id cwd branch model prompt in_tokens out_tokens cache_read updated_at transcript term_program cmux_panel_id cmux_workspace_id; do
   [[ -z "$s_status" ]] && continue
 
   # xbar の menu item は `text | k=v ...` 形式なので、prompt 内の `|` は

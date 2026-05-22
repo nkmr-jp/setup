@@ -45,7 +45,7 @@ if [[ ! -s "$SESSIONS_FILE" ]]; then
   print -- "data dir: ${DATA_DIR} | size=11 color=gray"
   print -- "---"
   print -- "Refresh | refresh=true"
-  print -- "Open data dir | bash=open param1=${DATA_DIR} terminal=false"
+  print -- "Open data dir | bash=open param1='${DATA_DIR}' terminal=false"
   exit 0
 fi
 
@@ -176,7 +176,7 @@ print -r -- "$records" | while IFS="$SEP" read -r rank s_status session_id cwd b
       click_action="bash=${HANDLER} param1=bundle param2=${bundle_id} terminal=false"
       launcher_label="$term_program"
     else
-      click_action="bash=${HANDLER} param1=finder param2=${cwd} terminal=false"
+      click_action="bash=${HANDLER} param1=finder param2='${cwd}' terminal=false"
       launcher_label=""
     fi
   fi
@@ -215,9 +215,9 @@ print -r -- "$records" | while IFS="$SEP" read -r rank s_status session_id cwd b
   print -- "-- updated: ${updated_at} | size=11 color=gray"
 
   if [[ -n "$transcript" ]]; then
-    print -- "-- Open transcript | bash=${HANDLER} param1=finder param2=${transcript} terminal=false"
+    print -- "-- Open transcript | bash=${HANDLER} param1=finder param2='${transcript}' terminal=false"
   fi
-  print -- "-- Open cwd in Finder | bash=${HANDLER} param1=finder param2=${cwd} terminal=false"
+  print -- "-- Open cwd in Finder | bash=${HANDLER} param1=finder param2='${cwd}' terminal=false"
 done
 
 print -- "---"

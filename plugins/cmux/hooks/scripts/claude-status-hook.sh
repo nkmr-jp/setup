@@ -41,6 +41,15 @@
 # 並列発火で daemon 応答待ちが lock を握り続け、後続 hook が無駄に待たされる
 # のを避けるため)。並列 event の cmux 配信順は厳密でなくなるが、PreToolUse 等
 # で頻繁に最新 state へ上書きされるので、ずれた最終状態は直近の遷移で解消する。
+#
+# pill は workspace スコープで管理される (`workspace:<WS_UUID>:tag:cwd_<SURFACE>`)。
+# `cmux set-status` を `--workspace` 無しで呼ぶと `$CMUX_WORKSPACE_ID` 環境変数を
+# 参照するが、cmux 0.61+ は CMUX_WORKSPACE_ID も子プロセスに継承しないため、
+# 結果として daemon は「現在 focus している workspace」に pill を attach してしまう。
+# 別 pane の Claude Code セッションが running になった瞬間、その pill が
+# ユーザーが今見ている (別) workspace のサイドバーに混入する原因となるため、
+# 必ず `--workspace $CMUX_WORKSPACE_ID` を明示指定する。WORKSPACE_ID は panel と
+# 一緒に session 別 cache (2 行目) に保存して再解決コストを抑える。
 
 exec >/dev/null 2>&1
 
@@ -78,88 +87,114 @@ fi
 # 無い)。SessionStart 限定にすると、既に動いているセッションでスクリプトが更新
 # された場合に永遠に cache が作られなくなるため、event を限定しない。
 panel_cache=""
-if [ -z "${CMUX_PANEL_ID:-}" ] && [ -n "$session_id" ]; then
+if [ -n "$session_id" ]; then
   panel_cache="$state_dir/session-${session_id}.panel"
+fi
 
+# 既存 cache を読み込む。format は 1 行目=surface UUID, 2 行目=workspace UUID。
+# 旧 format (1 行のみ) は workspace 未指定で set-status を呼んでしまい今回のバグの
+# 原因となるので、workspace UUID が欠けている cache は無効として再生成する。
+load_panel_cache() {
+  [ -n "$panel_cache" ] && [ -f "$panel_cache" ] || return 0
+  cached_panel=$(awk 'NR==1{print; exit}' "$panel_cache" 2>/dev/null)
+  cached_ws=$(awk 'NR==2{print; exit}' "$panel_cache" 2>/dev/null)
+  case "$cached_panel" in
+    ""|*:*) cached_panel=""; cached_ws="" ;;
+  esac
+  case "$cached_ws" in
+    *:*) cached_ws="" ;;
+  esac
+  if [ -z "$cached_panel" ] || [ -z "$cached_ws" ]; then
+    rm -f "$panel_cache"
+    return 0
+  fi
+  CMUX_PANEL_ID="$cached_panel"
+  CMUX_WORKSPACE_ID="$cached_ws"
+}
+
+# 環境変数で渡されていない場合は cache を試す。
+if [ -z "${CMUX_PANEL_ID:-}" ] || [ -z "${CMUX_WORKSPACE_ID:-}" ]; then
   # SessionStart のときは cache を強制再生成する。過去の壊れた実装で書き込まれた
   # 別 workspace の UUID が残っている可能性があるため。
-  [ "$hook_event" = "SessionStart" ] && rm -f "$panel_cache"
+  [ "$hook_event" = "SessionStart" ] && [ -n "$panel_cache" ] && rm -f "$panel_cache"
+  load_panel_cache
+fi
 
-  if [ ! -f "$panel_cache" ] \
-     && [ "${TERM_PROGRAM:-}" = "ghostty" ] \
-     && [ "${__CFBundleIdentifier:-}" = "com.cmuxterm.app" ] \
-     && command -v jq >/dev/null 2>&1; then
-    cmux_cli="${CMUX_BUNDLED_CLI_PATH:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
-    if [ -x "$cmux_cli" ]; then
-      # 1. cmux top で全 process / surface / pane / workspace の階層を取得し、
-      #    自分の PID から親方向に辿って `process <PID> <surface:N>` 行に当たった
-      #    surface ref を確定する。
-      top_tsv=$("$cmux_cli" top --all --processes --format tsv 2>/dev/null)
-      surface_ref=""
-      probe_pid=$$
-      probe_attempts=0
-      while [ -n "$probe_pid" ] && [ "$probe_pid" != "0" ] \
-         && [ "$probe_pid" != "1" ] && [ "$probe_attempts" -lt 20 ]; do
-        surface_ref=$(printf '%s\n' "$top_tsv" | awk -F'\t' -v pid="$probe_pid" '
-          $4 == "process" && $5 == pid && $6 ~ /^surface:/ { print $6; exit }')
-        [ -n "$surface_ref" ] && break
-        next_pid=$(ps -o ppid= -p "$probe_pid" 2>/dev/null | tr -d ' ')
-        { [ -z "$next_pid" ] || [ "$next_pid" = "$probe_pid" ]; } && break
-        probe_pid="$next_pid"
-        probe_attempts=$((probe_attempts + 1))
-      done
+# cmux top で自分の PID から surface/pane/workspace ref を辿り UUID に変換して
+# cache に書き込む。途中で何も解決できなければ何もしない (caller が判断)。
+resolve_and_cache_panel() {
+  [ -n "$panel_cache" ] || return 0
+  [ "${TERM_PROGRAM:-}" = "ghostty" ] || return 0
+  [ "${__CFBundleIdentifier:-}" = "com.cmuxterm.app" ] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+  cmux_cli="${CMUX_BUNDLED_CLI_PATH:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
+  [ -x "$cmux_cli" ] || return 0
 
-      if [ -n "$surface_ref" ]; then
-        # 2. surface -> pane -> workspace を TSV 上で辿って workspace ref を確定する。
-        #    surface ref (`surface:N`) は workspace 内ローカル番号で別 workspace に
-        #    同名の surface ref が存在しうるため、workspace.list を盲目的に walk
-        #    して `ref` 一致だけで UUID を取ると別ペインを掴むリスクがある。
-        pane_ref=$(printf '%s\n' "$top_tsv" | awk -F'\t' -v sref="$surface_ref" '
-          $4 == "surface" && $5 == sref && $6 ~ /^pane:/ { print $6; exit }')
-        ws_ref=""
-        if [ -n "$pane_ref" ]; then
-          ws_ref=$(printf '%s\n' "$top_tsv" | awk -F'\t' -v pref="$pane_ref" '
-            $4 == "pane" && $5 == pref && $6 ~ /^workspace:/ { print $6; exit }')
-        fi
-        if [ -n "$ws_ref" ]; then
-          # 3. workspace ref -> UUID -> surface UUID
-          ws_id=$("$cmux_cli" rpc workspace.list "{}" 2>/dev/null \
-            | jq -r --arg ref "$ws_ref" \
-              '.workspaces[]? | select(.ref == $ref) | .id // empty' 2>/dev/null \
-            | head -n 1)
-          if [ -n "$ws_id" ]; then
-            new_panel=$("$cmux_cli" rpc surface.list \
-                "{\"workspace_id\":\"$ws_id\"}" 2>/dev/null \
-              | jq -r --arg ref "$surface_ref" \
-                '.surfaces[]? | select(.ref == $ref) | .id // empty' 2>/dev/null \
-              | head -n 1)
-            [ -n "$new_panel" ] && printf '%s\n' "$new_panel" > "$panel_cache"
-          fi
-        fi
-      fi
-    fi
-  fi
+  # 1. cmux top で全 process / surface / pane / workspace の階層を取得し、
+  #    自分の PID から親方向に辿って `process <PID> <surface:N>` 行に当たった
+  #    surface ref を確定する。
+  top_tsv=$("$cmux_cli" top --all --processes --format tsv 2>/dev/null)
+  surface_ref=""
+  probe_pid=$$
+  probe_attempts=0
+  while [ -n "$probe_pid" ] && [ "$probe_pid" != "0" ] \
+     && [ "$probe_pid" != "1" ] && [ "$probe_attempts" -lt 20 ]; do
+    surface_ref=$(printf '%s\n' "$top_tsv" | awk -F'\t' -v pid="$probe_pid" '
+      $4 == "process" && $5 == pid && $6 ~ /^surface:/ { print $6; exit }')
+    [ -n "$surface_ref" ] && break
+    next_pid=$(ps -o ppid= -p "$probe_pid" 2>/dev/null | tr -d ' ')
+    { [ -z "$next_pid" ] || [ "$next_pid" = "$probe_pid" ]; } && break
+    probe_pid="$next_pid"
+    probe_attempts=$((probe_attempts + 1))
+  done
+  [ -n "$surface_ref" ] || return 0
 
-  if [ -f "$panel_cache" ]; then
-    CMUX_PANEL_ID=$(cat "$panel_cache" 2>/dev/null)
-    # ref 形式 (surface:N) の旧 cache が残っていたら捨てる。UUID は `:` を含まない。
-    case "$CMUX_PANEL_ID" in
-      *:*) CMUX_PANEL_ID=""; rm -f "$panel_cache" ;;
-    esac
-  fi
+  # 2. surface -> pane -> workspace を TSV 上で辿って workspace ref を確定する。
+  #    surface ref (`surface:N`) は workspace 内ローカル番号で別 workspace に
+  #    同名の surface ref が存在しうるため、workspace.list を盲目的に walk
+  #    して `ref` 一致だけで UUID を取ると別ペインを掴むリスクがある。
+  pane_ref=$(printf '%s\n' "$top_tsv" | awk -F'\t' -v sref="$surface_ref" '
+    $4 == "surface" && $5 == sref && $6 ~ /^pane:/ { print $6; exit }')
+  [ -n "$pane_ref" ] || return 0
+  ws_ref=$(printf '%s\n' "$top_tsv" | awk -F'\t' -v pref="$pane_ref" '
+    $4 == "pane" && $5 == pref && $6 ~ /^workspace:/ { print $6; exit }')
+  [ -n "$ws_ref" ] || return 0
+
+  # 3. workspace ref -> UUID -> surface UUID
+  new_ws=$("$cmux_cli" rpc workspace.list "{}" 2>/dev/null \
+    | jq -r --arg ref "$ws_ref" \
+      '.workspaces[]? | select(.ref == $ref) | .id // empty' 2>/dev/null \
+    | head -n 1)
+  [ -n "$new_ws" ] || return 0
+  new_panel=$("$cmux_cli" rpc surface.list \
+      "{\"workspace_id\":\"$new_ws\"}" 2>/dev/null \
+    | jq -r --arg ref "$surface_ref" \
+      '.surfaces[]? | select(.ref == $ref) | .id // empty' 2>/dev/null \
+    | head -n 1)
+  [ -n "$new_panel" ] || return 0
+
+  printf '%s\n%s\n' "$new_panel" "$new_ws" > "$panel_cache"
+  load_panel_cache
+}
+
+if [ -z "${CMUX_PANEL_ID:-}" ] || [ -z "${CMUX_WORKSPACE_ID:-}" ]; then
+  resolve_and_cache_panel
 fi
 
 [ -n "${CMUX_PANEL_ID:-}" ] || exit 0
+[ -n "${CMUX_WORKSPACE_ID:-}" ] || exit 0
 
 # SessionEnd は Claude Code 側に時間制約があり (1 秒未満)、lock 競合で sleep
 # すると "Hook cancelled" として打ち切られる。clear だけは即時に親へ制御を
 # 返し、実処理は detach した子プロセスで race-safe lock を取って実行する。
 # 親 session が消えても cmux daemon への set-status は子プロセスから完了する。
-# CMUX_PANEL_ID は環境変数で子プロセスに引き継ぐ (stdin は /dev/null になる)。
+# CMUX_PANEL_ID / CMUX_WORKSPACE_ID は環境変数で子プロセスに引き継ぐ
+# (stdin は /dev/null になるので cache 経由の再解決はできない)。
 if [ "$state" = clear ] && [ -z "${CMUX_STATUS_HOOK_BG:-}" ]; then
   # SessionEnd では panel cache も掃除しておく (次回 SessionStart で再取得)。
   [ "$hook_event" = "SessionEnd" ] && [ -n "$panel_cache" ] && rm -f "$panel_cache"
   CMUX_STATUS_HOOK_BG=1 CMUX_PANEL_ID="$CMUX_PANEL_ID" \
+    CMUX_WORKSPACE_ID="$CMUX_WORKSPACE_ID" \
     nohup "$0" "$@" </dev/null >/dev/null 2>&1 &
   exit 0
 fi
@@ -221,12 +256,13 @@ rmdir "$lock_dir" 2>/dev/null
 trap 'rm -f "$input_file"' EXIT INT TERM HUP
 
 if [ "$state" = clear ]; then
-  cmux set-status "$key" "$label" --icon "$icon"
+  cmux set-status "$key" "$label" --workspace "$CMUX_WORKSPACE_ID" --icon "$icon"
   exit 0
 fi
 
 # 旧バージョンの per-pane Claude pill が残っていたら回収しておく。
-cmux clear-status "claude_${CMUX_PANEL_ID}" 2>/dev/null
+cmux clear-status "claude_${CMUX_PANEL_ID}" --workspace "$CMUX_WORKSPACE_ID" 2>/dev/null
 
-cmux set-status "$key" "$label" --icon "$icon" --color "$color"
+cmux set-status "$key" "$label" --workspace "$CMUX_WORKSPACE_ID" \
+  --icon "$icon" --color "$color"
 exit 0

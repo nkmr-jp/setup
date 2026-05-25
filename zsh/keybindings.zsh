@@ -8,7 +8,7 @@
 # ghqリポジトリ検索と移動 (Ctrl+G)
 # ========================================
 _ghq_finder_widget() {
-    local selected_dir=$(find ~/ghq -mindepth 3 -maxdepth 3 -type d | sed "s|$HOME/ghq/||" | fzf --reverse --height 40%)
+    local selected_dir=$(find -L ~/ghq -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sed "s|$HOME/ghq/||" | fzf --reverse --height 40%)
     if [[ -n "$selected_dir" ]]; then
         local full_path="$HOME/ghq/$selected_dir"
         # fzfの影響外でcdするため遅延実行（gwt.zshの_GWT_DEFERRED_CMD機構を使用）

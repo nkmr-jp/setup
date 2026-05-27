@@ -34,6 +34,11 @@
   //     "unreadPaneRing" : true
   //   },
 
+    "app" : {
+      // Cmd+クリック等でファイルを開いた時、cmux 内プレビューではなく macOS デフォルトアプリで開く
+      "openSupportedFilesInCmux" : false
+    },
+
     "sidebar" : {
       // "branchLayout" : "vertical",
       // "hideAllDetails" : false,

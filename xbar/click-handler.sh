@@ -60,8 +60,8 @@ case "$mode" in
     jq -c --arg sid "$ident" 'select(.session_id != $sid)' "$sessions_file" > "$tmp_file" 2>/dev/null || : > "$tmp_file"
     mv "$tmp_file" "$sessions_file"
 
-    # SwiftBar に即時再描画を要求 (xbar 経由の場合はメニュー側 refresh=true がカバー)。
-    /usr/bin/open -g "swiftbar://refreshplugin?name=claude-sessions.5s.sh" >/dev/null 2>&1 &
+    # xbar に即時再描画を要求 (5s ループでも追従するが UI 反映を早めるため)。
+    /usr/bin/open -g "xbar://app.xbarapp.com/refreshPlugin?path=claude-sessions.5s.sh" >/dev/null 2>&1 &
     exit 0
     ;;
 esac

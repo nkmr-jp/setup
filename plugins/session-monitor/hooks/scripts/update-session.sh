@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Claude Code の各 hook イベントから session_id / transcript_path / cwd を受け取り、
-# 全セッション横断の sessions.jsonl を upsert する。SwiftBar はこの jsonl を読んで
+# 全セッション横断の sessions.jsonl を upsert する。xbar はこの jsonl を読んで
 # メニューバーに表示する。
 #
 # 設計:
@@ -16,9 +16,9 @@
 #   をベストエフォートで抽出。tail -r で末尾から逆順走査して最初に見つかったものを採用。
 # - 同時並走する複数セッションが sessions.jsonl を破壊しないよう mkdir lock で排他。
 #   - PostToolUse は高頻度発火するため、lock 競合中も lock 内処理を最小限に保つ。
-# - SwiftBar 側が CLAUDE_PLUGIN_DATA の実パスを発見できるよう、
+# - xbar 側が CLAUDE_PLUGIN_DATA の実パスを発見できるよう、
 #   ~/.claude/session-monitor/data-dir にデータディレクトリの絶対パスを記録する
-#   (anchor file)。SwiftBar はそれを読んで sessions.jsonl の場所を解決する。
+#   (anchor file)。xbar はそれを読んで sessions.jsonl の場所を解決する。
 # - SessionEnd は Claude Code 側の hook タイムアウトが厳しいため、即座に親へ復帰し
 #   実処理は detach 子プロセスで行う (cmux pill と同様)。
 
@@ -55,7 +55,7 @@ mkdir -p "$data_dir" 2>/dev/null
 sessions_file="$data_dir/sessions.jsonl"
 lock_dir="$sessions_file.lock"
 
-# anchor file: SwiftBar が $CLAUDE_PLUGIN_DATA の実体を知る手段が無いため、
+# anchor file: xbar が $CLAUDE_PLUGIN_DATA の実体を知る手段が無いため、
 # 固定パスから data_dir を逆引きできるようにしておく。
 anchor_dir="$HOME/.claude/session-monitor"
 mkdir -p "$anchor_dir" 2>/dev/null
@@ -158,7 +158,7 @@ if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
   #   - sidechain (subagent 内の user role メッセージ)
   #   - isMeta=true (Stop hook 注入 / Skill 起動 / "Continue from where..." 等)
   #   - toolUseResult あり (Bash 等のツール結果として後付けされた user role)
-  # SwiftBar 側で全文表示するため上限は緩めに (極端に長い貼り付けを抑える程度)。
+  # xbar 側で全文表示するため上限は緩めに (極端に長い貼り付けを抑える程度)。
   last_prompt=$(printf '%s\n' "$tail_buf" | jq -r '
     select(.type=="user"
            and (.isSidechain // false)==false
@@ -232,11 +232,11 @@ fi
 
 mv "$tmp_file" "$sessions_file"
 
-# SwiftBar に即時再描画を要求する。`open -g` は URL ハンドラへ投げるだけで
+# xbar に即時再描画を要求する。`open -g` は URL ハンドラへ投げるだけで
 # アプリをフォアグラウンドに上げないので、ターミナル等の現在のフォアグラウンド
-# アプリから入力フォーカスを奪わない。`-g` 無しだと SwiftBar がアクティブ化
+# アプリから入力フォーカスを奪わない。`-g` 無しだと xbar がアクティブ化
 # されて、hook 発火のたびに入力フォーカスが奪われてしまう。
-# (SwiftBar が動いていない / 未インストールでもエラーは無視される)
-/usr/bin/open -g "swiftbar://refreshplugin?name=claude-sessions.5s.sh" >/dev/null 2>&1 &
+# (xbar が動いていない / 未インストールでもエラーは無視される)
+/usr/bin/open -g "xbar://app.xbarapp.com/refreshPlugin?path=claude-sessions.5s.sh" >/dev/null 2>&1 &
 
 exit 0

@@ -117,20 +117,23 @@ _cmux_equalize_splits() {
 _cmux_equalize_splits_after_close() {
   # pane を閉じた直後に workspace 内の残った分割を均等化する。
   # shell が exit してから cmux が pane を model から外すまでに時間差があるため、
-  # zshexit と同期で equalize を呼ぶと「閉じる直前」の構成で均等化してしまう。
-  # disowned な子プロセスを spawn し、shell 終了を生き残らせて少し待ってから RPC を打つ。
+  # 短い間隔でリトライする。equalize_splits は冪等なので複数回呼んでも安全。
+  # disowned な子プロセスを spawn し、shell 終了を生き残らせて RPC を打つ。
   (( ${+commands[cmux]} )) || return 0
   [[ "${CMUX_EQUALIZE_SPLITS:-1}" != 0 ]] || return 0
   [[ -n "$_CMUX_WORKSPACE_ID" ]] || return 0
   local ws="$_CMUX_WORKSPACE_ID"
   local cmux_bin="${commands[cmux]}"
-  local delay="${CMUX_EQUALIZE_AFTER_CLOSE_DELAY:-1}"
+  local delays="${CMUX_EQUALIZE_AFTER_CLOSE_DELAYS:-0.1 0.4}"
   {
     trap '' HUP INT TERM PIPE QUIT
     exec </dev/null >/dev/null 2>&1
-    sleep "$delay"
-    "$cmux_bin" rpc workspace.equalize_splits \
-      "{\"workspace_id\":\"$ws\"}"
+    local d
+    for d in ${=delays}; do
+      sleep "$d"
+      "$cmux_bin" rpc workspace.equalize_splits \
+        "{\"workspace_id\":\"$ws\"}"
+    done
   } &!
 }
 

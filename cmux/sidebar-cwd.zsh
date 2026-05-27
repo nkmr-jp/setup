@@ -222,6 +222,18 @@ fi
 # 特に zshexit でサブシェル終了の度に pane の pill / state file を消してしまうのを防ぐ。
 # 強制クローズで残った pill は sweeper が数秒おきに回収するので副作用はない。
 if [[ -n "${ZSH_VERSION:-}" ]] && [[ -o interactive ]]; then
+  # _cmux_resolve_ids (重い: top + workspace.list + surface.list) を待たず、
+  # cmux identify で workspace_ref だけ即取得して equalize を先行発火する。
+  # こうすると pane 作成からの反映が ~100ms 単位で速くなる。
+  if (( ${+commands[cmux]} )) && [[ "${CMUX_EQUALIZE_SPLITS:-1}" != 0 ]]; then
+    {
+      ws_ref=$(cmux identify --json 2>/dev/null \
+        | /usr/bin/awk -F'"' '/"workspace_ref"[[:space:]]*:/ {print $4; exit}')
+      [[ -n "$ws_ref" ]] && cmux rpc workspace.equalize_splits \
+        "{\"workspace_id\":\"$ws_ref\"}" >/dev/null 2>&1
+    } &!
+  fi
+
   # まず一度だけ cmux top で自分の panel/workspace UUID を解決する。
   [[ -z "$_CMUX_PANEL_ID" || -z "$_CMUX_WORKSPACE_ID" ]] && _cmux_resolve_ids
 

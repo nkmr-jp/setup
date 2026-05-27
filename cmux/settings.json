@@ -42,8 +42,9 @@
     "sidebar" : {
       // "branchLayout" : "vertical",
       // "hideAllDetails" : false,
-      // "openPortLinksInCmuxBrowser" : true,
-      // "openPullRequestLinksInCmuxBrowser" : true,
+      // sidebar の Port / PR リンクをデフォルトブラウザで開く
+      "openPortLinksInCmuxBrowser" : false,
+      "openPullRequestLinksInCmuxBrowser" : false,
       "showBranchDirectory" : false,
       "showCustomMetadata" : true,
       // "showLog" : true,
@@ -103,28 +104,11 @@
   //     ]
   //   },
 
-  //   "browser" : {
-  //     "defaultSearchEngine" : "google",
-  //     "hostsToOpenInEmbeddedBrowser" : [
-  // 
-  //     ],
-  //     "insecureHttpHostsAllowedInEmbeddedBrowser" : [
-  //       "localhost",
-  //       "127.0.0.1",
-  //       "::1",
-  //       "0.0.0.0",
-  //       "*.localtest.me"
-  //     ],
-  //     "interceptTerminalOpenCommandInCmuxBrowser" : true,
-  //     "openTerminalLinksInCmuxBrowser" : true,
-  //     "reactGrabVersion" : "0.1.29",
-  //     "showImportHintOnBlankTabs" : true,
-  //     "showSearchSuggestions" : true,
-  //     "theme" : "system",
-  //     "urlsToAlwaysOpenExternally" : [
-  // 
-  //     ]
-  //   },
+    "browser" : {
+      // terminal 上の URL クリックと `open` コマンドをデフォルトブラウザに渡す
+      "interceptTerminalOpenCommandInCmuxBrowser" : false,
+      "openTerminalLinksInCmuxBrowser" : false
+    },
 
     "shortcuts" : {
       "bindings" : {

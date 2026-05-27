@@ -103,6 +103,17 @@ _cmux_update_cwd_status() {
   cmux set-status "${args[@]}" >/dev/null 2>&1 &!
 }
 
+_cmux_equalize_splits() {
+  # 新しい pane が起動したタイミングで、その workspace 内の分割サイズを均等化する。
+  # workspace.equalize_splits は分割が無い／既に均等の場合は no-op なので、毎回呼んで
+  # も実害は無い。CMUX_EQUALIZE_SPLITS=0 で抑止可能。
+  (( ${+commands[cmux]} )) || return 0
+  [[ "${CMUX_EQUALIZE_SPLITS:-1}" != 0 ]] || return 0
+  [[ -n "$_CMUX_WORKSPACE_ID" ]] || return 0
+  cmux rpc workspace.equalize_splits \
+    "{\"workspace_id\":\"$_CMUX_WORKSPACE_ID\"}" >/dev/null 2>&1 &!
+}
+
 _cmux_clear_pane_status() {
   # zshexit から呼ばれるので同期実行。&! だと shell 終了時に reap されない。
   (( ${+commands[cmux]} )) || return 0
@@ -209,4 +220,5 @@ if [[ -n "${ZSH_VERSION:-}" ]] && [[ -o interactive ]]; then
   fi
   _cmux_update_cwd_status
   _cmux_spawn_gc_sweeper
+  _cmux_equalize_splits
 fi

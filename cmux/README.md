@@ -34,6 +34,12 @@ Claude Code 側のフック (`UserPromptSubmit` / `Notification`) は [`agent-pl
 
 workspace 名は手動設定（`cmd+shift+r` でリネーム）。強制クローズで残った pill は独立 sweeper が数秒おきに回収する。
 
+### Pane 起動時に分割サイズを均等化
+
+`sidebar-cwd.zsh` は interactive shell 起動時に `workspace.equalize_splits` RPC を一度叩く。新しい pane を作る (= 新しい shell が起動する) たびに、その workspace 内の分割が自動で均等化される。既に均等／分割が無い場合は no-op。
+
+無効化したいときは `~/.zshrc` で `export CMUX_EQUALIZE_SPLITS=0` を設定する。
+
 ## settings.json
 
 JSON with comments (JSONC) 形式。template として全項目がコメントアウトされた状態で生成されるが、本リポジトリでは `shortcuts` のみ有効化している。

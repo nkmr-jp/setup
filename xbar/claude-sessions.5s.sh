@@ -218,6 +218,9 @@ print -r -- "$records" | while IFS="$SEP" read -r rank s_status session_id cwd b
     print -- "-- Open transcript | bash=${HANDLER} param1=finder param2='${transcript}' terminal=false"
   fi
   print -- "-- Open cwd in Finder | bash=${HANDLER} param1=finder param2='${cwd}' terminal=false"
+  # ハングや異常終了で hook が SessionEnd を撃てなかったセッションを手動で掃除する。
+  # refresh=true でメニューを再構築して即時消える。
+  print -- "-- 🗑 Delete from list | bash=${HANDLER} param1=delete param2=${session_id} terminal=false refresh=true color=red"
 done
 
 print -- "---"

@@ -6,6 +6,7 @@
 #   mode = cmux   : identifier = panel (= surface) id, workspace_id = 任意
 #   mode = bundle : identifier = macOS bundle id
 #   mode = finder : identifier = path
+#   mode = delete : identifier = session_id (sessions.jsonl から該当行を除去)
 
 mode="${1:-}"
 ident="${2:-}"
@@ -28,6 +29,40 @@ case "$mode" in
     ;;
   finder)
     exec /usr/bin/open "$ident"
+    ;;
+  delete)
+    # メニューバーに古いセッションが残ったときに手動で除去するための入口。
+    # データソース解決は xbar 本体スクリプトと同じ規約 (anchor file → fallback)。
+    [[ -n "$ident" ]] || exit 1
+    command -v jq >/dev/null 2>&1 || exit 1
+
+    ANCHOR="$HOME/.claude/session-monitor/data-dir"
+    DATA_DIR=""
+    [[ -f "$ANCHOR" ]] && DATA_DIR=$(< "$ANCHOR")
+    [[ -z "$DATA_DIR" ]] && DATA_DIR="$HOME/.claude/session-monitor"
+    sessions_file="$DATA_DIR/sessions.jsonl"
+    [[ -f "$sessions_file" ]] || exit 0
+
+    # update-session.sh と同じ mkdir lock 規約 (1s 超 = stale)。
+    lock_dir="$sessions_file.lock"
+    attempts=0
+    while ! mkdir "$lock_dir" 2>/dev/null; do
+      attempts=$((attempts + 1))
+      if (( attempts > 50 )); then
+        rm -rf "$lock_dir" 2>/dev/null
+        attempts=0
+      fi
+      sleep 0.02
+    done
+    trap 'rm -rf "$lock_dir" 2>/dev/null' EXIT INT TERM HUP
+
+    tmp_file="$sessions_file.tmp"
+    jq -c --arg sid "$ident" 'select(.session_id != $sid)' "$sessions_file" > "$tmp_file" 2>/dev/null || : > "$tmp_file"
+    mv "$tmp_file" "$sessions_file"
+
+    # SwiftBar に即時再描画を要求 (xbar 経由の場合はメニュー側 refresh=true がカバー)。
+    /usr/bin/open -g "swiftbar://refreshplugin?name=claude-sessions.5s.sh" >/dev/null 2>&1 &
+    exit 0
     ;;
 esac
 

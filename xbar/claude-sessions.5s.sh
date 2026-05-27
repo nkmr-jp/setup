@@ -49,6 +49,34 @@ if [[ ! -s "$SESSIONS_FILE" ]]; then
   exit 0
 fi
 
+now_epoch=$(date -u +%s)
+
+# GC: 1 日以上更新されていないレコードを除去する。SessionEnd が撃てずに残った
+# 残骸を放置すると menu が肥大化するので、xbar 駆動の 5s ループで掃除する。
+# updated_at は UTC の ISO 8601 なので、cutoff との文字列比較で十分。
+# lock は実際に stale 行があるときのみ取得し、hook 側 (高頻度書き込み) との
+# 競合を最小化する。
+cutoff_iso=$(date -u -r $(( now_epoch - 86400 )) +%Y-%m-%dT%H:%M:%SZ)
+if jq -e --arg cutoff "$cutoff_iso" 'select((.updated_at // "") < $cutoff)' "$SESSIONS_FILE" >/dev/null 2>&1; then
+  lock_dir="$SESSIONS_FILE.lock"
+  attempts=0
+  while ! mkdir "$lock_dir" 2>/dev/null; do
+    attempts=$((attempts + 1))
+    if (( attempts > 50 )); then
+      rm -rf "$lock_dir" 2>/dev/null
+      attempts=0
+    fi
+    sleep 0.02
+  done
+  tmp_file="$SESSIONS_FILE.tmp"
+  if jq -c --arg cutoff "$cutoff_iso" 'select((.updated_at // "") >= $cutoff)' "$SESSIONS_FILE" > "$tmp_file" 2>/dev/null; then
+    mv "$tmp_file" "$SESSIONS_FILE"
+  else
+    rm -f "$tmp_file"
+  fi
+  rm -rf "$lock_dir" 2>/dev/null
+fi
+
 counts=$(jq -s '
   group_by(.status) | map({key:.[0].status, value:length}) | from_entries
 ' "$SESSIONS_FILE" 2>/dev/null)
@@ -84,8 +112,6 @@ if (( n_total == 0 )); then
   print -- "アクティブなセッションはありません | color=gray"
   print -- "---"
 fi
-
-now_epoch=$(date -u +%s)
 
 # 経過時間を "Ns / Nm / Nh / Nd ago" の短い文字列に整形
 fmt_elapsed() {

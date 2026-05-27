@@ -34,11 +34,19 @@ Claude Code 側のフック (`UserPromptSubmit` / `Notification`) は [`agent-pl
 
 workspace 名は手動設定（`cmd+shift+r` でリネーム）。強制クローズで残った pill は独立 sweeper が数秒おきに回収する。
 
-### Pane 起動時に分割サイズを均等化
+### Pane 起動/削除時に分割サイズを均等化
 
-`sidebar-cwd.zsh` は interactive shell 起動時に `workspace.equalize_splits` RPC を一度叩く。新しい pane を作る (= 新しい shell が起動する) たびに、その workspace 内の分割が自動で均等化される。既に均等／分割が無い場合は no-op。
+`sidebar-cwd.zsh` は以下のタイミングで `workspace.equalize_splits` RPC を打つ:
 
-無効化したいときは `~/.zshrc` で `export CMUX_EQUALIZE_SPLITS=0` を設定する。
+- **起動時**: interactive shell init で同期的に 1 回
+- **削除時**: `zshexit` から disowned 子プロセスを spawn し、cmux 側で pane が model から外れるのを待って (デフォルト 1 秒) RPC を打つ
+
+新しい pane を作る／既存 pane を閉じるたびに、その workspace 内の分割が自動で均等化される。既に均等／分割が無い場合は no-op。
+
+| env var | デフォルト | 意味 |
+| --- | --- | --- |
+| `CMUX_EQUALIZE_SPLITS` | `1` | `0` で全無効化 |
+| `CMUX_EQUALIZE_AFTER_CLOSE_DELAY` | `1` | 削除後 equalize までの待ち秒数 |
 
 ## settings.json
 

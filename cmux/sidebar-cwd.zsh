@@ -114,6 +114,26 @@ _cmux_equalize_splits() {
     "{\"workspace_id\":\"$_CMUX_WORKSPACE_ID\"}" >/dev/null 2>&1 &!
 }
 
+_cmux_equalize_splits_after_close() {
+  # pane を閉じた直後に workspace 内の残った分割を均等化する。
+  # shell が exit してから cmux が pane を model から外すまでに時間差があるため、
+  # zshexit と同期で equalize を呼ぶと「閉じる直前」の構成で均等化してしまう。
+  # disowned な子プロセスを spawn し、shell 終了を生き残らせて少し待ってから RPC を打つ。
+  (( ${+commands[cmux]} )) || return 0
+  [[ "${CMUX_EQUALIZE_SPLITS:-1}" != 0 ]] || return 0
+  [[ -n "$_CMUX_WORKSPACE_ID" ]] || return 0
+  local ws="$_CMUX_WORKSPACE_ID"
+  local cmux_bin="${commands[cmux]}"
+  local delay="${CMUX_EQUALIZE_AFTER_CLOSE_DELAY:-1}"
+  {
+    trap '' HUP INT TERM PIPE QUIT
+    exec </dev/null >/dev/null 2>&1
+    sleep "$delay"
+    "$cmux_bin" rpc workspace.equalize_splits \
+      "{\"workspace_id\":\"$ws\"}"
+  } &!
+}
+
 _cmux_clear_pane_status() {
   # zshexit から呼ばれるので同期実行。&! だと shell 終了時に reap されない。
   (( ${+commands[cmux]} )) || return 0
@@ -212,6 +232,7 @@ if [[ -n "${ZSH_VERSION:-}" ]] && [[ -o interactive ]]; then
   add-zsh-hook chpwd _cmux_update_cwd_status
   add-zsh-hook precmd _cmux_update_cwd_status
   add-zsh-hook zshexit _cmux_clear_pane_status
+  add-zsh-hook zshexit _cmux_equalize_splits_after_close
   # 旧 run_<panel> pill が残っていたら回収する (one-time migration)。
   if [[ -n "$_CMUX_PANEL_ID" && -n "$_CMUX_WORKSPACE_ID" ]] \
      && (( ${+commands[cmux]} )); then

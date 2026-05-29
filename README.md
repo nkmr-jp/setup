@@ -168,6 +168,8 @@ setup/
 │   ├── plugins.zsh   # Plugin settings
 │   └── theme.zsh     # Theme settings
 ├── tools/            # Tool-specific configurations
+├── bin/              # Local executables (symlinked into ~/bin)
+├── launchd/          # macOS LaunchAgent plists (symlinked into ~/Library/LaunchAgents)
 └── gitconfig         # Git configuration
 ```
 
@@ -405,3 +407,62 @@ bind diff    B !git rebase -i %(commit)
 ```sh
 ln -s "$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/vault" "$HOME/vault"
 ```
+
+## LaunchAgents
+
+macOS 上で定期実行される launchd ジョブ。plist は `launchd/` に置き、
+`~/Library/LaunchAgents/` から symlink で参照してリポジトリ更新を即反映できるようにする。
+
+### check-claude-orphans
+
+`prompt-line-wt-*` などの worktree から起動した `claude` セッションを終了/削除したあと、
+`claude daemon` / `bg-spare` プロセスが launchd に養子化されたまま CPU 100% で
+busy-loop してしまうケースがある (v2.1.152 で実例を確認)。
+この LaunchAgent は **30 分ごとに孤児を検出し、暴走中のものだけを自動 kill** する。
+
+**判定ロジック** (`bin/check-claude-orphans.sh`):
+- 対象: `PPID=1` (launchd 養子化) かつ comm が `/Users/nkmr/.local/{share/claude,bin/claude}` のプロセス (デスクトップ `Claude.app` は除外)
+- 「暴走中」: 累積 CPU 時間 ÷ 経過時間 ≥ 20%
+
+#### Install
+
+```sh
+# 1. ~/bin と ~/Library/LaunchAgents から symlink で参照
+ln -sf ~/ghq/github.com/nkmr-jp/setup/bin/check-claude-orphans.sh ~/bin/check-claude-orphans.sh
+ln -sf ~/ghq/github.com/nkmr-jp/setup/launchd/com.nkmr.check-claude-orphans.plist ~/Library/LaunchAgents/com.nkmr.check-claude-orphans.plist
+
+# 2. launchd に登録 (30 分ごとに --kill モードで実行される)
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.check-claude-orphans.plist
+
+# 3. 動作確認 (即座に 1 回起動)
+launchctl kickstart gui/$(id -u)/com.nkmr.check-claude-orphans
+tail ~/Library/Logs/check-claude-orphans.log
+```
+
+#### Usage (手動実行)
+
+```sh
+check-claude-orphans.sh             # dry-run: 暴走中の孤児を表示するだけ
+check-claude-orphans.sh --kill      # SIGTERM → 3 秒後に残ってれば SIGKILL
+check-claude-orphans.sh --list-all  # idle 含む全孤児を表示 (棚卸し用)
+```
+
+#### Uninstall / 停止
+
+```sh
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.check-claude-orphans.plist
+rm ~/Library/LaunchAgents/com.nkmr.check-claude-orphans.plist
+rm ~/bin/check-claude-orphans.sh
+```
+
+#### ログ
+
+`~/Library/Logs/check-claude-orphans.log` に追記される。
+孤児が居ない場合: `no orphan claude processes (PPID=1)`。
+
+#### 注意
+
+- idle 化した孤児 (過去に焼いたが現在 0% のもの) は自動 kill 対象外。
+  気になったら `--list-all` で確認して手で `kill` する。
+- 30 分間隔なので検知最大遅延は 30 分。
+  もっと早く反応させたい場合は `launchd/com.nkmr.check-claude-orphans.plist` の `StartInterval` を縮める。

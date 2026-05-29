@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.nkmr.check-claude-orphans</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/nkmr/bin/check-claude-orphans.sh</string>
+    <string>--kill</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>1800</integer>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>StandardOutPath</key>
+  <string>/Users/nkmr/Library/Logs/check-claude-orphans.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/nkmr/Library/Logs/check-claude-orphans.log</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>HOME</key>
+    <string>/Users/nkmr</string>
+  </dict>
+</dict>
+</plist>

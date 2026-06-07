@@ -466,3 +466,59 @@ rm ~/bin/check-claude-orphans.sh
   気になったら `--list-all` で確認して手で `kill` する。
 - 30 分間隔なので検知最大遅延は 30 分。
   もっと早く反応させたい場合は `launchd/com.nkmr.check-claude-orphans.plist` の `StartInterval` を縮める。
+
+### git-auto-backup
+
+任意の git リポジトリを無人で `pull --rebase → add -A → commit → push` する汎用バックアップ
+(`bin/git-auto-backup.sh`)。`issues` / `vault` など複数リポジトリで共用する。
+30 分ごとに launchd から起動し、リポジトリパスを引数で受け取る。
+
+**Usage**
+
+```sh
+git-auto-backup.sh <repo-path> [--llm]
+#   <repo-path>  バックアップ対象リポジトリの絶対パス
+#   --llm        コミットメッセージをローカル Ollama で生成 (失敗時は auto:<日時> に降格)
+```
+
+Env override: `BACKUP_BRANCH` (既定 `main`) / `BACKUP_LLM_MODEL` (既定 `qwen3.5:9b`) /
+`BACKUP_LLM_TIMEOUT` (既定 `45` 秒)。
+
+**`--llm` のコミットメッセージ生成**
+
+ステージ済み差分から Ollama の HTTP API (`/api/generate`, `think:false`) で英語・命令形 1 行を生成する。
+
+- `think` を無効化しないと推論で時間を使い切り空応答になるため必須。
+- `curl`/`jq`/サーバ未起動・タイムアウト・空応答時は `auto:<日時>` に自動降格し、**コミット自体は必ず成功する** (無人ジョブのためフォールバック最優先)。
+- 利用にはローカルで Ollama 稼働＋対象モデルの pull が必要 (`ollama pull qwen3.5:9b`)。
+
+#### Install (例: issues リポジトリ)
+
+```sh
+# 1. ~/bin と ~/Library/LaunchAgents から symlink で参照
+ln -sf ~/ghq/github.com/nkmr-jp/setup/bin/git-auto-backup.sh ~/bin/git-auto-backup.sh
+ln -sf ~/ghq/github.com/nkmr-jp/setup/launchd/com.nkmr.issues-autobackup.plist ~/Library/LaunchAgents/com.nkmr.issues-autobackup.plist
+
+# 2. launchd に登録 (30 分ごとに <issues path> --llm で起動)
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.issues-autobackup.plist
+
+# 3. 動作確認 (即座に 1 回起動)
+launchctl kickstart -p gui/$(id -u)/com.nkmr.issues-autobackup
+tail ~/Library/Logs/issues-autobackup.log
+```
+
+別リポジトリを追加する場合は plist を複製し、`Label` / `ProgramArguments` のパス引数 /
+`StandardOutPath` を差し替える (`--llm` は任意)。
+
+#### Uninstall / 停止
+
+```sh
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.issues-autobackup.plist
+rm ~/Library/LaunchAgents/com.nkmr.issues-autobackup.plist
+```
+
+#### ログ
+
+`~/Library/Logs/issues-autobackup.log` に追記される。
+変更なし: `no local changes` / コミット時: `committed: <message>` /
+LLM 降格時: `LLM unavailable, fallback message`。

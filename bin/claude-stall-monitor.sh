@@ -25,6 +25,11 @@
 #       parse 失敗は claude プロセスが生きたまま固まる点が決定的に異なる。
 #       注: CLAUDE_CODE_SESSION_ID(env) は起動時の元 id で JSONL 名(実 session_id)と
 #           一致しないため、プロセス照合は session_id ではなく cwd→プロジェクト名で行う。
+#     - /clear や正常終了 → 古い JSONL に last-prompt/ai-title/mode/permission-mode 等の
+#       メタデータレコードが追記され mtime が進むが、ターンフックは発火しないため ack < mtime
+#       になる。さらに /clear はプロセスが生き続ける（同プロジェクト）ため cwd 判定も通過する。
+#       → 末尾レコードの type で弁別する。parse 失敗の末尾は会話レコード（assistant の試行）、
+#         /clear・終了の末尾は制御/メタデータレコード。末尾が assistant/user 以外なら鳴らさない。
 #
 # 使い方:
 #   claude-stall-monitor.sh            # watcher（既定）: 異常停止を検知して通知
@@ -69,6 +74,19 @@ project_has_live_session() {
   return 1
 }
 
+# --- 末尾レコードが「会話の途中」か判定 ---
+# parse 失敗で固まった JSONL の末尾は assistant（パースできなかった tool_use の試行）。
+# /clear や正常終了で追記される末尾は mode/permission-mode/ai-title/last-prompt/system 等の
+# 制御・メタデータレコード。末尾が assistant/user のときだけ parse 失敗の疑いとみなす。
+last_record_is_conversation() {
+  local t
+  t="$(tail -1 "$1" 2>/dev/null | jq -r '.type // empty' 2>/dev/null)"
+  case "$t" in
+    assistant|user) return 0 ;;
+    *)              return 1 ;;
+  esac
+}
+
 # --- 通知 ---
 notify() {
   local title="$1" subtitle="$2" message="$3"
@@ -100,8 +118,10 @@ watch_mode() {
     # 直近の JSONL 書き込みの後にフックが発火していれば正常（正常完了/エラー/権限待ち/ツール実行中）
     [ "$ack" -ge "$mtime" ] && continue
     # ここに来たら: JSONL は進んだのにどのフックも発火していない＝ parse 失敗の疑い。
-    # ただし claude プロセスが既に消えている＝ユーザーがセッションを終了/kill した場合は
-    # parse 失敗ではないので鳴らさない（誤検知防止）。
+    # ただし以下は parse 失敗ではないので鳴らさない（誤検知防止）:
+    #   - 末尾が制御/メタデータレコード → /clear・正常終了による追記（会話の途中ではない）
+    #   - 対象プロジェクトに生存 claude プロセスなし → ユーザーがセッションを終了/kill した
+    last_record_is_conversation "$f" || continue
     project="$(basename "$(dirname "$f")")"
     project_has_live_session "$project" || continue
     alerted_file="$MONITOR_DIR/$sid.alerted"

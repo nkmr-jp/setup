@@ -467,6 +467,71 @@ rm ~/bin/check-claude-orphans.sh
 - 30 分間隔なので検知最大遅延は 30 分。
   もっと早く反応させたい場合は `launchd/com.nkmr.check-claude-orphans.plist` の `StartInterval` を縮める。
 
+### claude-stall-monitor
+
+Claude Code で `The model's tool call could not be parsed (retry also failed).` により
+ターンが異常終了すると、**Stop / Notification / StopFailure いずれのフックも発火せず、何の通知も
+来ない**。セッション JSONL にも parse 失敗の専用レコードは残らない（assistant の試行レコードだけ）。
+そのため「セッションが止まっていること」に気づけない。この LaunchAgent は **30 秒ごとに各セッションを
+監視し、parse 失敗による無通知停止を検知して macOS 通知** を出す。
+
+**仕組み（ack ハートビート方式）** (`bin/claude-stall-monitor.sh`):
+- 各フック（`PreToolUse`/`PostToolUse`/`UserPromptSubmit`/`SessionStart`/`Stop`/`StopFailure`/`Notification`）が
+  `ack` モードで `~/.claude/monitor/<session_id>.ack` に現在 epoch を書く（= 直近の JSONL 書き込みの後に
+  何らかのフックが発火した記録）。`~/.claude/settings.json` の各イベントに ack コマンドを 1 つ追記する。
+- watcher は各セッション JSONL を走査し、`idle(now - mtime) >= 45s` かつ `ack < mtime`
+  （= JSONL は進んだのにその後どのフックも発火していない）のものを「異常停止」と判定して通知する。
+- 誤検知しない: 正常完了→`Stop`、API エラー→`StopFailure`、権限待ち/idle→`Notification`、
+  長時間ツール実行中→`PreToolUse` がそれぞれ ack を書く（ack ≥ mtime）ため鳴らない。
+  parse 失敗だけがどのフックも発火しない＝唯一鳴るケース。
+- 通知は `terminal-notifier`（無ければ `osascript`）。停止 1 回につき 1 通知（活動再開で解除）。
+
+#### Install
+
+```sh
+# 1. ~/bin と ~/Library/LaunchAgents から symlink で参照
+ln -sf ~/ghq/github.com/nkmr-jp/setup/bin/claude-stall-monitor.sh ~/bin/claude-stall-monitor.sh
+ln -sf ~/ghq/github.com/nkmr-jp/setup/launchd/com.nkmr.claude-stall-monitor.plist ~/Library/LaunchAgents/com.nkmr.claude-stall-monitor.plist
+
+# 2. ~/.claude/settings.json の各イベントに ack コマンドを追記（既存フックはそのまま別グループで追加）
+#    対象: PreToolUse / PostToolUse / UserPromptSubmit / SessionStart / Stop / StopFailure / Notification
+#    例: { "hooks": [ { "type": "command", "command": "/Users/nkmr/bin/claude-stall-monitor.sh ack" } ] }
+
+# 3. launchd に登録 (30 秒ごとに --watch モードで実行される)
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.claude-stall-monitor.plist
+
+# 4. 動作確認 (即座に 1 回起動)
+launchctl kickstart gui/$(id -u)/com.nkmr.claude-stall-monitor
+tail ~/Library/Logs/claude-stall-monitor.log
+```
+
+#### Usage (手動実行)
+
+```sh
+claude-stall-monitor.sh            # watcher（既定）: 異常停止を検知して通知
+claude-stall-monitor.sh ack        # フックから: stdin JSON の session_id で ack を書く
+```
+
+#### Uninstall / 停止
+
+```sh
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.claude-stall-monitor.plist
+rm ~/Library/LaunchAgents/com.nkmr.claude-stall-monitor.plist
+rm ~/bin/claude-stall-monitor.sh
+# settings.json から ack コマンドの行を削除する
+```
+
+#### ログ
+
+`~/Library/Logs/claude-stall-monitor.log` に追記される（`STALL sid=... idle=...` 形式）。
+異常停止が無ければ無出力。
+
+#### 注意
+
+- 検知最大遅延は `StartInterval`(30s) + `IDLE_THRESHOLD`(45s)。早めたい場合は plist の `StartInterval` と
+  スクリプトの `IDLE_THRESHOLD` を縮める。
+- ack が無い旧セッション（導入前）は基準が無いため判定しない（誤検知防止）。
+
 ### git-auto-backup
 
 任意の git リポジトリを無人で `pull --rebase → add -A → commit → push` する汎用バックアップ

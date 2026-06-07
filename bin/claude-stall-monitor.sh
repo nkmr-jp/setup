@@ -20,6 +20,11 @@
 #     - API エラー → StopFailure が ack を書く
 #     - 権限待ち/idle → Notification が ack を書く（既存 claude-notify も通知済）
 #     - 長時間ツール実行中 → tool 開始時に PreToolUse が ack を書く（mtime は据え置き）ため鳴らない
+#     - セッション終了/kill（ユーザーが閉じた）→ Stop が発火せず ack < mtime になるが、
+#       claude プロセス自体が消えているので「対象プロジェクトに生存プロセスなし」で除外する。
+#       parse 失敗は claude プロセスが生きたまま固まる点が決定的に異なる。
+#       注: CLAUDE_CODE_SESSION_ID(env) は起動時の元 id で JSONL 名(実 session_id)と
+#           一致しないため、プロセス照合は session_id ではなく cwd→プロジェクト名で行う。
 #
 # 使い方:
 #   claude-stall-monitor.sh            # watcher（既定）: 異常停止を検知して通知
@@ -45,6 +50,23 @@ ack_mode() {
   # 活動が再開したら通知の重複抑止フラグを解除（次の停止で再通知できるように）
   rm -f "$MONITOR_DIR/$sid.alerted"
   exit 0
+}
+
+# --- セッションのプロセス生存判定 ---
+# 生きている claude プロセスの cwd を JSONL のプロジェクトディレクトリ名と同じ規則
+# （'/' と '.' を '-' に変換）でエンコードし、対象プロジェクトに一致する生存プロセスが
+# 1つでもあれば「生きている」とみなす。parse 失敗で固まったセッションは true、
+# ユーザーが閉じた/kill したセッションは false（＝通知しない）になる。
+project_has_live_session() {
+  local target="$1" pids cwd enc
+  pids="$(pgrep -x claude 2>/dev/null | paste -sd, -)"
+  [ -n "$pids" ] || return 1
+  while IFS= read -r cwd; do
+    [ -n "$cwd" ] || continue
+    enc="$(printf '%s' "$cwd" | sed 's#[/.]#-#g')"
+    [ "$enc" = "$target" ] && return 0
+  done < <(lsof -a -d cwd -p "$pids" -Fn 2>/dev/null | sed -n 's/^n//p')
+  return 1
 }
 
 # --- 通知 ---
@@ -77,12 +99,15 @@ watch_mode() {
     ack="$(cat "$ack_file" 2>/dev/null || echo 0)"
     # 直近の JSONL 書き込みの後にフックが発火していれば正常（正常完了/エラー/権限待ち/ツール実行中）
     [ "$ack" -ge "$mtime" ] && continue
-    # ここに来たら: JSONL は進んだのにどのフックも発火していない＝ parse 失敗の疑い
+    # ここに来たら: JSONL は進んだのにどのフックも発火していない＝ parse 失敗の疑い。
+    # ただし claude プロセスが既に消えている＝ユーザーがセッションを終了/kill した場合は
+    # parse 失敗ではないので鳴らさない（誤検知防止）。
+    project="$(basename "$(dirname "$f")")"
+    project_has_live_session "$project" || continue
     alerted_file="$MONITOR_DIR/$sid.alerted"
     if [ -f "$alerted_file" ] && [ "$(cat "$alerted_file" 2>/dev/null)" = "$mtime" ]; then
       continue   # この停止については通知済み（mtime が変わらない限り 1 回だけ）
     fi
-    project="$(basename "$(dirname "$f")")"
     notify "Claude Code 停止検知" "${project}" \
       "セッション ${sid:0:8} が ${idle}s 無応答。tool call parse 失敗の可能性（フック未発火）。"
     echo "$mtime" > "$alerted_file"

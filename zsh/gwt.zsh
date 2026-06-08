@@ -113,6 +113,40 @@ _gwt_run_post_create_hook() {
 }
 
 # ========================================
+# .agentsws/issues シンボリックリンクの作成
+# ========================================
+# worktree内に .agentsws/issues シンボリックリンクを作成し、
+# issues リポジトリ (~/ghq/github.com/nkmr-jp/issues) の該当プロジェクト
+# フォルダへリンクする。プロジェクト名はベースリポジトリ名（-wt-除去後）。
+# リンク先フォルダが未作成なら先に作成する。
+_gwt_setup_agentsws_issues_link() {
+    local worktree_path="$1"
+    local project_name="$2"
+    local issues_repo_dir="${GWT_ISSUES_REPO_DIR:-$HOME/ghq/github.com/nkmr-jp/issues}"
+
+    # issues リポジトリ本体が存在しない場合はスキップ
+    [[ -d "$issues_repo_dir" ]] || return 0
+
+    local issues_project_dir="${issues_repo_dir}/${project_name}"
+    local agentsws_dir="${worktree_path}/.agentsws"
+    local link_path="${agentsws_dir}/issues"
+
+    # 既にリンク/ファイルが存在する場合はスキップ
+    [[ -e "$link_path" || -L "$link_path" ]] && return 0
+
+    # issues リポジトリ側にプロジェクトフォルダを作成
+    if [[ ! -d "$issues_project_dir" ]]; then
+        mkdir -p "$issues_project_dir"
+        echo -e "${CYAN}→ issues プロジェクトフォルダを作成: ${issues_project_dir}${RESET}"
+    fi
+
+    # .agentsws ディレクトリとシンボリックリンクを作成
+    mkdir -p "$agentsws_dir"
+    ln -s "$issues_project_dir" "$link_path"
+    echo -e "${GREEN}✓ .agentsws/issues -> ${issues_project_dir}${RESET}"
+}
+
+# ========================================
 # JetBrains Recent Projectsから削除
 # ========================================
 _gwt_jetbrains_dir="$HOME/Library/Application Support/JetBrains"
@@ -283,8 +317,10 @@ _gwt_resolve_base_branch() {
         echo -e "${GREEN}✓ ${main_branch} を最新化しました${RESET}" >&2
     else
         # チェックアウト中の場合はmerge --ff-onlyで試行
+        # （merge の標準出力 "Already up to date." が stdout のブランチ名に
+        #   混入しないよう >/dev/null で抑制する）
         local main_path=$(echo "${main_entries[1]}" | awk '{print $1}')
-        if (cd "$main_path" && git merge --ff-only "origin/$main_branch" 2>/dev/null); then
+        if (cd "$main_path" && git merge --ff-only "origin/$main_branch" >/dev/null 2>&1); then
             echo -e "${GREEN}✓ ${main_branch} を最新化しました${RESET}" >&2
         else
             echo -e "${YELLOW}⚠ ${main_branch} の最新化をスキップしました（fast-forward不可）${RESET}" >&2
@@ -358,6 +394,9 @@ _gwt_new() {
         # iTerm2ユーザー変数にworktreeパスを設定（path変数はCWDポーリングで汚染されるため）
         _iterm2_set_user_var gwtCwd "$worktree_path" 2>/dev/null
         echo -e "${BLUE}→ 移動しました: $(pwd)${RESET}"
+
+        # .agentsws/issues シンボリックリンクを作成
+        _gwt_setup_agentsws_issues_link "$worktree_path" "$repo_name"
 
         # Post-create hook を実行
         _gwt_run_post_create_hook "$worktree_path" "$branch_name" "$base_branch" "$base_path"
@@ -1016,6 +1055,12 @@ ${YELLOW}Post-create Hook:${RESET}
   ${CYAN}例 (.gwt-post-create.sh):${RESET}
     #!/bin/bash
     npm install  # 依存関係をインストール
+
+${YELLOW}.agentsws/issues シンボリックリンク:${RESET}
+  worktree作成時に .agentsws/issues を自動生成し、issues リポジトリ
+  (~/ghq/github.com/nkmr-jp/issues/<project>) へリンクします。
+  <project> はベースリポジトリ名で、リンク先が無ければ自動作成します。
+  リンク先は GWT_ISSUES_REPO_DIR 環境変数で変更できます。
 
 ${YELLOW}iTerm2 Smart Selection (IDE起動連携):${RESET}
   Claude Codeのstatusline等の "Edit" テキストをクリックしてIDEを起動できます。

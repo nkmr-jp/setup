@@ -6,6 +6,10 @@ setup() {
     setup_test_repos
     setup_mock_dir
     disable_gh
+    # issues リポジトリの既定パス(~/ghq/...)を誤って汚さないよう、
+    # テスト用の（存在しない）パスを既定にする。
+    # リンク機能を検証するテストのみ、このディレクトリを作成する。
+    export GWT_ISSUES_REPO_DIR="$BATS_TEST_TMPDIR/issues"
 }
 
 teardown() {
@@ -213,6 +217,41 @@ teardown() {
 
     # ベースブランチのファイルが含まれていることを確認
     [ -f "$BATS_TEST_TMPDIR/repo-wt-derived-branch/base.txt" ]
+}
+
+@test "new: .agentsws/issues シンボリックリンクを作成する" {
+    mkdir -p "$GWT_ISSUES_REPO_DIR"
+
+    run_gwt _gwt_new "link-test"
+    [ "$status" -eq 0 ]
+
+    local wt="$BATS_TEST_TMPDIR/repo-wt-link-test"
+    # シンボリックリンクが作成されていること
+    [ -L "$wt/.agentsws/issues" ]
+    # ベースリポジトリ名(repo)のフォルダへリンクしていること
+    [ "$(readlink "$wt/.agentsws/issues")" = "$GWT_ISSUES_REPO_DIR/repo" ]
+    # リンク先プロジェクトフォルダが自動作成されていること
+    [ -d "$GWT_ISSUES_REPO_DIR/repo" ]
+}
+
+@test "new: issues リポジトリが存在しない場合はリンクを作成しない" {
+    # GWT_ISSUES_REPO_DIR は未作成（setup の既定のまま）
+    run_gwt _gwt_new "no-link-test"
+    [ "$status" -eq 0 ]
+
+    local wt="$BATS_TEST_TMPDIR/repo-wt-no-link-test"
+    [ ! -e "$wt/.agentsws/issues" ]
+}
+
+@test "new: 既存の .agentsws/issues は上書きしない" {
+    mkdir -p "$GWT_ISSUES_REPO_DIR/repo"
+
+    run_gwt _gwt_new "preexist-test"
+    [ "$status" -eq 0 ]
+
+    local wt="$BATS_TEST_TMPDIR/repo-wt-preexist-test"
+    [ -L "$wt/.agentsws/issues" ]
+    [ "$(readlink "$wt/.agentsws/issues")" = "$GWT_ISSUES_REPO_DIR/repo" ]
 }
 
 # ============================================================

@@ -235,11 +235,21 @@ teardown() {
 }
 
 @test "new: issues リポジトリが存在しない場合はリンクを作成しない" {
-    # GWT_ISSUES_REPO_DIR は未作成（setup の既定のまま）
+    # GWT_ISSUES_REPO_DIR は設定済みだがディレクトリは未作成（setup の既定のまま）
     run_gwt _gwt_new "no-link-test"
     [ "$status" -eq 0 ]
 
     local wt="$BATS_TEST_TMPDIR/repo-wt-no-link-test"
+    [ ! -e "$wt/.agentsws/issues" ]
+}
+
+@test "new: GWT_ISSUES_REPO_DIR 未設定時はリンクを作成しない" {
+    unset GWT_ISSUES_REPO_DIR
+
+    run_gwt _gwt_new "no-env-test"
+    [ "$status" -eq 0 ]
+
+    local wt="$BATS_TEST_TMPDIR/repo-wt-no-env-test"
     [ ! -e "$wt/.agentsws/issues" ]
 }
 

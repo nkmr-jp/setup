@@ -116,15 +116,20 @@ _gwt_run_post_create_hook() {
 # .agentsws/issues シンボリックリンクの作成
 # ========================================
 # worktree内に .agentsws/issues シンボリックリンクを作成し、
-# issues リポジトリ (~/ghq/github.com/nkmr-jp/issues) の該当プロジェクト
-# フォルダへリンクする。プロジェクト名はベースリポジトリ名（-wt-除去後）。
-# リンク先フォルダが未作成なら先に作成する。
+# issues リポジトリ ($GWT_ISSUES_REPO_DIR) の該当プロジェクトフォルダへ
+# リンクする。プロジェクト名はベースリポジトリ名（-wt-除去後）。
+# - 環境変数 GWT_ISSUES_REPO_DIR が未設定なら何もしない
+# - issues リポジトリが存在しなくてもエラーにせずスキップする
+# - リンク先プロジェクトフォルダが未作成なら先に作成する
 _gwt_setup_agentsws_issues_link() {
     local worktree_path="$1"
     local project_name="$2"
-    local issues_repo_dir="${GWT_ISSUES_REPO_DIR:-$HOME/ghq/github.com/nkmr-jp/issues}"
+    local issues_repo_dir="$GWT_ISSUES_REPO_DIR"
 
-    # issues リポジトリ本体が存在しない場合はスキップ
+    # 環境変数 GWT_ISSUES_REPO_DIR が未設定（空）ならスキップ
+    [[ -n "$issues_repo_dir" ]] || return 0
+
+    # issues リポジトリ本体が存在しない場合もエラーにせずスキップ
     [[ -d "$issues_repo_dir" ]] || return 0
 
     local issues_project_dir="${issues_repo_dir}/${project_name}"
@@ -1057,10 +1062,11 @@ ${YELLOW}Post-create Hook:${RESET}
     npm install  # 依存関係をインストール
 
 ${YELLOW}.agentsws/issues シンボリックリンク:${RESET}
-  worktree作成時に .agentsws/issues を自動生成し、issues リポジトリ
-  (~/ghq/github.com/nkmr-jp/issues/<project>) へリンクします。
-  <project> はベースリポジトリ名で、リンク先が無ければ自動作成します。
-  リンク先は GWT_ISSUES_REPO_DIR 環境変数で変更できます。
+  環境変数 GWT_ISSUES_REPO_DIR を設定すると、worktree作成時に
+  .agentsws/issues を \$GWT_ISSUES_REPO_DIR/<project> へリンクします。
+  <project> はベースリポジトリ名で、リンク先フォルダが無ければ自動作成します。
+  GWT_ISSUES_REPO_DIR が未設定、またはディレクトリが存在しない場合は
+  何もしません（エラーになりません）。
 
 ${YELLOW}iTerm2 Smart Selection (IDE起動連携):${RESET}
   Claude Codeのstatusline等の "Edit" テキストをクリックしてIDEを起動できます。

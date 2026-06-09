@@ -16,6 +16,7 @@ alias wind='windsurf'
 alias md="open -a 'Marked 2'"
 alias ob='open "obsidian://open?path=$(pwd)"'
 alias typora="open -a Typora"
+alias om='open -a OpenMark'
 
 # Shell management
 alias load='exec $SHELL -l'

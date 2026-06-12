@@ -1019,8 +1019,8 @@ ${YELLOW}コマンド:${RESET}
   info, i                    現在のworktree情報を表示
   quick, q <prefix> [base]   日付付きでworktreeを素早く作成
   prune, p [-f|--force]      worktreeのクリーンアップ（-f: 確認スキップ）
-  claude, cc <prefix> [base] 日付付きworktreeを作成してClaude Codeを起動
-  yolo, y <prefix> [base]    日付付きworktreeを作成してClaude Code (yolo) を起動
+  claude, cc <prefix> [base] 日付付きworktreeを作成→通常モードでClaude起動（権限確認あり）
+  yolo, y <prefix> [base]    日付付きworktreeを作成→bypassモードでClaude起動（--dangerously-skip-permissions）
   help, h                    このヘルプを表示
 
 ${YELLOW}使用例:${RESET}
@@ -1029,8 +1029,8 @@ ${YELLOW}使用例:${RESET}
   gwt switch                        # worktreeを切り替え
   gwt status                        # 全worktreeの状態を確認
   gwt remove                        # 不要なworktreeを削除
-  gwt claude feature/login develop  # 日付付きworktreeを作成してClaude Codeを起動
-  gwt yolo feature/login develop    # 日付付きworktreeを作成してClaude Code (yolo) を起動
+  gwt claude feature/login develop  # worktree作成 → 通常モードでClaude起動（権限確認あり）
+  gwt yolo feature/login develop    # worktree作成 → bypassモードでClaude起動（権限スキップ）
 
 ${YELLOW}短縮形:${RESET}
   gwt n    = gwt new
@@ -1042,8 +1042,15 @@ ${YELLOW}短縮形:${RESET}
   gwt i    = gwt info
   gwt q    = gwt quick
   gwt p    = gwt prune
-  gwt cc   = gwt claude
-  gwt y    = gwt yolo
+  gwt cc   = gwt claude  (通常モードでClaude起動)
+  gwt y    = gwt yolo    (bypassモードでClaude起動)
+
+${YELLOW}シェルエイリアス (普段これを打つ):${RESET}
+  g    = gwt           gn   = gwt new        gq = gwt quick
+  gs   = gwt switch    gr   = gwt remove     gl = gwt list
+  gp   = gwt prune
+  gcc  = gwt cc    → 通常モードでClaude起動（claudew も同じ）
+  gy   = gwt yolo  → bypassモードでClaude起動（権限スキップ）
 
 ${YELLOW}Post-create Hook:${RESET}
   worktree作成後に自動的にスクリプトを実行できます。

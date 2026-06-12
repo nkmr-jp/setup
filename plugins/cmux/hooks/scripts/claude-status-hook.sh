@@ -30,6 +30,15 @@
 #     その後 workspace.list / surface.list を walk して surface UUID に変換する。
 # cache が無い間はどの hook event でも実行する。SessionEnd で cache を掃除。
 #
+# tmux 内 (claude ラッパーが ccdash-<sid8> セッションで起動するケース) は追加の
+# 迂回が必要: tmux server はデーモン化されて親が launchd になるため、hook 自身の
+# PID から親を辿っても cmux surface に到達しない (hook → claude → tmux server →
+# launchd)。また TERM_PROGRAM も tmux に上書きされる。代わりに、このセッションに
+# attach している tmux client の PID (cmux surface の zsh の子として cmux top に
+# 載る) を起点に辿る。複数 client が attach している場合 (ccdash パネル併用等) は
+# 全 client を試し、cmux top にヒットしたものを採用する。cmux 以外のターミナルの
+# client はヒットしないので自然に除外される。
+#
 # 並列・近接して呼ばれた hook が cmux daemon で逆順に処理されると古い state で
 # pill が固定化するため、event 時刻 (perl で nanosecond) を各 hook が起動直後に
 # 記録し、pane 単位の lock 内で「自分の時刻が直近に適用された時刻より新しい場合
@@ -124,28 +133,46 @@ fi
 # cache に書き込む。途中で何も解決できなければ何もしない (caller が判断)。
 resolve_and_cache_panel() {
   [ -n "$panel_cache" ] || return 0
-  [ "${TERM_PROGRAM:-}" = "ghostty" ] || return 0
-  [ "${__CFBundleIdentifier:-}" = "com.cmuxterm.app" ] || return 0
+  # 探索起点の PID 一覧を決める。tmux 内なら attach 中の client PID 群
+  # (TERM_PROGRAM/__CFBundleIdentifier は tmux server 経由で信頼できないため、
+  # 判定は cmux top でのヒット有無に委ねる)、そうでなければ hook 自身の PID。
+  if [ -n "${TMUX:-}" ] && command -v tmux >/dev/null 2>&1; then
+    if [ -n "${TMUX_PANE:-}" ]; then
+      tmux_session=$(tmux display-message -p -t "$TMUX_PANE" '#{session_name}' 2>/dev/null)
+    else
+      tmux_session=$(tmux display-message -p '#{session_name}' 2>/dev/null)
+    fi
+    [ -n "$tmux_session" ] || return 0
+    probe_pids=$(tmux list-clients -t "=$tmux_session" -F '#{client_pid}' 2>/dev/null)
+    [ -n "$probe_pids" ] || return 0
+  else
+    [ "${TERM_PROGRAM:-}" = "ghostty" ] || return 0
+    [ "${__CFBundleIdentifier:-}" = "com.cmuxterm.app" ] || return 0
+    probe_pids=$$
+  fi
   command -v jq >/dev/null 2>&1 || return 0
   cmux_cli="${CMUX_BUNDLED_CLI_PATH:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
   [ -x "$cmux_cli" ] || return 0
 
   # 1. cmux top で全 process / surface / pane / workspace の階層を取得し、
-  #    自分の PID から親方向に辿って `process <PID> <surface:N>` 行に当たった
+  #    各起点 PID から親方向に辿って `process <PID> <surface:N>` 行に当たった
   #    surface ref を確定する。
   top_tsv=$("$cmux_cli" top --all --processes --format tsv 2>/dev/null)
   surface_ref=""
-  probe_pid=$$
-  probe_attempts=0
-  while [ -n "$probe_pid" ] && [ "$probe_pid" != "0" ] \
-     && [ "$probe_pid" != "1" ] && [ "$probe_attempts" -lt 20 ]; do
-    surface_ref=$(printf '%s\n' "$top_tsv" | awk -F'\t' -v pid="$probe_pid" '
-      $4 == "process" && $5 == pid && $6 ~ /^surface:/ { print $6; exit }')
+  for start_pid in $probe_pids; do
+    probe_pid=$start_pid
+    probe_attempts=0
+    while [ -n "$probe_pid" ] && [ "$probe_pid" != "0" ] \
+       && [ "$probe_pid" != "1" ] && [ "$probe_attempts" -lt 20 ]; do
+      surface_ref=$(printf '%s\n' "$top_tsv" | awk -F'\t' -v pid="$probe_pid" '
+        $4 == "process" && $5 == pid && $6 ~ /^surface:/ { print $6; exit }')
+      [ -n "$surface_ref" ] && break
+      next_pid=$(ps -o ppid= -p "$probe_pid" 2>/dev/null | tr -d ' ')
+      { [ -z "$next_pid" ] || [ "$next_pid" = "$probe_pid" ]; } && break
+      probe_pid="$next_pid"
+      probe_attempts=$((probe_attempts + 1))
+    done
     [ -n "$surface_ref" ] && break
-    next_pid=$(ps -o ppid= -p "$probe_pid" 2>/dev/null | tr -d ' ')
-    { [ -z "$next_pid" ] || [ "$next_pid" = "$probe_pid" ]; } && break
-    probe_pid="$next_pid"
-    probe_attempts=$((probe_attempts + 1))
   done
   [ -n "$surface_ref" ] || return 0
 

@@ -43,6 +43,7 @@ Temporary Items
 settings.local.json
 CLAUDE.local.md
 .claude/tmp
+.claude/worktrees
 .agentsws
 .prompt-line
 .antigravitycli

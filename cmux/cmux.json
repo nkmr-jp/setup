@@ -1,0 +1,105 @@
+{
+  "$schema": "https://raw.githubusercontent.com/manaflow-ai/cmux/main/web/data/cmux.schema.json",
+  "schemaVersion": 1,
+
+  // cmux の primary 設定ファイル。実際に変更している設定のみを記載し、
+  // cmux が自動生成するコメントアウト済みテンプレートは持たない。
+  // legacy の settings.json は廃止済み（v0.64+ は cmux.json が primary）。
+  // 編集後は `cmux reload-config` で反映（Ghostty config も同時 reload）。
+
+  "app": {
+    // Cmd+クリック等でファイルを開いた時、cmux 内プレビューではなく macOS 既定アプリで開く
+    "openSupportedFilesInCmux": false
+  },
+
+  "sidebar": {
+    // Port / PR リンクを cmux 内蔵ブラウザでなく既定ブラウザで開く
+    "openPortLinksInCmuxBrowser": false,
+    "openPullRequestLinksInCmuxBrowser": false,
+    "showBranchDirectory": false,
+    "showCustomMetadata": true
+  },
+
+  "browser": {
+    // 端末上の URL クリックと `open` コマンドを既定ブラウザに渡す
+    "interceptTerminalOpenCommandInCmuxBrowser": false,
+    "openTerminalLinksInCmuxBrowser": false
+  },
+
+  "automation": {
+    // 標準の workspace 単位 claude_code pill (Running/Awaiting) を抑止。
+    // pane 別の cwd_<panel-id> pill (sidebar-cwd.zsh + agent-plugins/cmux) で代替。
+    "claudeCodeIntegration": false,
+    "socketControlMode": "automation"
+  },
+
+  "shortcuts": {
+    "bindings": {
+      "browserBack": "cmd+[",
+      "browserForward": "cmd+]",
+      "browserReload": "cmd+r",
+      "browserZoomIn": "cmd+=",
+      "browserZoomOut": "cmd+-",
+      "browserZoomReset": "cmd+0",
+      "closeOtherTabsInPane": "cmd+opt+t",
+      "closeTab": "cmd+w",
+      "closeWindow": "cmd+ctrl+w",
+      "closeWorkspace": "cmd+shift+w",
+      "commandPalette": "cmd+shift+p",
+      "editWorkspaceDescription": "cmd+shift+e",
+      "find": "cmd+f",
+      "findNext": "cmd+g",
+      "findPrevious": "cmd+opt+g",
+      "focusBrowserAddressBar": "cmd+l",
+      // v0.64+ 新デフォルト (cmd+opt+↓ 等) との競合を防ぐため旧キーを明示保持
+      "focusDown": "cmd+↓",
+      "focusLeft": "cmd+←",
+      "focusRight": "cmd+→",
+      "focusUp": "cmd+↑",
+      // v0.64+ 新規追加デフォルト: browserBack/Forward (cmd+[/]) と競合するため無効化
+      "focusHistoryBack": null,
+      "focusHistoryForward": null,
+      // v0.64+ 新規追加デフォルト: editWorkspaceDescription (cmd+shift+e) と競合するため無効化
+      "focusRightSidebar": null,
+      "goToWorkspace": "cmd+p",
+      "hideFind": "cmd+shift+f",
+      "jumpToUnread": "cmd+shift+u",
+      "newSurface": "cmd+t",
+      "newTab": "cmd+n",
+      "newWindow": "cmd+shift+n",
+      // ワークスペース移動: cmd+alt+↓/↑。alt 単体は v0.64.16(#6007)で Option が端末優先となり
+      // cmux のショートカットとして発火しない（Ghostty で端末送出を止めても届かないと実験で確認済み）。
+      // サーフェス移動 cmd+alt+←/→ と上下/左右で対になる。
+      "nextSidebarTab": "cmd+alt+↓",
+      "nextSurface": "cmd+alt+→",
+      "openBrowser": "cmd+shift+l",
+      "openFolder": "cmd+o",
+      "openSettings": "cmd+,",
+      "prevSidebarTab": "cmd+alt+↑",
+      "prevSurface": "cmd+alt+←",
+      "quit": "cmd+q",
+      "reloadConfiguration": "cmd+shift+,",
+      "renameTab": "cmd+r",
+      "renameWorkspace": "cmd+shift+r",
+      "reopenClosedBrowserPanel": "cmd+shift+t",
+      "selectSurfaceByNumber": "ctrl+1",
+      "selectWorkspaceByNumber": "cmd+1",
+      "sendFeedback": "cmd+opt+f",
+      "showBrowserJavaScriptConsole": "cmd+opt+c",
+      "showNotifications": "cmd+i",
+      "splitBrowserDown": "cmd+shift+opt+d",
+      "splitBrowserRight": "cmd+opt+d",
+      "splitDown": "cmd+shift+d",
+      "splitRight": "cmd+d",
+      "toggleBrowserDeveloperTools": "cmd+opt+i",
+      "toggleFullScreen": "cmd+ctrl+f",
+      "toggleReactGrab": "cmd+shift+g",
+      "toggleSidebar": "cmd+b",
+      "toggleSplitZoom": "cmd+enter",
+      "toggleTerminalCopyMode": "cmd+shift+m",
+      "triggerFlash": "cmd+shift+h",
+      "useSelectionForFind": "cmd+e"
+    },
+    "showModifierHoldHints": true
+  }
+}

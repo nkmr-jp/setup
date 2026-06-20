@@ -532,30 +532,32 @@ rm ~/bin/claude-stall-monitor.sh
   スクリプトの `IDLE_THRESHOLD` を縮める。
 - ack が無い旧セッション（導入前）は基準が無いため判定しない（誤検知防止）。
 
-### git-auto-backup / claude-auto
+### git-auto-backup
 
-リポジトリを 30 分毎に自動バックアップ（`pull --rebase → add -A → commit → push`）するジョブ群。
-汎用バックアップ `bin/git-auto-backup.sh`（vault と同型）と、Claude 固有部を分離した
-`claude-auto/` モジュール（コミットメッセージ生成・セッション要約）で構成する。詳細は
-[`claude-auto/README.md`](claude-auto/README.md) を参照。
+リポジトリを 30 分毎に自動バックアップ（`pull --rebase → add -A → commit → push`）する汎用ジョブ。
+`bin/git-auto-backup.sh`（vault と同型）と launchd `com.nkmr.issues-autobackup.plist` で構成する。
 
-- **機能A**: `--llm` 指定時、コミットメッセージを分離 Claude（`CLAUDE_CONFIG_DIR=~/.claude-auto` /
-  Haiku）で生成。トークン未登録・生成失敗時は `auto:<日時>` に自動降格し、コミットは必ず成功する。
-- **機能B**: `claude-session-summary.sh` が `~/.claude/projects` を集計し、分離 Claude で日次サマリを生成。
-- トークンは keychain（`claude-auto-oauth`）保管 → 実行時インライン注入（plist・env には置かない。[#8473] 回避）。
+`--llm` を付けると Claude でコミットメッセージを生成するが、その Claude 固有部（`claude-auto`）は
+**ccdash リポジトリへ移設済み**（`~/ghq/github.com/nkmr-jp/ccdash/claude-auto/`）。
+`git-auto-backup.sh --llm` は生成器 `claude-commit-msg.sh` を PATH（`~/bin`）から解決して呼ぶため、
+claude-auto の置き場所に依存しない。トークン未登録・生成失敗時は `auto:<日時>` に自動降格し、コミットは必ず成功する。
+
+> 現在の `issues-autobackup` ジョブは `--llm` を付けず固定メッセージ（`auto:<日時>`）で稼働中。
 
 ```sh
-# インストール（冪等: symlink 配置 + ~/.claude-auto seed + keychain 確認）
-~/ghq/github.com/nkmr-jp/setup/claude-auto/install.sh
+# 汎用バックアップの symlink 配置（~/bin と ~/Library/LaunchAgents から参照）
+ln -sf ~/ghq/github.com/nkmr-jp/setup/bin/git-auto-backup.sh ~/bin/git-auto-backup.sh
+ln -sf ~/ghq/github.com/nkmr-jp/setup/launchd/com.nkmr.issues-autobackup.plist ~/Library/LaunchAgents/com.nkmr.issues-autobackup.plist
 
-# launchd 有効化（準備完了後に手動で。Agent SDK クレジット開始 2026-06-15 以降が無難）
+# launchd 有効化（準備完了後に手動で）
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.issues-autobackup.plist
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.claude-session-summary.plist
 
 # 手動実行 / ログ
 git-auto-backup.sh ~/ghq/github.com/nkmr-jp/issues --llm
 tail ~/Library/Logs/issues-autobackup.log
 ```
 
-[#8473]: https://github.com/anthropics/claude-code/issues/8473
+> Claude 固有の自動化基盤 `claude-auto`（コミットメッセージ生成・セッション要約・keychain OAuth・
+> `~/.claude-auto` 隔離）は ccdash へ移設した。セットアップ（`claude-auto/install.sh` / `setup-token` 発行）と
+> 機能B（日次セッション要約）の詳細は ccdash の `claude-auto/README.md` を参照（移設の経緯は ccdash#33）。
 

@@ -4,13 +4,14 @@
 #
 # 使い方:
 #   git-auto-backup.sh <repo-path> [--llm] [--branch <name>] [--remote <name>]
-#     --llm           コミットメッセージを分離 Claude で生成（claude-auto/bin/claude-commit-msg.sh）。
+#     --llm           コミットメッセージを分離 Claude で生成（claude-commit-msg.sh / claude-auto）。
 #                     生成失敗・トークン未設定時は auto:<日時> に自動降格し、コミットは必ず成功する。
 #     --branch <name> push 先ブランチ（既定: 現在のブランチ。取得不能なら main）
 #     --remote <name> push 先リモート（既定: origin）
 #
-# Claude 固有部（--llm）は claude-auto モジュールに分離してある。Claude 障害・枠切れが
-# 汎用バックアップを壊さない（必ず auto:<日時> 降格でコミット成功）。
+# Claude 固有部（--llm）は claude-auto モジュール（ccdash リポジトリ）に分離してある。生成器は
+# PATH（`~/bin/claude-commit-msg.sh`）から解決するので、claude-auto の置き場所に依存しない。
+# Claude 障害・枠切れが汎用バックアップを壊さない（必ず auto:<日時> 降格でコミット成功）。
 set -u
 
 REPO=""
@@ -44,16 +45,11 @@ if git diff --cached --quiet; then
 else
   MSG=""
   if [[ "$USE_LLM" -eq 1 ]]; then
-    # 自身の実体ディレクトリを解決し、claude-auto モジュールの生成器を探す
-    SOURCE="${BASH_SOURCE[0]}"
-    while [ -h "$SOURCE" ]; do
-      DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
-      SOURCE="$(readlink "$SOURCE")"
-      [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-    done
-    SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
-    GEN="$SCRIPT_DIR/../claude-auto/bin/claude-commit-msg.sh"
-    if [[ -x "$GEN" ]]; then
+    # claude-auto の生成器を PATH（~/bin の symlink）から解決する。claude-auto モジュールが
+    # どのリポジトリに置かれていても疎結合に動く（移設先 ccdash に追従不要）。
+    GEN="$(command -v claude-commit-msg.sh 2>/dev/null || true)"
+    [[ -z "$GEN" && -x "$HOME/bin/claude-commit-msg.sh" ]] && GEN="$HOME/bin/claude-commit-msg.sh"
+    if [[ -n "$GEN" && -x "$GEN" ]]; then
       MSG="$("$GEN" "$REPO" 2>/dev/null || true)"
     fi
   fi

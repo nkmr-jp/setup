@@ -27,9 +27,13 @@
   },
 
   "automation": {
-    // 標準の workspace 単位 claude_code pill (Running/Awaiting) を抑止。
-    // pane 別の cwd_<panel-id> pill (sidebar-cwd.zsh + agent-plugins/cmux) で代替。
-    "claudeCodeIntegration": false,
+    // ワークスペースの会話メタデータ (タイトル自動生成・最新メッセージ表示等) に
+    // 必要なため true。標準の workspace 単位 claude_code pill (Running/Awaiting) は
+    // 複数 pane が同一 workspace で同時に動くと Awaiting のまま固着する cmux 側の
+    // 既知の癖があるため、plugins/cmux/hooks/scripts/claude-status-hook.sh が
+    // 自前の per-pane state から都度再計算して上書き・自己修復する。
+    // pane 別の表示は同スクリプトが管理する cwd_<panel-id> pill を使う。
+    "claudeCodeIntegration": true,
     "socketControlMode": "automation"
   },
 

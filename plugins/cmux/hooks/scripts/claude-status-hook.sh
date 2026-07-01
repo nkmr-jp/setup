@@ -204,12 +204,65 @@ resolve_and_cache_panel() {
   load_panel_cache
 }
 
+# cmux ネイティブの Claude Code連携 (automation.claudeCodeIntegration: true)
+# はワークスペース単位で 1 個の `claude_code` pill (Running/Awaiting) を自分
+# で管理する。これは会話メタデータ保存 (workspace タイトル自動生成等) に必要
+# なので有効のままにしているが、同一 workspace に複数 pane (batch 実行時の
+# バックグラウンドセッション等) が同時に動いていると、あるセッションの
+# Notification で Awaiting になった後、別セッションがまだ running でも
+# cmux 側は Running に戻し損ねて Awaiting のまま固着することがある
+# (cmux 側の既知の癖で、こちらからは修正できない)。
+# 対策として、この pill は cmux に任せず、こちら側の正確な per-pane state
+# (cwd_<UUID> pill と同じ state file が情報源) から都度再計算して上書きする。
+# 同一 workspace 内の他 pane の state は、session 別 panel cache
+# ($state_dir/session-<id>.panel の 2 行目が workspace UUID) を総なめして
+# 対応する state file を見ることで、RPC を叩かずローカルだけで判定できる。
+aggregate_claude_code_state() {
+  agg_best=clear
+  for agg_cache in "$state_dir"/session-*.panel; do
+    [ -f "$agg_cache" ] || continue
+    agg_ws=$(awk 'NR==2{print; exit}' "$agg_cache" 2>/dev/null)
+    [ "$agg_ws" = "$CMUX_WORKSPACE_ID" ] || continue
+    agg_surface=$(awk 'NR==1{print; exit}' "$agg_cache" 2>/dev/null)
+    [ -n "$agg_surface" ] || continue
+    agg_surface_state=$(cat "$state_dir/$agg_surface" 2>/dev/null)
+    if [ "$agg_surface_state" = running ]; then
+      agg_best=running
+      break
+    elif [ "$agg_surface_state" = awaiting ] && [ "$agg_best" = clear ]; then
+      agg_best=awaiting
+    fi
+  done
+  printf '%s\n' "$agg_best"
+}
+
+sync_claude_code_pill() {
+  case $(aggregate_claude_code_state) in
+    running)  cmux set-status claude_code Running --workspace "$CMUX_WORKSPACE_ID" \
+                --icon bolt.fill --color '#4C8DFF' 2>/dev/null ;;
+    awaiting) cmux set-status claude_code Awaiting --workspace "$CMUX_WORKSPACE_ID" \
+                --icon bell.fill --color '#FF9500' 2>/dev/null ;;
+    *)        cmux clear-status claude_code --workspace "$CMUX_WORKSPACE_ID" 2>/dev/null ;;
+  esac
+}
+
 if [ -z "${CMUX_PANEL_ID:-}" ] || [ -z "${CMUX_WORKSPACE_ID:-}" ]; then
   resolve_and_cache_panel
 fi
 
 [ -n "${CMUX_PANEL_ID:-}" ] || exit 0
 [ -n "${CMUX_WORKSPACE_ID:-}" ] || exit 0
+
+# cmux バージョンによっては CMUX_PANEL_ID / CMUX_WORKSPACE_ID が最初から
+# 子プロセスに継承されており、resolve_and_cache_panel が一度も呼ばれず
+# session-<id>.panel が書かれないことがある。aggregate_claude_code_state は
+# 他 pane の状態をこのキャッシュ経由でしか見られないため、有効な ID が
+# 判明した時点で (未作成なら) 必ず書いておく。clear (SessionStart/SessionEnd)
+# のときは対象外: SessionEnd 直後の再生成を防ぐ (集約対象から外れないと
+# 終了済みセッションが running 扱いのまま残ってしまう)。
+if [ "$state" != clear ] && [ -n "$panel_cache" ] && [ ! -f "$panel_cache" ]; then
+  printf '%s\n%s\n' "$CMUX_PANEL_ID" "$CMUX_WORKSPACE_ID" > "$panel_cache"
+fi
 
 # SessionEnd は Claude Code 側に時間制約があり (1 秒未満)、lock 競合で sleep
 # すると "Hook cancelled" として打ち切られる。clear だけは即時に親へ制御を
@@ -284,6 +337,7 @@ trap 'rm -f "$input_file"' EXIT INT TERM HUP
 
 if [ "$state" = clear ]; then
   cmux set-status "$key" "$label" --workspace "$CMUX_WORKSPACE_ID" --icon "$icon"
+  sync_claude_code_pill
   exit 0
 fi
 
@@ -292,4 +346,5 @@ cmux clear-status "claude_${CMUX_PANEL_ID}" --workspace "$CMUX_WORKSPACE_ID" 2>/
 
 cmux set-status "$key" "$label" --workspace "$CMUX_WORKSPACE_ID" \
   --icon "$icon" --color "$color"
+sync_claude_code_pill
 exit 0

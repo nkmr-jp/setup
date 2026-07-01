@@ -29,10 +29,14 @@
   "automation": {
     // ワークスペースの会話メタデータ (タイトル自動生成・最新メッセージ表示等) に
     // 必要なため true。標準の workspace 単位 claude_code pill (Running/Awaiting) は
-    // 複数 pane が同一 workspace で同時に動くと Awaiting のまま固着する cmux 側の
-    // 既知の癖があるため、plugins/cmux/hooks/scripts/claude-status-hook.sh が
-    // 自前の per-pane state から都度再計算して上書き・自己修復する。
-    // pane 別の表示は同スクリプトが管理する cwd_<panel-id> pill を使う。
+    // 複数 pane が同一 workspace で同時に動くと Awaiting のまま固着することがある
+    // (cmux 本体の既知バグ: upstream issue #1027 / PR #5666、turnId ドリフトで
+    // 解除イベントがゲートされる。未マージのため本リポジトリ側では修正不可)。
+    // 外部から `cmux set-status claude_code ...` で上書きしようとしても
+    // claudeCodeIntegration:true の間は daemon に無視されるため、この pill を
+    // 直接いじる自己修復は実装しない (setup#3 で検証済み)。pane 別の表示は
+    // plugins/cmux/hooks/scripts/claude-status-hook.sh が管理する cwd_<panel-id>
+    // pill を使う。
     "claudeCodeIntegration": true,
     "socketControlMode": "automation"
   },

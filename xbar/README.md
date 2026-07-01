@@ -15,6 +15,23 @@
 xbar が実行する symlink は `${0:A}` で実体パスに解決されるため、シンボリックリンクは
 `*.5s.sh` だけで十分で、`click-handler.sh` をリンクする必要はない。
 
+## cmux ステータス連携 (claude-sessions.5s.sh)
+
+`claude-sessions.5s.sh` はメニューバー描画だけでなく、cmux サイドバーの
+workspace 単位 `claude_code` pill (Running/Awaiting) も更新する
+(`sync_cmux_pills` 関数)。`sessions.jsonl` を `cmux_workspace_id` ごとに
+集約し、running > awaiting > idle-only(=clear) の優先度で
+`cmux set-status`/`clear-status` を叩く。cmux 未インストール環境では
+`command -v cmux` チェックで自動的に何もしない。
+
+session-monitor 側の hook (`plugins/session-monitor/hooks/scripts/update-session.sh`)
+はセッション状態が変わるたびに `xbar://refreshPlugin` を叩いてこのスクリプトを
+即時再実行させるため、5s の定期実行を待たずに cmux 側もほぼリアルタイムに追従する。
+`plugins/cmux/hooks/scripts/claude-status-hook.sh` 側にも独立した自己修復ロジック
+(`sync_claude_code_pill`) があるが、そちらは cmux hook が発火した pane のみが対象。
+ここは `cmux_workspace_id` が付与された全セッション (cmux 外の hook 取りこぼしを
+含む) を横断できるため、保険として両方が同じ `claude_code` キーへ書き込む。
+
 ## シンボリックリンク作成
 
 ```sh

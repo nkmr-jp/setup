@@ -28,6 +28,67 @@ fi
 [[ -z "$DATA_DIR" ]] && DATA_DIR="$HOME/.claude/session-monitor"
 SESSIONS_FILE="$DATA_DIR/sessions.jsonl"
 
+# cmux サイドバーの workspace 単位 claude_code pill (Running/Awaiting) を、
+# session-monitor が集約した sessions.jsonl から都度計算して反映する。
+# session-monitor の hook は状態変化のたびに `xbar://refreshPlugin` でこの
+# スクリプトを即時再実行させる (5s の定期実行はフォールバック) ので、ここに
+# 書くだけで cmux 側もリアルタイムに追従する。plugins/cmux/hooks/scripts/
+# claude-status-hook.sh 側の自己修復ロジックとは独立した経路 (cmux hook が
+# 拾えない/cmux 外の判定漏れがあっても、ここは cmux_workspace_id が付与された
+# 全セッションを横断できるので保険になる)。
+CMUX_WS_STATE_FILE="$DATA_DIR/cmux-workspaces"
+
+sync_cmux_pills() {
+  command -v cmux >/dev/null 2>&1 || return 0
+
+  # 現在 jsonl にいる cmux_workspace_id ごとに running > awaiting > idle-only
+  # の優先度で集約する (cmux_workspace_id が空 = cmux 外のセッションは除外)。
+  local current_ws_status=""
+  if [[ -s "$SESSIONS_FILE" ]]; then
+    current_ws_status=$(jq -rs '
+      [.[] | select((.cmux_workspace_id // "") != "")]
+      | group_by(.cmux_workspace_id)
+      | map({
+          ws: .[0].cmux_workspace_id,
+          best: (if any(.[]; .status=="running") then "running"
+                 elif any(.[]; .status=="awaiting") then "awaiting"
+                 else "idle" end)
+        })
+      | .[] | "\(.ws)\t\(.best)"
+    ' "$SESSIONS_FILE" 2>/dev/null)
+  fi
+
+  local current_ws_list=""
+  [[ -n "$current_ws_status" ]] && current_ws_list=$(print -r -- "$current_ws_status" | cut -f1)
+
+  # 前回までは cmux セッションがあったが今回の jsonl には居ない (= 最後の
+  # cmux セッションが終了した) workspace を clear する。
+  local prev_ws=""
+  [[ -f "$CMUX_WS_STATE_FILE" ]] && prev_ws=$(< "$CMUX_WS_STATE_FILE")
+  if [[ -n "$prev_ws" ]]; then
+    print -r -- "$prev_ws" | while IFS= read -r ws; do
+      [[ -z "$ws" ]] && continue
+      print -r -- "$current_ws_list" | grep -qxF "$ws" || cmux clear-status claude_code --workspace "$ws" >/dev/null 2>&1
+    done
+  fi
+
+  # 現在 jsonl にいる workspace は running/awaiting なら set、idle だけなら clear。
+  # cmux set-status/clear-status は成功時に "OK" を stdout に出す。ここは xbar
+  # の描画本体 (stdout=メニュー内容) なので、混入しないよう必ず捨てる。
+  if [[ -n "$current_ws_status" ]]; then
+    print -r -- "$current_ws_status" | while IFS=$'\t' read -r ws best; do
+      [[ -z "$ws" ]] && continue
+      case "$best" in
+        running)  cmux set-status claude_code Running --workspace "$ws" --icon bolt.fill --color '#4C8DFF' >/dev/null 2>&1 ;;
+        awaiting) cmux set-status claude_code Awaiting --workspace "$ws" --icon bell.fill --color '#FF9500' >/dev/null 2>&1 ;;
+        *)        cmux clear-status claude_code --workspace "$ws" >/dev/null 2>&1 ;;
+      esac
+    done
+  fi
+
+  print -r -- "$current_ws_list" > "$CMUX_WS_STATE_FILE"
+}
+
 if ! command -v jq >/dev/null 2>&1; then
   print -- "⚠️ no jq"
   print -- "---"
@@ -39,6 +100,7 @@ fi
 # jsonl が無い / 空 (0 行) の場合でも、バーにアイコンだけは出して
 # 「動いているが空」だと分かるようにする (完全非表示だと故障と区別できない)。
 if [[ ! -s "$SESSIONS_FILE" ]]; then
+  sync_cmux_pills
   print -- "💤"
   print -- "---"
   print -- "セッションデータがありません | color=gray"
@@ -76,6 +138,8 @@ if jq -e --arg cutoff "$cutoff_iso" 'select((.updated_at // "") < $cutoff)' "$SE
   fi
   rm -rf "$lock_dir" 2>/dev/null
 fi
+
+sync_cmux_pills
 
 counts=$(jq -s '
   group_by(.status) | map({key:.[0].status, value:length}) | from_entries

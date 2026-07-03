@@ -96,7 +96,7 @@ ghostty / iTerm2 Scripts / cmux の設定は本リポジトリ配下で管理し
 ```sh
 mkdir -p ~/.config/ghostty ~/.config/cmux ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch
 ln -sf ~/ghq/github.com/nkmr-jp/setup/ghostty/config ~/.config/ghostty/config
-ln -sf ~/ghq/github.com/nkmr-jp/setup/cmux/settings.json ~/.config/cmux/settings.json
+ln -sf ~/ghq/github.com/nkmr-jp/setup/cmux/cmux.json ~/.config/cmux/cmux.json
 ln -sf ~/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount.py ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount.py
 ```
 

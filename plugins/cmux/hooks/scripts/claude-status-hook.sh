@@ -10,6 +10,12 @@
 #
 # Usage: claude-status-hook.sh <running|awaiting|idle|clear>
 #
+# 副次責務 (setup issue #3): pill 更新と同じ最終段で、sessionId -> cmux
+# surface/workspace UUID のマッピングを ~/.claude/cmux/hook-sessions.json に
+# upsert する (sync_sessions_json)。cmux の claudeCodeIntegration を false に
+# したことで cmux 自身が ~/.cmuxterm/claude-hook-sessions.json を更新しなく
+# なるため、その消費側 (ccdash / issues-site) 向けの代替データを自前生成する。
+#
 # 状態は ${TMPDIR}/cmux-pane-state/<panel-id> に保存し、zsh 側の precmd/chpwd でも
 # 同じアイコンを再描画できるようにする（state→icon の写像は両側で同期）。
 #
@@ -84,10 +90,18 @@ cat > "$input_file" 2>/dev/null
 
 session_id=""
 hook_event=""
+hook_cwd=""
 if command -v jq >/dev/null 2>&1; then
   session_id=$(jq -r '.session_id // empty' < "$input_file" 2>/dev/null)
   hook_event=$(jq -r '.hook_event_name // empty' < "$input_file" 2>/dev/null)
+  hook_cwd=$(jq -r '.cwd // empty' < "$input_file" 2>/dev/null)
 fi
+
+# clear の detach 子プロセスは stdin が /dev/null になるため、親が抽出済みの
+# 値を環境変数経由で引き継ぐ (sessions JSON の upsert/削除に必要)。
+[ -n "$session_id" ] || session_id="${CMUX_STATUS_HOOK_SID:-}"
+[ -n "$hook_event" ] || hook_event="${CMUX_STATUS_HOOK_EVENT:-}"
+[ -n "$hook_cwd" ] || hook_cwd="${CMUX_STATUS_HOOK_CWD:-$PWD}"
 
 # CMUX_PANEL_ID が継承されない cmux 0.61+ 対策: session_id 別 cache + cmux identify。
 # cache が無ければ caller ベースで identify を呼んで作る。SessionStart に限らず
@@ -222,9 +236,89 @@ if [ "$state" = clear ] && [ -z "${CMUX_STATUS_HOOK_BG:-}" ]; then
   [ "$hook_event" = "SessionEnd" ] && [ -n "$panel_cache" ] && rm -f "$panel_cache"
   CMUX_STATUS_HOOK_BG=1 CMUX_PANEL_ID="$CMUX_PANEL_ID" \
     CMUX_WORKSPACE_ID="$CMUX_WORKSPACE_ID" \
+    CMUX_STATUS_HOOK_SID="$session_id" \
+    CMUX_STATUS_HOOK_EVENT="$hook_event" \
+    CMUX_STATUS_HOOK_CWD="$hook_cwd" \
     nohup "$0" "$@" </dev/null >/dev/null 2>&1 &
   exit 0
 fi
+
+# sessionId -> cmux surface/workspace UUID のマッピングを自前で永続化する
+# (setup issue #3)。cmux の automation.claudeCodeIntegration は claude_code pill
+# 固着バグ (upstream #1027) を避けるため false にしており、cmux が書いていた
+# ~/.cmuxterm/claude-hook-sessions.json は更新されなくなる。その代替として、
+# 消費側 (ccdash / issues-site) が実際に読む `sessions` マップだけを同スキーマの
+# サブセット (sessionId / workspaceId / surfaceId / cwd / agentLifecycle /
+# startedAt / updatedAt) で ~/.claude/cmux/hook-sessions.json に upsert する。
+# agentLifecycle の語彙は cmux 本家に合わせる (running / needsInput / idle)。
+# SessionEnd でエントリを削除し、SessionEnd を逃したクラッシュ分は書き込み時に
+# 7 日超の stale エントリとして prune する (cmux 本家の pruneExpired と同じ寿命)。
+# 呼び出し元の早期 exit (非 cmux 環境 / 古い event / 同一 state) をそのまま
+# 流用するため、この関数は set-status と同じ最終段でのみ呼ばれる。
+sync_sessions_json() {
+  [ -n "$session_id" ] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+  sessions_file="${CMUX_HOOK_SESSIONS_FILE:-$HOME/.claude/cmux/hook-sessions.json}"
+  mkdir -p "$(dirname "$sessions_file")" 2>/dev/null || return 0
+
+  case "$state" in
+    running)  lifecycle=running ;;
+    awaiting) lifecycle=needsInput ;;
+    idle)     lifecycle=idle ;;
+    clear)
+      # SessionStart は idle で upsert、SessionEnd はエントリ削除。
+      if [ "$hook_event" = "SessionEnd" ]; then lifecycle=ended; else lifecycle=idle; fi ;;
+    *) return 0 ;;
+  esac
+
+  # Per-file mutex (state file の lock とは別)。1 秒以上経過したロックは stale。
+  sessions_lock="$sessions_file.lock.d"
+  s_attempts=0
+  while ! mkdir "$sessions_lock" 2>/dev/null; do
+    s_attempts=$((s_attempts + 1))
+    if [ "$s_attempts" -gt 50 ]; then
+      rm -rf "$sessions_lock" 2>/dev/null
+      s_attempts=0
+    fi
+    sleep 0.02
+  done
+
+  now=$(date +%s)
+  sessions_tmp="$sessions_file.tmp.$$"
+  base='{"version":1,"sessions":{}}'
+  [ -s "$sessions_file" ] && base=$(cat "$sessions_file" 2>/dev/null)
+  if [ "$lifecycle" = ended ]; then
+    printf '%s' "$base" | jq --arg sid "$session_id" --argjson now "$now" '
+      {version: 1,
+       sessions: ((.sessions // {})
+         | with_entries(select(.key != $sid
+             and (.value.updatedAt // 0) > ($now - 604800))))}
+    ' > "$sessions_tmp" 2>/dev/null
+  else
+    printf '%s' "$base" | jq --arg sid "$session_id" --arg ws "$CMUX_WORKSPACE_ID" \
+      --arg sf "$CMUX_PANEL_ID" --arg cwd "$hook_cwd" --arg lc "$lifecycle" \
+      --argjson now "$now" '
+      {version: 1,
+       sessions: ((.sessions // {})
+         | .[$sid] = ((.[$sid] // {startedAt: $now})
+             + {sessionId: $sid, workspaceId: $ws, surfaceId: $sf, cwd: $cwd,
+                agentLifecycle: $lc, updatedAt: $now})
+         | with_entries(select((.value.updatedAt // 0) > ($now - 604800))))}
+    ' > "$sessions_tmp" 2>/dev/null
+  fi
+  # jq が失敗した場合 (壊れた既存 JSON 等) は既存ファイルを壊さず放置し、
+  # 空の tmp だけ回収する。次回の正常な書き込みで復旧する。
+  if [ -s "$sessions_tmp" ]; then
+    mv "$sessions_tmp" "$sessions_file"
+  else
+    rm -f "$sessions_tmp"
+    # 既存ファイルが壊れて jq が parse できない場合はここに落ちるので初期化する。
+    if [ -s "$sessions_file" ] && ! jq empty "$sessions_file" >/dev/null 2>&1; then
+      printf '{"version":1,"sessions":{}}\n' > "$sessions_file"
+    fi
+  fi
+  rmdir "$sessions_lock" 2>/dev/null
+}
 
 # basename "$PWD" が空 (PWD 未設定など) になると cmux set-status が空 value で
 # 失敗し、pill が前回値のまま固定化したり stale 判定で消えたりする。空のとき
@@ -284,6 +378,7 @@ trap 'rm -f "$input_file"' EXIT INT TERM HUP
 
 if [ "$state" = clear ]; then
   cmux set-status "$key" "$label" --workspace "$CMUX_WORKSPACE_ID" --icon "$icon"
+  sync_sessions_json
   exit 0
 fi
 
@@ -292,4 +387,5 @@ cmux clear-status "claude_${CMUX_PANEL_ID}" --workspace "$CMUX_WORKSPACE_ID" 2>/
 
 cmux set-status "$key" "$label" --workspace "$CMUX_WORKSPACE_ID" \
   --icon "$icon" --color "$color"
+sync_sessions_json
 exit 0

@@ -27,17 +27,20 @@
   },
 
   "automation": {
-    // ワークスペースの会話メタデータ (タイトル自動生成・最新メッセージ表示等) に
-    // 必要なため true。標準の workspace 単位 claude_code pill (Running/Awaiting) は
-    // 複数 pane が同一 workspace で同時に動くと Awaiting のまま固着することがある
+    // false: cmux 標準の workspace 単位 claude_code pill (Running/Awaiting) は
+    // 複数 pane が同一 workspace で同時に動くと Awaiting のまま固着する
     // (cmux 本体の既知バグ: upstream issue #1027 / PR #5666、turnId ドリフトで
     // 解除イベントがゲートされる。未マージのため本リポジトリ側では修正不可)。
-    // 外部から `cmux set-status claude_code ...` で上書きしようとしても
-    // claudeCodeIntegration:true の間は daemon に無視されるため、この pill を
-    // 直接いじる自己修復は実装しない (setup#3 で検証済み)。pane 別の表示は
-    // plugins/cmux/hooks/scripts/claude-status-hook.sh が管理する cwd_<panel-id>
-    // pill を使う。
-    "claudeCodeIntegration": true,
+    // true にしていた唯一の実目的だった ~/.cmuxterm/claude-hook-sessions.json
+    // (sessionId -> surface/workspace UUID マッピング。ccdash / issues-site が
+    // 消費) は、plugins/cmux/hooks/scripts/claude-status-hook.sh が
+    // ~/.claude/cmux/hook-sessions.json へ自前生成する方式に移行したため、
+    // true を維持する理由が無くなった (setup#3 案1)。false 化の副作用として
+    // ワークスペースのタイトル自動生成・最新メッセージ表示は失われる。
+    // pane 別の表示は claude-status-hook.sh が管理する cwd_<panel-id> pill を使う。
+    // 注意: この設定は新規サーフェス作成時にしか評価されないため、変更後も
+    // 開き直していない既存ペインの Claude セッションは旧動作のまま動き続ける。
+    "claudeCodeIntegration": false,
     "socketControlMode": "automation"
   },
 

@@ -56,6 +56,12 @@ cmux set-status copilot_cli Idle
 cmux clear-status claude_code
 ```
 
+> **注意**: `claude_code` キーは cmux の `automation.claudeCodeIntegration: true` の間は
+> daemon が管理しており、外部からの `cmux set-status claude_code ...` は `OK` を返しつつ
+> **黙って無視される**（setup#3 で実機検証済み）。外部から書けるのは cmux 自身の
+> `cmux hooks claude <event>` 経由のみだが、これは upstream の turnId ドリフトバグ
+> (issue #1027) の影響を受けるため、自前の書き込みレイヤーを構築してはならない。
+
 ### キーの命名規約
 
 慣例として `<agent>_cli` や `<agent>` 形式を使う：

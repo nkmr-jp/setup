@@ -251,8 +251,16 @@ fi
 # サブセット (sessionId / workspaceId / surfaceId / cwd / agentLifecycle /
 # startedAt / updatedAt) で ~/.claude/cmux/hook-sessions.json に upsert する。
 # agentLifecycle の語彙は cmux 本家に合わせる (running / needsInput / idle)。
-# SessionEnd でエントリを削除し、SessionEnd を逃したクラッシュ分は書き込み時に
-# 7 日超の stale エントリとして prune する (cmux 本家の pruneExpired と同じ寿命)。
+# SessionEnd でエントリを削除する。SessionEnd を逃した分 (クラッシュ・workspace
+# の強制クローズ等) は書き込み時に prune する (issue #5):
+#   - liveness prune: workspace.list + surface.list で生存 surface UUID 集合を
+#     取得し、集合に無い surfaceId のエントリを削除する。RPC (~200ms) は 60 秒
+#     スロットルし、取得に失敗した場合は誤って全エントリを消さないようスキップ
+#     する (zsh 側 sweeper と同じ安全策)。live 集合の取得は per-file lock 内で
+#     行うので、lock 前に書かれたエントリの surface は必ず取得時点より古く、
+#     新規セッションのエントリを stale な集合で誤 prune することはない。
+#   - 7 日超 prune: cmux daemon 不達等で liveness prune が動けない場合の
+#     フォールバック (cmux 本家の pruneExpired と同じ寿命)。
 # 呼び出し元の早期 exit (非 cmux 環境 / 古い event / 同一 state) をそのまま
 # 流用するため、この関数は set-status と同じ最終段でのみ呼ばれる。
 sync_sessions_json() {
@@ -284,26 +292,65 @@ sync_sessions_json() {
   done
 
   now=$(date +%s)
+
+  # liveness prune 用の生存 surface UUID 集合 (JSON 配列)。null は「今回は
+  # liveness prune をしない」(スロットル中 / RPC 失敗) を意味する。
+  live_json=null
+  prune_marker="$sessions_file.pruned"
+  last_prune=$(cat "$prune_marker" 2>/dev/null)
+  case "$last_prune" in ''|*[!0-9]*) last_prune=0 ;; esac
+  if [ $((now - last_prune)) -ge 60 ]; then
+    ws_ids=$(cmux rpc workspace.list "{}" 2>/dev/null \
+      | jq -r '.workspaces[]?.id // empty' 2>/dev/null)
+    if [ -n "$ws_ids" ]; then
+      live_ids=""
+      fetch_ok=1
+      for ws_id in $ws_ids; do
+        sf_json=$(cmux rpc surface.list "{\"workspace_id\":\"$ws_id\"}" 2>/dev/null)
+        if ! printf '%s' "$sf_json" | jq -e '.surfaces' >/dev/null 2>&1; then
+          fetch_ok=0
+          break
+        fi
+        live_ids="$live_ids
+$(printf '%s' "$sf_json" | jq -r '.surfaces[]?.id // empty' 2>/dev/null)"
+      done
+      # surface が 1 つも取れないのは異常 (この hook 自身が surface 内に居る)
+      # なので、全エントリの誤削除を避けるため prune しない。
+      [ -n "$(printf '%s' "$live_ids" | tr -d '[:space:]')" ] || fetch_ok=0
+      if [ "$fetch_ok" = 1 ]; then
+        live_json=$(printf '%s\n' "$live_ids" \
+          | jq -R -s 'split("\n") | map(select(length > 0))' 2>/dev/null)
+        [ -n "$live_json" ] || live_json=null
+        [ "$live_json" = null ] || printf '%s' "$now" > "$prune_marker"
+      fi
+    fi
+  fi
+
   sessions_tmp="$sessions_file.tmp.$$"
   base='{"version":1,"sessions":{}}'
   [ -s "$sessions_file" ] && base=$(cat "$sessions_file" 2>/dev/null)
   if [ "$lifecycle" = ended ]; then
-    printf '%s' "$base" | jq --arg sid "$session_id" --argjson now "$now" '
+    printf '%s' "$base" | jq --arg sid "$session_id" --argjson now "$now" \
+      --argjson live "$live_json" '
       {version: 1,
        sessions: ((.sessions // {})
-         | with_entries(select(.key != $sid
-             and (.value.updatedAt // 0) > ($now - 604800))))}
+         | with_entries((.value.surfaceId // "") as $s
+             | select(.key != $sid
+                 and (.value.updatedAt // 0) > ($now - 604800)
+                 and ($live == null or ($live | index($s)) != null))))}
     ' > "$sessions_tmp" 2>/dev/null
   else
     printf '%s' "$base" | jq --arg sid "$session_id" --arg ws "$CMUX_WORKSPACE_ID" \
       --arg sf "$CMUX_PANEL_ID" --arg cwd "$hook_cwd" --arg lc "$lifecycle" \
-      --argjson now "$now" '
+      --argjson now "$now" --argjson live "$live_json" '
       {version: 1,
        sessions: ((.sessions // {})
          | .[$sid] = ((.[$sid] // {startedAt: $now})
              + {sessionId: $sid, workspaceId: $ws, surfaceId: $sf, cwd: $cwd,
                 agentLifecycle: $lc, updatedAt: $now})
-         | with_entries(select((.value.updatedAt // 0) > ($now - 604800))))}
+         | with_entries((.value.surfaceId // "") as $s
+             | select((.value.updatedAt // 0) > ($now - 604800)
+                 and ($live == null or ($live | index($s)) != null))))}
     ' > "$sessions_tmp" 2>/dev/null
   fi
   # jq が失敗した場合 (壊れた既存 JSON 等) は既存ファイルを壊さず放置し、

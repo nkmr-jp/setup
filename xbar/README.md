@@ -9,6 +9,7 @@
 | --- | --- | --- |
 | `focus.5s.sh` | [Horo.app](https://horo.app) の進行中タスクをメニューバーに表示 | `sqlite3`, Horo.app |
 | `claude-sessions.5s.sh` | Claude Code のセッション状態を `⚡running / 🔔awaiting / ⏸idle` で集約表示 | `jq`, Claude Code (session-monitor plugin) |
+| `kalloc1024.2m.sh` | Claude Code 起因のカーネルメモリリーク（`data.kalloc.1024`）の閾値到達進捗%・増加ペースを表示 | `zprint` |
 | `click-handler.sh` | `claude-sessions.5s.sh` から呼ばれるクリックハンドラ (xbar には登録しない) | cmux (任意) |
 
 `click-handler.sh` は `claude-sessions.5s.sh` 内で `${0:A:h}/click-handler.sh` として呼ばれる。
@@ -25,7 +26,7 @@ make ln
 
 1. `~/Library/Application Support/xbar/plugins/` 配下を **すべて削除** する
 2. `setup/xbar/*.sh` に実行権限を付与
-3. `setup/xbar/*.5s.sh` を `~/Library/Application Support/xbar/plugins/` にシンボリックリンク
+3. `setup/xbar/*.5s.sh` / `*.2m.sh` を `~/Library/Application Support/xbar/plugins/` にシンボリックリンク
 4. リンク結果を `ls` で確認
 
 > [!WARNING]

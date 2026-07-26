@@ -1,0 +1,13 @@
+# 公開リポジトリ用の署名設定。
+# ~/.gitconfig-signing-includes の includeIf から読み込まれる
+# （生成元: bin/gen-git-signing-config.sh）。
+#
+# 既定（~/.gitconfig）はコミット署名なし。エージェントの無人コミットが
+# 1Password の生体認証プロンプトで停止するのを避けるため。
+# 公開リポジトリだけこのファイルで署名を有効に戻す。
+#
+# tag.gpgsign は意図的に設定していない（元々どこでも未設定＝タグは無署名）。
+# タグ署名を有効にすると semantic-release 等のタグ生成が
+# 1Password のプロンプト待ちで止まる。
+[commit]
+    gpgsign = true

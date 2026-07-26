@@ -133,6 +133,40 @@ git config --global user.name "username"
 git config --global user.email "mailaddress"
 ```
 
+### コミット署名は公開リポジトリのみ
+
+署名鍵は 1Password の SSH agent（`op-ssh-sign`）にあり、署名のたびに生体認証を求める。
+エージェントの無人コミットがそこで止まるため、**既定は署名なし・公開リポジトリだけ署名あり**にしている。
+
+```ini
+# ~/.gitconfig（この順序に意味がある。後に書いたものが勝つ）
+[commit]
+    gpgsign = false                      # 既定: 署名なし
+[include]
+    path = ~/.gitconfig-signing-includes # public リポジトリだけ署名ONに戻す
+[includeIf "gitdir:~/ghq/github.com/nkmr-jp/prompt-line-plugins/"]
+    path = ~/.gitconfig-scheduler        # agent-scheduler 対象は public でも署名OFF
+```
+
+`~/.gitconfig-signing-includes` は生成物。GitHub 上で public なリポジトリすべての
+`includeIf "gitdir:..."` を並べ、`gitconfig-signing` を読ませる。
+**リポジトリの公開/非公開を切り替えたら再実行する**（public→private のまま放置すると古いエントリが残って署名され続ける）。
+未 clone のリポジトリも含めて生成するので、clone しただけなら再実行不要。
+
+```sh
+bin/gen-git-signing-config.sh          # 既定 owner: nkmr-jp
+```
+
+確認方法（`--show-origin` でどのファイルが効いたか分かる）:
+
+```sh
+git -C <repo> config --show-origin --get commit.gpgsign
+```
+
+- worktree（`<repo>-wt-<branch>`）は `GIT_DIR` が本体の `.git` 配下を指すため、本体と同じ判定になる。
+- 他 org の clone は署名なし。OSS へコントリビュートするときはそのリポジトリで
+  `git config commit.gpgsign true` を設定する。
+
 ### Set gtr
 ```sh
 ghq get coderabbitai/git-worktree-runner
@@ -170,7 +204,8 @@ setup/
 ├── tools/            # Tool-specific configurations
 ├── bin/              # Local executables (symlinked into ~/bin)
 ├── launchd/          # macOS LaunchAgent plists (symlinked into ~/Library/LaunchAgents)
-└── gitconfig         # Git configuration
+├── gitconfig         # Git configuration
+└── gitconfig-signing # 公開リポジトリ用の署名ON設定（includeIf から読まれる）
 ```
 
 ## Zsh Configuration

@@ -120,6 +120,7 @@ _gwt_run_post_create_hook() {
 # リンクする。プロジェクト名はベースリポジトリ名（-wt-除去後）。
 # - 環境変数 GWT_ISSUES_REPO_DIR が未設定なら何もしない
 # - issues リポジトリが存在しなくてもエラーにせずスキップする
+# - issues リポジトリに projects/ があればその配下をプロジェクトフォルダの親とする
 # - リンク先プロジェクトフォルダが未作成なら先に作成する
 _gwt_setup_agentsws_issues_link() {
     local worktree_path="$1"
@@ -132,7 +133,15 @@ _gwt_setup_agentsws_issues_link() {
     # issues リポジトリ本体が存在しない場合もエラーにせずスキップ
     [[ -d "$issues_repo_dir" ]] || return 0
 
-    local issues_project_dir="${issues_repo_dir}/${project_name}"
+    # issues リポジトリが projects/ レイアウトなら、その配下をプロジェクトフォルダの親にする。
+    # このレイアウトでは実体が <repo>/projects/<project>/ に置かれるため、リポジトリ直下に
+    # 張ると空のフォルダを新規作成して既存の issue が一切見えないリンクになる。
+    # GWT_ISSUES_REPO_DIR が既に projects/ を指している場合は projects/projects が無いので
+    # そのまま使われる（冪等）。
+    local projects_parent="$issues_repo_dir"
+    [[ -d "${issues_repo_dir}/projects" ]] && projects_parent="${issues_repo_dir}/projects"
+
+    local issues_project_dir="${projects_parent}/${project_name}"
     local agentsws_dir="${worktree_path}/.agentsws"
     local link_path="${agentsws_dir}/issues"
 
@@ -1072,6 +1081,8 @@ ${YELLOW}.agentsws/issues シンボリックリンク:${RESET}
   環境変数 GWT_ISSUES_REPO_DIR を設定すると、worktree作成時に
   .agentsws/issues を \$GWT_ISSUES_REPO_DIR/<project> へリンクします。
   <project> はベースリポジトリ名で、リンク先フォルダが無ければ自動作成します。
+  \$GWT_ISSUES_REPO_DIR/projects/ が存在する場合はそちらを親として
+  \$GWT_ISSUES_REPO_DIR/projects/<project> へリンクします。
   GWT_ISSUES_REPO_DIR が未設定、またはディレクトリが存在しない場合は
   何もしません（エラーになりません）。
 

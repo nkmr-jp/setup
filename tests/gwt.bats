@@ -234,6 +234,35 @@ teardown() {
     [ -d "$GWT_ISSUES_REPO_DIR/repo" ]
 }
 
+@test "new: issues リポジトリに projects/ があればその配下へリンクする" {
+    # projects/ レイアウト（実体が <repo>/projects/<project>/ にある構成）
+    mkdir -p "$GWT_ISSUES_REPO_DIR/projects"
+
+    run_gwt _gwt_new "projects-layout-test"
+    [ "$status" -eq 0 ]
+
+    local wt="$BATS_TEST_TMPDIR/repo-wt-projects-layout-test"
+    [ -L "$wt/.agentsws/issues" ]
+    # リポジトリ直下ではなく projects/ 配下を指していること
+    [ "$(readlink "$wt/.agentsws/issues")" = "$GWT_ISSUES_REPO_DIR/projects/repo" ]
+    [ -d "$GWT_ISSUES_REPO_DIR/projects/repo" ]
+    # リポジトリ直下に空のプロジェクトフォルダを作っていないこと
+    [ ! -d "$GWT_ISSUES_REPO_DIR/repo" ]
+}
+
+@test "new: GWT_ISSUES_REPO_DIR が既に projects/ を指す場合は二重に付けない" {
+    GWT_ISSUES_REPO_DIR="$GWT_ISSUES_REPO_DIR/projects"
+    mkdir -p "$GWT_ISSUES_REPO_DIR"
+
+    run_gwt _gwt_new "projects-idempotent-test"
+    [ "$status" -eq 0 ]
+
+    local wt="$BATS_TEST_TMPDIR/repo-wt-projects-idempotent-test"
+    [ -L "$wt/.agentsws/issues" ]
+    [ "$(readlink "$wt/.agentsws/issues")" = "$GWT_ISSUES_REPO_DIR/repo" ]
+    [ ! -d "$GWT_ISSUES_REPO_DIR/projects" ]
+}
+
 @test "new: issues リポジトリが存在しない場合はリンクを作成しない" {
     # GWT_ISSUES_REPO_DIR は設定済みだがディレクトリは未作成（setup の既定のまま）
     run_gwt _gwt_new "no-link-test"

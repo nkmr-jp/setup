@@ -52,3 +52,9 @@ export EDITOR="code --wait"
 
 # See: https://codeclaude.com/docs/en/fullscreen
 export CLAUDE_CODE_NO_FLICKER=1
+
+# gwt: worktree 作成時に .agentsws/issues を張る先の issues リポジトリ
+# 未設定だと _gwt_setup_agentsws_issues_link が黙ってスキップし、symlink が作られない。
+# projects/ レイアウト（実体が <repo>/projects/<project>/）は gwt.zsh 側で解決するので
+# ここではリポジトリのルートを指す。
+export GWT_ISSUES_REPO_DIR="$HOME/ghq/github.com/nkmr-jp/issues"

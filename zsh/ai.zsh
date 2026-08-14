@@ -2,6 +2,10 @@
 # AI coding assistants and tools
 
 # AI agents
+# cmux の Codex hook 注入を無効化する。hook trust の確認を迂回する
+# --dangerously-bypass-hook-trust が自動付与されるのを防ぐ。
+export CMUX_CODEX_HOOKS_DISABLED=1
+
 alias cl='claude'
 alias co='codex'
 alias ge='gemini'

@@ -14,6 +14,7 @@
     * [Set .gitconfig](#set-gitconfig)
     * [Set git user](#set-git-user)
   * [Repository Structure](#repository-structure)
+  * [Codex Plugins](#codex-plugins)
   * [Zsh Configuration](#zsh-configuration)
     * [Optional: Set greeting messages](#optional-set-greeting-messages)
   * [Anyenv (anyenv)](#anyenv-anyenv)
@@ -207,6 +208,21 @@ setup/
 ├── gitconfig         # Git configuration
 └── gitconfig-signing # 公開リポジトリ用の署名ON設定（includeIf から読まれる）
 ```
+
+## Codex Plugins
+
+このリポジトリの marketplace を登録し、必要なプラグインをインストールする:
+
+```sh
+codex plugin marketplace add ~/ghq/github.com/nkmr-jp/setup
+codex plugin add cmux@setup
+codex plugin add session-monitor@setup
+```
+
+- `cmux`: cmux のワークスペース、ペイン、通知、ブラウザなどを操作するスキルと状態同期 hooks
+- `session-monitor`: Codex / Claude Code のセッション状態を集約し、xbar に表示する hooks
+
+インストール後は、新しいスレッドを開始してプラグインを読み込む。個別の前提条件や Claude Code へのインストール方法は、[cmux](plugins/cmux/README.md) と [session-monitor](plugins/session-monitor/README.md) を参照。
 
 ## Zsh Configuration
 Get plugin
@@ -595,4 +611,3 @@ tail ~/Library/Logs/issues-autobackup.log
 > Claude 固有の自動化基盤 `claude-auto`（コミットメッセージ生成・セッション要約・keychain OAuth・
 > `~/.claude-auto` 隔離）は ccdash へ移設した。セットアップ（`claude-auto/install.sh` / `setup-token` 発行）と
 > 機能B（日次セッション要約）の詳細は ccdash の `claude-auto/README.md` を参照（移設の経緯は ccdash#33）。
-

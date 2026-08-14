@@ -1,0 +1,25 @@
+{
+  "name": "cmux",
+  "version": "0.4.1",
+  "description": "Control the cmux native macOS terminal from Codex or Claude Code, with workspace, pane, surface, notification, browser, and agent-status integration.",
+  "author": {
+    "name": "nkmr-jp"
+  },
+  "homepage": "https://github.com/manaflow-ai/cmux",
+  "repository": "https://github.com/nkmr-jp/setup",
+  "keywords": ["cmux", "terminal", "macos", "codex", "claude-code", "agent", "workspace"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "cmux",
+    "shortDescription": "Control cmux from Codex",
+    "longDescription": "Operate cmux workspaces, panes, surfaces, notifications, status pills, and browser surfaces from Codex or Claude Code.",
+    "developerName": "nkmr-jp",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "defaultPrompt": [
+      "cmux の現在のワークスペースとペインを確認してください。",
+      "cmux のペインを右に分割してください。",
+      "cmux から完了通知を送ってください。"
+    ]
+  }
+}

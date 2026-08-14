@@ -1,6 +1,6 @@
 # session-monitor
 
-Claude Code の進行中セッションを hooks で監視し、xbar のメニューバーから一覧表示するプラグイン。
+Codex / Claude Code の進行中セッションを hooks で監視し、xbar のメニューバーから一覧表示するプラグイン。
 
 ```
 ⚡2 🔔1 ⏸3   ← 並走中の running / awaiting / idle セッション数
@@ -10,13 +10,13 @@ Claude Code の進行中セッションを hooks で監視し、xbar のメニ�
 
 ## 動作概要
 
-1. 各 hook イベント (`SessionStart` / `UserPromptSubmit` / `PreToolUse` / `PostToolUse` / `Notification` / `Stop` / `SessionEnd`) で `hooks/scripts/update-session.sh` が起動。
+1. 各 hook イベント (`SessionStart` / `UserPromptSubmit` / `PreToolUse` / `PostToolUse` / `Notification` / `PermissionRequest` / `Stop` / `SessionEnd`) で `hooks/scripts/update-session.sh` が起動。
 2. stdin の JSON から `session_id` / `transcript_path` / `cwd` / `hook_event_name` を抽出。
 3. transcript jsonl の末尾を `tail -r` で逆順スキャンし、`gitBranch` / `model` / 直近 user プロンプト / `usage` を取得（巨大セッション対策に末尾 400 行に制限）。
 4. ステータスを以下に写像し、`$CLAUDE_PLUGIN_DATA/sessions.jsonl` を upsert:
    - `SessionStart` → `idle`
    - `UserPromptSubmit` / `PreToolUse` / `PostToolUse` → `running`
-   - `Notification` → `awaiting`
+   - `Notification` / `PermissionRequest` → `awaiting`
    - `Stop` → `idle`
    - `SessionEnd` → 削除
 5. xbar スクリプト (`xbar/claude-sessions.5s.sh`) が 5 秒間隔で sessions.jsonl を読み、メニューバーを描画。
@@ -49,9 +49,16 @@ xbar スクリプトをリポジトリのルート `xbar/` 配下に置くのは
 
 ## インストール
 
-### 1. Claude Code プラグインとして有効化
+### 1. Codex プラグインとして有効化
 
-このリポジトリの marketplace から:
+```bash
+codex plugin marketplace add ~/ghq/github.com/nkmr-jp/setup
+codex plugin add session-monitor@setup
+```
+
+インストール後は、新しいスレッドで hooks を読み込む。
+
+Claude Code で有効化する場合は、このリポジトリの marketplace から:
 
 ```bash
 /plugin marketplace add nkmr-jp/setup

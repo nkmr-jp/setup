@@ -1,15 +1,26 @@
 # cmux
 
-[manaflow-ai/cmux](https://github.com/manaflow-ai/cmux) のネイティブ macOS ターミナルを Claude Code から操作するためのスキルプラグイン。
+[manaflow-ai/cmux](https://github.com/manaflow-ai/cmux) のネイティブ macOS ターミナルを Codex / Claude Code から操作するためのスキルプラグイン。
 
-cmux は複数の AI コーディングエージェント CLI を縦型タブ・分割ペイン・通知パネル付きで束ねる macOS 専用ターミナルで、`cmux` CLI と UNIX ソケット API（`/tmp/cmux.sock`）で外部から制御できる。本プラグインはその使い方を Claude にオンボーディングする。
+cmux は複数の AI コーディングエージェント CLI を縦型タブ・分割ペイン・通知パネル付きで束ねる macOS 専用ターミナルで、`cmux` CLI と UNIX ソケット API（`/tmp/cmux.sock`）で外部から制御できる。本プラグインはその使い方を Codex / Claude Code にオンボーディングする。
 
 ## 前提
 
 - macOS
 - cmux.app がインストール・起動済みであること（`brew install --cask cmux`）
 
-## インストール
+## Codex へのインストール
+
+setup リポジトリの marketplace を追加して install する:
+
+```bash
+codex plugin marketplace add ~/ghq/github.com/nkmr-jp/setup
+codex plugin add cmux@setup
+```
+
+インストール後は、新しいスレッドでスキルと hooks を読み込む。
+
+## Claude Code へのインストール
 
 setup リポジトリの marketplace を追加して install する:
 
@@ -32,6 +43,7 @@ claude plugin install cmux@setup
 | `PreToolUse` | [`hooks/scripts/claude-status-hook.sh running`](hooks/scripts/claude-status-hook.sh) | 通知後にツール実行が再開した場合も pill を `bolt.fill` (#4C8DFF) に戻す |
 | `PostToolUse` | [`hooks/scripts/claude-status-hook.sh running`](hooks/scripts/claude-status-hook.sh) | AskUserQuestion 回答や permission 承認後に `awaiting` から `bolt.fill` (#4C8DFF) に戻す |
 | `Notification` | [`hooks/scripts/claude-status-hook.sh awaiting`](hooks/scripts/claude-status-hook.sh) | サイドバー pill を `bell.fill` (#FF9500) に |
+| `PermissionRequest` | [`hooks/scripts/claude-status-hook.sh awaiting`](hooks/scripts/claude-status-hook.sh) | Codex の承認待ちで pill を `bell.fill` (#FF9500) に |
 | `Stop` | [`hooks/scripts/claude-status-hook.sh idle`](hooks/scripts/claude-status-hook.sh) | 応答完了時に pill を `pause.fill` (#8E8E93) に |
 | `SessionStart` | [`hooks/scripts/claude-status-hook.sh clear`](hooks/scripts/claude-status-hook.sh) | 前セッションが SessionEnd を逃した場合の stale state を掃除し `folder` アイコンに戻す |
 | `SessionEnd` | [`hooks/scripts/claude-status-hook.sh clear`](hooks/scripts/claude-status-hook.sh) | state file を削除し pill を `folder` アイコンに戻す |

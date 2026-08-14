@@ -1,7 +1,6 @@
 ---
 name: cmux
-description: このスキルは、ユーザーが「cmux」「cmux で通知を送る」「cmux のワークスペースを操作」「cmux のペインを分割」「cmux のサーフェス」「cmux のステータスを更新」「cmux ブラウザを操作」と依頼したとき、または cmux 内で動作している Claude Code が cmux 自身を制御したいときに使用すべきです。manaflow-ai/cmux のネイティブ macOS ターミナルを CLI（`cmux` コマンド）と JSON-RPC ソケット API で操作する方法を提供します。
-version: 0.1.0
+description: このスキルは、ユーザーが「cmux」「cmux で通知を送る」「cmux のワークスペースを操作」「cmux のペインを分割」「cmux のサーフェス」「cmux のステータスを更新」「cmux ブラウザを操作」と依頼したとき、または cmux 内で動作している Codex / Claude Code が cmux 自身を制御したいときに使用すべきです。manaflow-ai/cmux のネイティブ macOS ターミナルを CLI（`cmux` コマンド）と JSON-RPC ソケット API で操作する方法を提供します。
 ---
 
 # cmux
@@ -76,7 +75,7 @@ ID 形式は `window:N` / `workspace:N` / `pane:N` / `surface:N`。CLI 引数の
 
 ### 1. 現在の文脈を把握する
 
-cmux 内で動く Claude Code から自分の所在を知るには、まず `identify` を呼ぶ。
+cmux 内で動く Codex / Claude Code から自分の所在を知るには、まず `identify` を呼ぶ。
 
 ```bash
 cmux identify --json

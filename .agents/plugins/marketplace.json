@@ -1,0 +1,32 @@
+{
+  "name": "setup",
+  "interface": {
+    "displayName": "nkmr-jp Setup"
+  },
+  "plugins": [
+    {
+      "name": "cmux",
+      "source": {
+        "source": "local",
+        "path": "./plugins/cmux"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "session-monitor",
+      "source": {
+        "source": "local",
+        "path": "./plugins/session-monitor"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "session-monitor",
+  "version": "0.1.0",
+  "description": "Monitor Codex and Claude Code sessions with lifecycle hooks and aggregate their running, awaiting, and idle states for xbar.",
+  "author": {
+    "name": "nkmr-jp"
+  },
+  "repository": "https://github.com/nkmr-jp/setup",
+  "keywords": ["codex", "claude-code", "monitoring", "session", "xbar", "hooks"],
+  "interface": {
+    "displayName": "Session Monitor",
+    "shortDescription": "Monitor Codex and Claude sessions",
+    "longDescription": "Aggregate Codex and Claude Code lifecycle-hook events into sessions.jsonl and show running, awaiting, and idle sessions in xbar.",
+    "developerName": "nkmr-jp",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": [
+      "セッションモニターのセットアップ方法を確認してください。"
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Claude Code の各 hook イベントから session_id / transcript_path / cwd を受け取り、
+# Codex / Claude Code の各 hook イベントから session_id / transcript_path / cwd を受け取り、
 # 全セッション横断の sessions.jsonl を upsert する。xbar はこの jsonl を読んで
 # メニューバーに表示する。
 #
@@ -9,7 +9,7 @@
 # - hook event から status を導出 (cmux pill と同じ写像):
 #     SessionStart                                    -> idle
 #     UserPromptSubmit / PreToolUse / PostToolUse     -> running
-#     Notification                                    -> awaiting
+#     Notification / PermissionRequest                -> awaiting
 #     Stop                                            -> idle
 #     SessionEnd                                      -> ended (= sessions.jsonl から削除)
 # - transcript jsonl から付加情報 (model, gitBranch, 直近ユーザープロンプト, usage)
@@ -42,7 +42,7 @@ hook_event=$(jq -r '.hook_event_name // empty' < "$input_file" 2>/dev/null)
 case "$hook_event" in
   SessionStart) status=idle ;;
   UserPromptSubmit|PreToolUse|PostToolUse) status=running ;;
-  Notification) status=awaiting ;;
+  Notification|PermissionRequest) status=awaiting ;;
   Stop) status=idle ;;
   SessionEnd) status=ended ;;
   *) exit 0 ;;
@@ -81,7 +81,7 @@ reverse() {
 }
 
 git_branch=""
-model=""
+model=$(jq -r '.model // empty' < "$input_file" 2>/dev/null)
 last_prompt=""
 in_tokens=0
 out_tokens=0
@@ -146,7 +146,8 @@ if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
   # 最新 assistant メッセージの usage / model
   last_assistant=$(printf '%s\n' "$tail_buf" | jq -c 'select(.type=="assistant" and (.message.usage // null)!=null)' 2>/dev/null | tail -n 1)
   if [ -n "$last_assistant" ]; then
-    model=$(printf '%s' "$last_assistant" | jq -r '.message.model // ""')
+    transcript_model=$(printf '%s' "$last_assistant" | jq -r '.message.model // ""')
+    [ -n "$transcript_model" ] && model="$transcript_model"
     in_tokens=$(printf '%s' "$last_assistant" | jq -r '.message.usage.input_tokens // 0')
     out_tokens=$(printf '%s' "$last_assistant" | jq -r '.message.usage.output_tokens // 0')
     cache_read=$(printf '%s' "$last_assistant" | jq -r '.message.usage.cache_read_input_tokens // 0')

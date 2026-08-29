@@ -14,11 +14,20 @@ source "$SETUP_DIR/zsh/cache.zsh"
 # 補完スクリプトのキャッシュ置き場。compinit より前に fpath へ足す。
 fpath=("$ZSH_CACHE_DIR/completions" $fpath)
 
+# grok の補完は #compdef 形式で正しい名前 (_grok) で置かれているので、
+# fpath に足すだけで compinit が遅延ロードする。(N) は無いときに黙って外す。
+fpath=("$HOME/.grok/completions/zsh"(N) $fpath)
+
 # uv の補完は 52 万バイトあり eval に 70ms かかる。#compdef 形式なので
 # fpath に置けば compinit が遅延ロードしてくれて起動時のコストがゼロになる。
 _zcomp_before=("$ZSH_CACHE_DIR"/completions/*(N.))
 _zsh_cache_completion _uv  "${commands[uv]}"  -- uv generate-shell-completion zsh
 _zsh_cache_completion _uvx "${commands[uvx]}" -- uvx --generate-shell-completion zsh
+# restish が配る _restish.zsh は cobra 製で、末尾に
+# `if [ "$funcstack[1]" = "_restish" ]` のガードがある。ファイル名が `_restish` でないと
+# 遅延ロード時にこのガードを通らないので、fpath に足すのではなくキャッシュへ生成する
+# (source すると起動が 6.6ms 遅くなる。生成物は名前が正しいので遅延ロードでコストゼロ)。
+_zsh_cache_completion _restish "${commands[restish]}" -- restish completion zsh
 _zcomp_after=("$ZSH_CACHE_DIR"/completions/*(N.))
 
 # Completion system

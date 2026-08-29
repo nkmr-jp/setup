@@ -35,7 +35,8 @@ fi
 
 # Additional paths
 export PATH="$HOME/.cargo/bin:$PATH"
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"   # Antigravity CLI もここに入る
+export PATH="$HOME/.grok/bin:$PATH"
 export PATH="/usr/local/Caskroom/miniconda/base/bin:$PATH"
 
 # For installing Command binaries
@@ -48,7 +49,7 @@ export PATH="$SETUP_DIR/bin:$PATH"
 export PATH="$HOME/.codeium/windsurf/bin:$PATH"
 
 # Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/nkmr/.lmstudio/bin"
+export PATH="$PATH:$HOME/.lmstudio/bin"
 
 # aqua https://aquaproj.github.io/docs/install
 # `aqua root-dir` は毎回プロセスを起こすが値は固定なのでキャッシュする

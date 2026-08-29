@@ -4,25 +4,8 @@ SETUP_DIR="$HOME/ghq/github.com/nkmr-jp/setup"
 # Initialize Zsh (loads all other configurations)
 source "$SETUP_DIR/zsh/init.zsh"
 
-
-alias restish="noglob restish"
-# >>> restish completion >>>
-# Managed by `restish completion install zsh`.
-autoload -Uz compinit
-if ! whence -w compdef >/dev/null 2>&1; then
-  compinit
-fi
-if [ -r '/Users/nkmr/.config/restish/completions/_restish.zsh' ]; then
-  source '/Users/nkmr/.config/restish/completions/_restish.zsh'
-fi
-# <<< restish completion <<<
-
-# >>> grok installer >>>
-export PATH="$HOME/.grok/bin:$PATH"
-fpath=(~/.grok/completions/zsh $fpath)
-autoload -Uz compinit && compinit -C
-# <<< grok installer <<<
-
-
-# Added by Antigravity CLI installer
-export PATH="/Users/nkmr/.local/bin:$PATH"
+# ここには何も足さない。設定は zsh/ 配下のモジュールへ入れる
+# (PATH は zsh/env.zsh、alias は zsh/aliases.zsh、補完は zsh/init.zsh の
+#  compinit より前)。インストーラがここへ追記してきたら、同じ要領で移すこと。
+# 経緯: symlink が外れている間にインストーラの追記が溜まり、compinit の
+# 二重呼び出しで起動が遅くなっていた (setup#20)。

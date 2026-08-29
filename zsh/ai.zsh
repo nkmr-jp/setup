@@ -25,8 +25,8 @@ yolo() {
     cmux claude-teams --dangerously-skip-permissions "$@"
   fi
 }
-alias cctop='/Users/nkmr/ghq/github.com/nkmr-jp/claude/scripts/session-top.sh'
-alias ccstatus='/Users/nkmr/ghq/github.com/nkmr-jp/claude/scripts/session-status.sh'
+alias cctop='$HOME/ghq/github.com/nkmr-jp/claude/scripts/session-top.sh'
+alias ccstatus='$HOME/ghq/github.com/nkmr-jp/claude/scripts/session-status.sh'
 alias h='claude --setting-sources "" --model haiku -p'
 alias ccusage='bunx ccusage'
 

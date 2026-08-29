@@ -38,3 +38,6 @@ alias sleepoff='sudo pmset -a disablesleep 1'
 alias serena='uvx --from git+https://github.com/oraios/serena serena'
 
 alias drawio='/Applications/draw.io.app/Contents/MacOS/draw.io'
+
+# restish はクエリに ? や [] を書くのでグロブ展開を止める
+alias restish='noglob restish'

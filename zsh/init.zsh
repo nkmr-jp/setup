@@ -8,9 +8,35 @@ setopt SHARE_HISTORY        # Share history between sessions
 setopt HIST_IGNORE_SPACE    # Don't record commands starting with space
 setopt HIST_IGNORE_DUPS     # Don't record duplicated commands
 
+# 起動時の重い初期化をキャッシュするためのヘルパー (compinit より前に要る)
+source "$SETUP_DIR/zsh/cache.zsh"
+
+# 補完スクリプトのキャッシュ置き場。compinit より前に fpath へ足す。
+fpath=("$ZSH_CACHE_DIR/completions" $fpath)
+
+# uv の補完は 52 万バイトあり eval に 70ms かかる。#compdef 形式なので
+# fpath に置けば compinit が遅延ロードしてくれて起動時のコストがゼロになる。
+_zcomp_before=("$ZSH_CACHE_DIR"/completions/*(N.))
+_zsh_cache_completion _uv  "${commands[uv]}"  -- uv generate-shell-completion zsh
+_zsh_cache_completion _uvx "${commands[uvx]}" -- uvx --generate-shell-completion zsh
+_zcomp_after=("$ZSH_CACHE_DIR"/completions/*(N.))
+
 # Completion system
+# フルの compinit は 240ms かかるが -C なら 10ms。ただし -C は dump をそのまま使うため
+# 新しく fpath に置いた補完が認識されない。dump が 24 時間より古い (または無い) とき、
+# および補完ファイルを新しく置いたときだけフルで作り直す。
+# (更新は遅延ロードが拾うので -C のままでよい。取りこぼすのは「新規登録」だけ。
+#  ここを見ないと、この設定を入れた直後の 1 回目で _uv が最大 24 時間認識されない)
 autoload -Uz compinit
-compinit
+# glob qualifier は素の形で書く ((#q...) は EXTENDED_GLOB が要る)。
+# N=無ければ空 / .=通常ファイル / mh-24=24時間以内に更新
+_zcompdump_fresh=("${ZDOTDIR:-$HOME}"/.zcompdump(N.mh-24))
+if (( $#_zcompdump_fresh )) && (( $#_zcomp_after == $#_zcomp_before )); then
+    compinit -C
+else
+    compinit
+fi
+unset _zcompdump_fresh _zcomp_before _zcomp_after
 
 # Enable colors
 autoload -Uz colors
@@ -25,6 +51,9 @@ source "$SETUP_DIR/zsh/ghu.zsh"
 source "$SETUP_DIR/zsh/gh.zsh"
 source "$SETUP_DIR/zsh/github.zsh"
 source "$SETUP_DIR/zsh/gcloud.zsh"
+source "$SETUP_DIR/zsh/anyenv.zsh"
+source "$SETUP_DIR/zsh/goenv.zsh"
+source "$SETUP_DIR/zsh/prompt-line.zsh"
 source "$SETUP_DIR/zsh/ai.zsh"
 source "$SETUP_DIR/zsh/aliases.zsh"
 source "$SETUP_DIR/zsh/functions.zsh"
@@ -45,20 +74,21 @@ fi
 #      "pyenv: cannot rehash: couldn't acquire lock" を出す
 # 新しい実行ファイルを入れた後 (pip install / gem install / npm i -g など) は
 # 明示的に `pyenv rehash` などを実行する。
-eval "$(anyenv init - --no-rehash)"
+#
+# さらに anyenv init 自体が env ごとに別プロセスを起こすため 550ms かかる。出力は
+# env の顔ぶれとバージョンが変わらない限り不変なのでキャッシュして source する
+# (生成の詳細は zsh/anyenv.zsh)。古い内容が残ったと感じたら `zsh-cache-clear`。
+_zsh_cache_source anyenv-init.zsh \
+    "$HOME/.anyenv/envs" "$HOME/.anyenv/envs"/*/libexec(N) "${commands[anyenv]}" \
+    "$HOMEBREW_PREFIX/Cellar/anyenv"(N) \
+    -- _zsh_gen_anyenv_init \
+    || eval "$(anyenv init - --no-rehash)"
 
 # --no-rehash は GOROOT/GOPATH を設定する goenv の呼び出しまで落とすので明示的に補う。
-# shim の rehash は伴わない (--only-manage-paths)。
-# cwd が削除されていると PWD が "." になり、goenv-version-file が
-# 親ディレクトリを辿るループから抜けられず 100% CPU で無限ループする
-# (goenv 2.2.39)。PWD が絶対パスのときだけ呼ぶ。
-if [[ "$PWD" == /* ]]; then
-    goenv rehash --only-manage-paths
-else
-    echo "goenv: cwd が削除されています (PWD=$PWD)。GOROOT/GOPATH は未設定です。有効なディレクトリへ cd してください。" >&2
-fi
-eval "$(uv generate-shell-completion zsh)"
-eval "$(uvx --generate-shell-completion zsh)"
+# 本家 `goenv rehash --only-manage-paths` は 190ms かかるので、同じ解決を
+# サブプロセス無しで行う _goenv_set_paths (zsh/goenv.zsh) を使う。
+_goenv_set_paths
+
 eval "$(zoxide init zsh)"
 
 # Call the greeting function when starting an interactive shell
@@ -100,10 +130,8 @@ esac
 export PATH="$HOME/.visivo/bin:$PATH"
 
 
-# PromptLine
-zoxide query -l > ~/.prompt-line/z.txt
-mdfind -onlyin ~ 'kMDItemLastUsedDate >= $time.today(-7)' | head -100 > ~/.prompt-line/mdfind.txt
-ghq list > ~/.prompt-line/ghq.txt
+# PromptLine (キャッシュ更新は zsh/prompt-line.zsh。古いときだけ背後で走る)
+_prompt_line_start_refresh
 
 
 # zshexit の挙動確認

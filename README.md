@@ -194,14 +194,23 @@ This repository uses a modular approach for Zsh configuration:
 setup/
 ├── .zshrc            # Main Zsh configuration (symlinked to ~/.zshrc)
 ├── zsh/              # Modular Zsh configurations
-│   ├── core.zsh      # Core Zsh settings and sourcing
-│   ├── env_vars.zsh  # Environment variables and PATH
+│   ├── init.zsh      # 起点。他の設定を読む順序を決める
+│   ├── env.zsh       # 環境変数と PATH
+│   ├── cache.zsh     # 起動時の重い初期化のキャッシュヘルパー
+│   ├── completion.zsh # 補完・プラグイン・プロンプト
 │   ├── aliases.zsh   # Shell aliases
 │   ├── functions.zsh # Utility functions
-│   ├── gwt.zsh       # Git worktree utilities
 │   ├── keybindings.zsh # Key bindings
-│   ├── plugins.zsh   # Plugin settings
-│   └── theme.zsh     # Theme settings
+│   ├── gwt.zsh       # Git worktree utilities
+│   ├── ghu.zsh       # ghq + GitHub ユーティリティ
+│   ├── gh.zsh        # GitHub CLI
+│   ├── github.zsh    # GitHub 関連
+│   ├── gcloud.zsh    # Google Cloud SDK
+│   ├── anyenv.zsh    # anyenv init のキャッシュ生成
+│   ├── goenv.zsh     # GOROOT / GOPATH の解決
+│   ├── prompt-line.zsh # PromptLine 用キャッシュの背景更新
+│   ├── ai.zsh        # AI ツール
+│   └── iterm2.zsh    # iTerm2 シェル統合
 ├── tools/            # Tool-specific configurations
 ├── bin/              # Local executables (symlinked into ~/bin)
 ├── launchd/          # macOS LaunchAgent plists (symlinked into ~/Library/LaunchAgents)
@@ -244,6 +253,29 @@ echo "hello world!" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 echo "shut the fuck up and write some code" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 echo "stay hungry stay foolish" >> ~/ghq/github.com/nkmr-jp/setup/.messages
 ```
+
+### 起動時のキャッシュ
+
+`anyenv init` の出力・`uv` / `uvx` の補完・`ghq root` などは、起動のたびに別プロセスを
+起こしていると合計で 1 秒近くかかる。値はツールを更新しない限り変わらないので、
+`~/.cache/zsh-init/` にキャッシュして依存ファイルが新しくなったときだけ作り直している
+（実装は `zsh/cache.zsh`）。
+
+ツールを更新して古い内容が残っていると感じたら、キャッシュを捨てる:
+
+```sh
+zsh-cache-clear   # 次のシェル起動で作り直される
+```
+
+補完については、生成した `#compdef` スクリプトを `~/.cache/zsh-init/completions/` に置き、
+`compinit` の遅延ロードに任せている（起動時に `eval` しない）。`compinit` 自体は
+dump が 24 時間より古いときだけフル実行し、それ以外は `-C`（チェック省略）で済ませる。
+
+**新しい実行ファイルを入れた直後は shim / 補完がまだ無い**ことがある:
+
+- `pip install` / `gem install` / `npm i -g` の後は `pyenv rehash` などを明示的に実行する
+  （起動時の rehash は廃止済み。ロック残留で全シェル起動が 60 秒ブロックする事故を防ぐため）
+- 新しいツールの補完が効かないときは `rm ~/.zcompdump` して起動し直す
 
 ## Anyenv ([anyenv](https://github.com/anyenv/anyenv))
 

@@ -1,7 +1,17 @@
 # Environment variables and PATH settings
 
 # Setup directory
-export SETUP_DIR="$HOME/ghq/github.com/nkmr-jp/setup"
+# .zshrc が既に設定していればそれを尊重する (worktree から検証するときに要る)
+export SETUP_DIR="${SETUP_DIR:-$HOME/ghq/github.com/nkmr-jp/setup}"
+
+# PATH の重複を自動で取り除く (先に出てきた方＝優先度の高い方が残る)。
+# .zprofile・各種インストーラ・env.zsh が同じディレクトリを何度も足すため、
+# これが無いと 82 エントリ中 24 個が重複したままになり、コマンド解決のたびに走査される。
+#
+# 配列 (path) だけでなくスカラー (PATH) にも -U を付けること。
+# `typeset -U path` だけだと `path=(...)` の代入しか重複除去されず、
+# この設定でほぼ全ての追加に使っている `export PATH="X:$PATH"` には効かない (実測)。
+typeset -U PATH path FPATH fpath
 
 # Golang
 export GO111MODULE=on
@@ -41,7 +51,9 @@ export PATH="$HOME/.codeium/windsurf/bin:$PATH"
 export PATH="$PATH:/Users/nkmr/.lmstudio/bin"
 
 # aqua https://aquaproj.github.io/docs/install
-export PATH="$(aqua root-dir)/bin:$PATH"
+# `aqua root-dir` は毎回プロセスを起こすが値は固定なのでキャッシュする
+_zsh_cache_var aqua-root-dir.zsh AQUA_ROOT_DIR "${commands[aqua]}" -- aqua root-dir
+export PATH="${AQUA_ROOT_DIR:-$HOME/.local/share/aquaproj-aqua}/bin:$PATH"
 
 # Export PATH to GUI apps (for GoLand, VSCode, etc.)
 # This allows GUI apps launched from Dock/Spotlight to access CLI tools

@@ -16,7 +16,7 @@
 # 8. "Automatically enable for new windows" にチェック（任意）
 #
 # パス:
-# /Users/nkmr/ghq/github.com/nkmr-jp/setup/marked2-frontmatter-preprocessor.sh
+# $HOME/ghq/github.com/nkmr-jp/setup/marked2-frontmatter-preprocessor.sh
 
 # frontmatterを検出してYAMLコードブロックとして出力。
 awk '

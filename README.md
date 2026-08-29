@@ -88,10 +88,11 @@ menu -> Install Shell Integration
 
 ### Terminal app configs
 
-ghostty / iTerm2 Scripts / cmux の設定は本リポジトリ配下で管理している。詳細とインストール手順は各 README を参照:
+ghostty / iTerm2 Scripts / cmux / Orca の設定は本リポジトリ配下で管理している。詳細とインストール手順は各 README を参照:
 
 - [ghostty/README.md](ghostty/README.md)
 - [cmux/README.md](cmux/README.md)
+- [orca/README.md](orca/README.md)
 - [iterm2/README.md](iterm2/README.md)
 
 ```sh
@@ -99,6 +100,13 @@ mkdir -p ~/.config/ghostty ~/.config/cmux ~/Library/Application\ Support/iTerm2/
 ln -sf ~/ghq/github.com/nkmr-jp/setup/ghostty/config ~/.config/ghostty/config
 ln -sf ~/ghq/github.com/nkmr-jp/setup/cmux/cmux.json ~/.config/cmux/cmux.json
 ln -sf ~/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount.py ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount.py
+```
+
+Orca だけは**ディレクトリごと** symlink する（ファイル単体の symlink は Orca 側の
+atomic write で無言で外れるため。理由と移行手順は [orca/README.md](orca/README.md)）:
+
+```sh
+ln -s ~/ghq/github.com/nkmr-jp/setup/orca ~/.orca
 ```
 
 ### Install QucickLook Plugins

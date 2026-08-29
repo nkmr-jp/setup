@@ -11,6 +11,7 @@
 # 使い方:
 #   check-config-symlinks.sh            # 問題のある項目だけ表示。あれば通知して exit 1
 #   check-config-symlinks.sh --list     # 全項目を表示するだけ（通知も状態更新もしない）
+#   check-config-symlinks.sh --suggest  # 管理対象に入っていない repo 向け symlink を探す
 #   check-config-symlinks.sh --no-notify  # 通知を出さない（状態も更新しない）
 #
 # 直し方は項目ごとに出力されるので、内容を見てから手で直す（自動復旧はしない。ホーム側と
@@ -19,12 +20,14 @@
 set -u
 
 MODE_LIST=0
+MODE_SUGGEST=0
 NOTIFY=1
 for arg in "$@"; do
   case "$arg" in
     --list)      MODE_LIST=1 ;;
+    --suggest)   MODE_SUGGEST=1 ;;
     --no-notify) NOTIFY=0 ;;
-    -h|--help)   sed -n '2,17p' "$0"; exit 0 ;;
+    -h|--help)   sed -n '2,18p' "$0"; exit 0 ;;
     *) echo "unknown option: $arg" >&2; exit 2 ;;
   esac
 done
@@ -39,11 +42,15 @@ APP_SUPPORT="$HOME/Library/Application Support"
 
 # 管理対象: "<ホーム側のパス>|<リポジトリ側の実体>"
 #
-# 方針: **リポジトリ管理下の設定ファイルは全部入れる**（`bin/` のスクリプトと launchd の
-# plist は除く。あれは手でしか触らないので外れる経路が無い）。
-# 「アプリが書き戻すものだけ」という絞り方はしない——書き戻すかどうかの判断が要る時点で
-# 漏れる。実際その方針で ~/.codex/AGENTS.md・yazi・herdr の 3 件が抜けていた。
-# 増やしたらここに 1 行足す（テストは tests/check-config-symlinks.bats）。
+# 方針: **ghq 配下のリポジトリを指しているホーム配下の symlink は、種別を問わず全部入れる**。
+# 「アプリが書き戻すものだけ」「bin と plist は除く」のように**判断が要る絞り方はしない**
+# ——判断が入る時点で漏れる。実際、絞り込みのせいで ~/.codex/AGENTS.md・yazi・herdr が抜け、
+# さらに **~/.prompt-line が抜けていて実際の事故を検知できなかった**
+# （別セッションの検証スクリプトが誤ってリンクを削除し、以後アプリの書き込みが
+# リポジトリに届かなくなっていたのに、誰も気づかなかった）。
+#
+# 増やすときは手で探さず `--suggest` を使う（ホームを走査して、リポジトリを指しているのに
+# ここに無い symlink を挙げる）。テストは tests/check-config-symlinks.bats。
 ENTRIES=(
   "$HOME/.claude/settings.json|$CLAUDE_REPO/settings.json"
   "$HOME/.claude/CLAUDE.md|$CLAUDE_REPO/HOME_CLAUDE.md"
@@ -63,8 +70,23 @@ ENTRIES=(
   "$HOME/.config/yazi/yazi.toml|$SETUP_REPO/yazi/yazi.toml"
   "$HOME/.config/herdr/config.toml|$SETUP_REPO/herdr/config.toml"
   "$APP_SUPPORT/iTerm2/Scripts/AutoLaunch/PaneCount.py|$SETUP_REPO/iterm2/PaneCount.py"
+  "$APP_SUPPORT/iTerm2/Scripts/AutoTabReorder|$SETUP_REPO/iterm2/AutoTabReorder"
   "$HOME/.orca|$SETUP_REPO/orca"
+  "$HOME/.prompt-line|$GHQ/dot-prompt-line"
   "$HOME/.hyper.js|$GHQ/hyper/.hyper.js"
+  "$HOME/.config/wezterm/wezterm.lua|$GHQ/hyper/wezterm.lua"
+  "$APP_SUPPORT/xbar/plugins/kalloc1024.2m.sh|$SETUP_REPO/xbar/kalloc1024.2m.sh"
+  "$APP_SUPPORT/xbar/plugins/claude-sessions.5s.sh|$SETUP_REPO/xbar/claude-sessions.5s.sh"
+  "$APP_SUPPORT/xbar/plugins/focus.5s.sh|$SETUP_REPO/xbar/focus.5s.sh"
+  "$HOME/Library/LaunchAgents/com.nkmr.claude-stall-monitor.plist|$SETUP_REPO/launchd/com.nkmr.claude-stall-monitor.plist"
+  "$HOME/Library/LaunchAgents/com.nkmr.issues-autobackup.plist|$SETUP_REPO/launchd/com.nkmr.issues-autobackup.plist"
+  "$HOME/Library/LaunchAgents/io.redis.stack.server.plist|$GHQ/xt/deployments/local/LaunchAgents/io.redis.stack.server.plist"
+  "$HOME/bin/check-claude-orphans.sh|$SETUP_REPO/bin/check-claude-orphans.sh"
+  "$HOME/bin/claude-stall-monitor.sh|$SETUP_REPO/bin/claude-stall-monitor.sh"
+  "$HOME/bin/git-auto-backup.sh|$SETUP_REPO/bin/git-auto-backup.sh"
+  "$HOME/bin/claude-terminal-title.sh|$GHQ/ccdash/claude-auto/bin/claude-terminal-title.sh"
+  "$HOME/bin/codex-terminal-title.sh|$GHQ/ccdash/codex-auto/bin/codex-terminal-title.sh"
+  "$HOME/bin/codex-auto|$GHQ/ccdash/codex-auto/bin/codex-auto.sh"
 )
 
 # テスト用: 管理対象を外から差し替える（1 行 1 エントリ。tests/check-config-symlinks.bats）
@@ -135,6 +157,42 @@ fix_hint() {
     printf '    ln -sfn "%s" "%s"\n' "$target" "$link"
   fi
 }
+
+# --suggest: ホーム配下を走査して「リポジトリを指しているのに ENTRIES に無い symlink」を挙げる。
+# 管理対象を手で数える運用だと必ず漏れる（実際 ~/.prompt-line が漏れて事故を検知できなかった）ので、
+# 増えたリンクは機械的に見つけられるようにしておく。
+if [ "$MODE_SUGGEST" -eq 1 ]; then
+  known=""
+  for entry in "${ENTRIES[@]}"; do known="$known
+${entry%%|*}"; done
+  found=0
+  # 設定が置かれる場所だけを浅く走査する（ホーム全体を潜ると重い）
+  for spec in "$HOME:1" "$HOME/.config:2" "$HOME/.claude:1" "$HOME/.codex:1" \
+              "$HOME/Documents:1" "$APP_SUPPORT:3" "$HOME/Library/LaunchAgents:1" "$HOME/bin:1"; do
+    dir="${spec%:*}"; depth="${spec##*:}"
+    [ -d "$dir" ] || continue
+    while IFS= read -r link; do
+      target="$(readlink "$link")"
+      case "$target" in */ghq/github.com/*) ;; *) continue ;; esac
+      case "$known" in *"
+$link") ;; *"
+$link
+"*) ;; *)
+        printf '  "%s|%s"\n' "$link" "$target"
+        found=$((found + 1)) ;;
+      esac
+    done <<EOF
+$(find "$dir" -maxdepth "$depth" -type l 2>/dev/null)
+EOF
+  done
+  if [ "$found" -eq 0 ]; then
+    echo "管理対象に入っていない repo 向け symlink は無い（ENTRIES ${#ENTRIES[@]} 件）"
+  else
+    echo
+    echo "↑ ENTRIES に入っていない。必要なものを bin/check-config-symlinks.sh へ追記する。"
+  fi
+  exit 0
+fi
 
 problems=()
 hints=()

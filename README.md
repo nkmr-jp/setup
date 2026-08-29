@@ -607,9 +607,15 @@ rm ~/bin/claude-stall-monitor.sh
 | `PENDING` | ホーム側が実体で、リポジトリ側に実体が無い（まだ管理下に入れていない） | しない |
 | `MISSING` | どちらにも実体が無い | しない |
 
-**対象は「リポジトリ管理下の設定ファイル全部」**（`bin/` のスクリプトと launchd の plist は除く。
-手でしか触らないので外れる経路が無い）。「アプリが書き戻すものだけ」という絞り方はしない——
-判断が要る時点で漏れるため（実際その方針で `~/.codex/AGENTS.md`・yazi・herdr の 3 件が抜けていた）。
+**対象は「ghq 配下のリポジトリを指しているホーム配下の symlink 全部」**。種別で絞らない
+（`bin/` のスクリプトも launchd の plist も入れる）。「アプリが書き戻すものだけ」のように
+**判断が要る絞り方はしない——判断が入る時点で漏れる**。実際その方針では
+`~/.codex/AGENTS.md`・yazi・herdr が抜け、さらに **`~/.prompt-line` が抜けていたために
+実際の事故（別セッションの検証スクリプトが誤ってリンクを削除し、以後アプリの書き込みが
+リポジトリに届かなくなっていた）を検知できなかった**。
+
+管理対象を増やすときは手で探さず `--suggest` を使う（ホーム配下を走査して、リポジトリを
+指しているのに `ENTRIES` に無い symlink を、そのまま貼れる形で出す）。
 
 **自動復旧はしない**。ホーム側とリポジトリ側のどちらが「現行」かは状況次第で、自動で倒すと
 編集を失うため、`diff` してから手で直す。**直し方は項目ごとに出力される**（対象がディレクトリなら
@@ -640,6 +646,7 @@ tail ~/Library/Logs/check-config-symlinks.log
 ```sh
 check-config-symlinks.sh              # 壊れている項目だけ表示。あれば通知して exit 1
 check-config-symlinks.sh --list       # 全項目を表示するだけ（通知も状態更新もしない）
+check-config-symlinks.sh --suggest    # 管理対象に入っていない repo 向け symlink を探す
 check-config-symlinks.sh --no-notify  # 通知しない（状態も更新しない）
 check-config-symlinks.sh --help       # 使い方
 ```

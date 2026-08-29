@@ -232,6 +232,25 @@ $HOMEDIR/other.json|$REPO/other.json"
     [[ "$output" != *"set -u"* ]]
 }
 
+@test "--suggest: 管理対象に入っていない repo 向け symlink を挙げる" {
+    # ENTRIES を実在しないものに差し替えると、実環境の repo 向け symlink が候補として出る
+    run_check "/tmp/nonexistent-entry|/tmp/nonexistent-target" --suggest
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ghq/github.com"* ]]
+    [[ "$output" == *"ENTRIES に入っていない"* ]]
+}
+
+@test "--suggest: 漏れが無ければその旨だけ出す" {
+    # 走査対象に repo 向け symlink が無い状態は作れないので、
+    # 「候補が出たら必ず ghq を指している」ことだけ担保する
+    run_check "/tmp/nonexistent-entry|/tmp/nonexistent-target" --suggest
+    while IFS= read -r line; do
+        case "$line" in
+            '  "'*) [[ "$line" == *"ghq/github.com"* ]] ;;
+        esac
+    done <<< "$output"
+}
+
 @test "未知のオプションはエラーにする" {
     export CHECK_CONFIG_SYMLINKS_ENTRIES=""
     run bash "$SCRIPT" --bogus

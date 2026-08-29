@@ -18,6 +18,7 @@
       "terminal.focusPreviousPane": ["Mod+ArrowLeft", "Mod+ArrowUp"],
       "terminal.focusNextPane": ["Mod+ArrowRight", "Mod+ArrowDown"],
       "terminal.expandPane": ["Mod+Enter"],
+      "terminal.equalizePaneSizes": ["Mod+Alt+Equal"],
       "tab.newBrowser": ["Mod+Shift+L"],
       "sidebar.right.toggle": null
     },

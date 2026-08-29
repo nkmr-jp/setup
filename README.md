@@ -103,11 +103,9 @@ ln -sf ~/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount.py ~/Library/Application\
 ```
 
 Orca だけは**ディレクトリごと** symlink する（ファイル単体の symlink は Orca 側の
-atomic write で無言で外れるため。理由と移行手順は [orca/README.md](orca/README.md)）:
-
-```sh
-ln -s ~/ghq/github.com/nkmr-jp/setup/orca ~/.orca
-```
+atomic write で無言で外れるため）。既存の `~/.orca` が残っていると
+`ln -s` がその**中に**リンクを作ってしまうので、退避と削除を含む手順は
+[orca/README.md](orca/README.md) を参照する。
 
 ### Install QucickLook Plugins
 

@@ -15,7 +15,10 @@ osascript -e 'quit app "Orca"'
 
 # 2. 既存の ~/.orca（Orca が生成した agent-hooks/ などが入っている）の中身をこのリポジトリへ移す
 #    ※ `~/.orca/*` はドットファイルを取りこぼすので、末尾 `/.` で中身ごとコピーする
+#    ※ この cp は既存の ~/.orca/keybindings.json でリポジトリ側の keybindings.json を
+#      上書きする。管理している設定が消えるので、コピー後に必ず戻す（下の checkout）
 cp -R ~/.orca/. ~/ghq/github.com/nkmr-jp/setup/orca/
+git -C ~/ghq/github.com/nkmr-jp/setup checkout -- orca/keybindings.json
 rm -rf ~/.orca
 ln -s ~/ghq/github.com/nkmr-jp/setup/orca ~/.orca
 
@@ -66,11 +69,14 @@ Settings UI から変更しても将来のマイグレーションが走って�
   エイリアスが効く（大文字小文字は不問）。
 - `$schema` はルートキーとして許容されるだけで**公開スキーマは存在しない**（書いても無視される）。
 
-### 競合すると両方消える
+### 競合すると override が無言で捨てられる
 
-競合は `conflictGroup ?? scope` のバケット単位で判定され、**override が絡む競合は衝突した両方が
-無言で捨てられる**（Settings に diagnostic が出るだけ）。「片方だけ書いたら両方効かなくなった」
-という壊れ方をするので、編集したら必ず検証する:
+競合は `conflictGroup ?? scope` のバケット単位で判定され、**衝突に関わった override が
+無言で捨てられる**（Settings に diagnostic が出るだけ / `removeConflictingOverrides`）。
+捨てられた側は**無効になるのではなく、そのアクションの既定キーに戻る**——
+`null` での無効化が巻き込まれると**既定のキーがそのまま復活する**（意図の逆）。
+「書いたキーが効かない」「消したはずのキーが生きている」という壊れ方をするので、
+編集したら必ず検証する:
 
 ```sh
 ./check-keybindings.py          # 引数省略で同ディレクトリの keybindings.json を見る
@@ -83,6 +89,12 @@ Settings UI から変更しても将来のマイグレーションが走って�
 なお **scope が違うだけの同キーは競合ではない**（Orca の既定自体が `Mod+F` を browser / editor /
 terminal / settings に、`Mod+L` を global / browser に重ねている）。フォーカス中の UI で解決される
 設計なので、検証スクリプトもこれは通す。
+
+ただし**検出されないからといって重ねてよいとは限らない**。Orca の既定に含まれる scope 跨ぎの重複は
+すべて「フォーカスで区別できる scope 同士」（browser / editor / terminal / fileExplorer / settings が
+片側にいる）で、`global` と `tabs` のような**どちらも常時有効な組み合わせは 1 つも無い**。
+この設定でも、`tab.nextSameType` と同じキーになる `worktree.history.forward` は
+検出対象外だが `null` で明示的に外してある。
 
 ## cmux との対応
 
@@ -103,7 +115,7 @@ terminal / settings に、`Mod+L` を global / browser に重ねている）。�
 | `reloadConfiguration` | `cmd+shift+,` | `app.forceReload` | `Mod+Shift+R` | 上の玉突き（`Mod+Shift+R` を空ける）。cmux の設定リロードと同じ位置 |
 | `prevSidebarTab` / `nextSidebarTab` | `cmd+alt+↑` / `↓` | `worktree.navigateUp` / `navigateDown` | `Mod+Shift+Arrow` | — |
 | `prevSurface` / `nextSurface` | `cmd+alt+←` / `→` | `tab.previousSameType` / `nextSameType` | `Mod+Alt+Bracket*` | 上下（ワークスペース移動）と対にする |
-| `focusHistoryBack` / `Forward` (cmux で無効化) | — | `worktree.history.back` / `forward` | `Mod+Alt+ArrowLeft/Right` | `null`。上の行と同じキーなので**無効化が必須** |
+| `focusHistoryBack` / `Forward` (cmux で無効化) | — | `worktree.history.back` / `forward` | `Mod+Alt+ArrowLeft/Right` | `null`。上の行と同じキーになるため（cmux でも無効化していた）。scope が `global` と `tabs` で違うので競合検出には掛からないが、どちらも常時有効なので重ねない |
 | `focusLeft` / `focusRight` | `cmd+←` / `→` | `terminal.focusPreviousPane` / `focusNextPane` | `Mod+Bracket*` | Orca には**方向フォーカスが無い**ので前/次ペインで代用（上下は非対応） |
 | `toggleSplitZoom` | `cmd+enter` | `terminal.expandPane` | `Mod+Shift+Enter` | — |
 | `openBrowser` | `cmd+shift+l` | `tab.newBrowser` | `Mod+Shift+B` | — |

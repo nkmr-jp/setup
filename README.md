@@ -600,15 +600,25 @@ rm ~/bin/claude-stall-monitor.sh
 | 状態 | 意味 | 通知 |
 | --- | --- | --- |
 | `OK` | 期待どおりのリンク | — |
-| `DETACHED` | symlink でなくなっている（本命の壊れ方。中身が乖離しているかも表示） | する |
+| `DETACHED` | ホーム側が symlink でなくなっている（本命の壊れ方。中身が乖離しているかも表示） | する |
 | `BROKEN` | リンク先が消えている | する |
 | `WRONG` | 別のリンク先を向いている | する |
-| `MISSING` | ホーム側に何も無い（未設定） | しない |
-| `PENDING` | リポジトリ側に実体が無い（まだ管理下に入れていない） | しない |
+| `NOLINK` | ホーム側にリンクが無い。リポジトリ側には実体がある（＝管理しているつもりが効いていない） | する |
+| `PENDING` | ホーム側が実体で、リポジトリ側に実体が無い（まだ管理下に入れていない） | しない |
+| `MISSING` | どちらにも実体が無い | しない |
+
+**対象は「リポジトリ管理下の設定ファイル全部」**（`bin/` のスクリプトと launchd の plist は除く。
+手でしか触らないので外れる経路が無い）。「アプリが書き戻すものだけ」という絞り方はしない——
+判断が要る時点で漏れるため（実際その方針で `~/.codex/AGENTS.md`・yazi・herdr の 3 件が抜けていた）。
 
 **自動復旧はしない**。ホーム側とリポジトリ側のどちらが「現行」かは状況次第で、自動で倒すと
-編集を失うため、`diff` してから手で直す（直し方はスクリプトが出力する）。
-同じ問題で毎回鳴らないよう、**問題の顔ぶれが前回と変わったときだけ通知**する。
+編集を失うため、`diff` してから手で直す。**直し方は項目ごとに出力される**（対象がディレクトリなら
+`cp -R` と `rm -rf` + `ln -s`。ディレクトリに `ln -sfn` を使うと exit 0 のまま中に入れ子リンクが
+できて直ったように見えるため、種別で出し分けている）。
+
+通知は**問題の顔ぶれが前回と変わったとき**、および**顔ぶれが同じでも前回通知から
+`RENOTIFY_DAYS`（既定 7 日）経過したとき**に出す。毎回鳴らすと無視されるようになるが、
+一度きりにすると通知を見逃したまま永久に黙る（＝7 週間気づかなかった事故の再来）ため。
 
 #### Install
 
@@ -629,12 +639,39 @@ tail ~/Library/Logs/check-config-symlinks.log
 
 ```sh
 check-config-symlinks.sh              # 壊れている項目だけ表示。あれば通知して exit 1
-check-config-symlinks.sh --list       # OK・未設定も含めて全項目表示（棚卸し用）
-check-config-symlinks.sh --no-notify  # 通知を出さない
+check-config-symlinks.sh --list       # 全項目を表示するだけ（通知も状態更新もしない）
+check-config-symlinks.sh --no-notify  # 通知しない（状態も更新しない）
+check-config-symlinks.sh --help       # 使い方
 ```
+
+`--list` / `--no-notify` は**状態ファイルを書かない**。書いてしまうと、手で 1 回眺めただけで
+定期実行が「前回と同じ＝通知済み」と誤認して黙る（実際にその不具合を踏んだ）。
 
 対象リンクはスクリプト冒頭の `ENTRIES` に宣言的に書いてある。管理するリンクを増やしたら
 ここに 1 行足す（テストは `tests/check-config-symlinks.bats`）。
+
+#### Uninstall / 停止
+
+```sh
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.check-config-symlinks.plist
+rm ~/Library/LaunchAgents/com.nkmr.check-config-symlinks.plist
+rm ~/bin/check-config-symlinks.sh
+```
+
+#### ログ・状態
+
+- ログ: `~/Library/Logs/check-config-symlinks.log` に追記される。
+  問題が無い場合: `OK: 管理対象 N 件に外れているリンクは無い`。
+- 状態: `~/Library/Application Support/check-config-symlinks/state`（前回通知した時刻と
+  問題の顔ぶれ）。消しても次の実行で作り直される（消すと次回必ず鳴る）。
+
+#### 注意
+
+- **検知だけで復旧はしない**。通知が来たら `--list` で全体を見てから手で直す。
+- 6 時間間隔なので検知最大遅延は 6 時間。急ぐなら plist の `StartInterval` を縮める。
+- **`~/.orca` は `setup/orca/` をマージした直後、Setup を実行するまで `DETACHED` として鳴る**
+  （[orca/README.md](orca/README.md) の Setup を実行すれば `OK` になる）。マージしたら間を
+  空けずに移行する。
 
 ### git-auto-backup
 

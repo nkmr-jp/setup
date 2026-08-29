@@ -10,11 +10,11 @@
 #
 # 使い方:
 #   check-config-symlinks.sh            # 問題のある項目だけ表示。あれば通知して exit 1
-#   check-config-symlinks.sh --list     # OK・未設定も含めて全項目表示
-#   check-config-symlinks.sh --no-notify  # macOS 通知を出さない（launchd 以外での実行用）
+#   check-config-symlinks.sh --list     # 全項目を表示するだけ（通知も状態更新もしない）
+#   check-config-symlinks.sh --no-notify  # 通知を出さない（状態も更新しない）
 #
-# 直し方は表示されるので、内容を見てから手で直す（自動復旧はしない。ホーム側とリポジトリ側の
-# どちらが「現行」かは状況次第で、自動で倒すと編集を失うため）。
+# 直し方は項目ごとに出力されるので、内容を見てから手で直す（自動復旧はしない。ホーム側と
+# リポジトリ側のどちらが「現行」かは状況次第で、自動で倒すと編集を失うため）。
 
 set -u
 
@@ -24,38 +24,48 @@ for arg in "$@"; do
   case "$arg" in
     --list)      MODE_LIST=1 ;;
     --no-notify) NOTIFY=0 ;;
-    -h|--help)   sed -n '2,20p' "$0"; exit 0 ;;
+    -h|--help)   sed -n '2,18p' "$0"; exit 0 ;;
     *) echo "unknown option: $arg" >&2; exit 2 ;;
   esac
 done
+# --list は棚卸し用の閲覧コマンド。ここで通知したり「通知済み」状態を書いたりすると、
+# 手で 1 回眺めただけで以後の定期実行が黙る（実際にその不具合があった）。
+[ "$MODE_LIST" -eq 1 ] && NOTIFY=0
 
 GHQ="$HOME/ghq/github.com/nkmr-jp"
 CLAUDE_REPO="$GHQ/claude"
 SETUP_REPO="$GHQ/setup"
 APP_SUPPORT="$HOME/Library/Application Support"
-# Claude デスクトップの local-agent-mode-sessions はアカウント／セッションの UUID を含む。
-# 環境ごとに変わるので固定せず glob で解決する。
-# sort するのは、セッションが複数あるとき find の順序が実行ごとに変わりうるため。
-# 対象がぶれると「顔ぶれが変わった」と誤判定して 6 時間ごとに鳴り続ける。
-SCHEDULED_TASKS="$(/usr/bin/find "$APP_SUPPORT/Claude/local-agent-mode-sessions" \
-  -maxdepth 3 -name scheduled-tasks.json 2>/dev/null | sort | head -1)"
 
 # 管理対象: "<ホーム側のパス>|<リポジトリ側の実体>"
-# 「アプリが書き戻す設定ファイル」を対象にする（手でしか触らない bin/plist のリンクは対象外）。
+#
+# 方針: **リポジトリ管理下の設定ファイルは全部入れる**（`bin/` のスクリプトと launchd の
+# plist は除く。あれは手でしか触らないので外れる経路が無い）。
+# 「アプリが書き戻すものだけ」という絞り方はしない——書き戻すかどうかの判断が要る時点で
+# 漏れる。実際その方針で ~/.codex/AGENTS.md・yazi・herdr の 3 件が抜けていた。
+# 増やしたらここに 1 行足す（テストは tests/check-config-symlinks.bats）。
 ENTRIES=(
   "$HOME/.claude/settings.json|$CLAUDE_REPO/settings.json"
   "$HOME/.claude/CLAUDE.md|$CLAUDE_REPO/HOME_CLAUDE.md"
   "$HOME/.claude/docs|$CLAUDE_REPO/docs"
-  "$APP_SUPPORT/Claude/claude_desktop_config.json|$CLAUDE_REPO/claude_desktop_config.json"
+  "$HOME/.codex/AGENTS.md|$CLAUDE_REPO/HOME_CLAUDE.md"
   "$HOME/.codex/config.toml|$CLAUDE_REPO/config.toml"
+  "$APP_SUPPORT/Claude/claude_desktop_config.json|$CLAUDE_REPO/claude_desktop_config.json"
   "$HOME/Documents/Claude|$CLAUDE_REPO/Documents/Claude"
+  # Claude デスクトップの local-agent-mode-sessions のパスはアカウント／セッションの UUID を
+  # 含む。find で拾うと、セッションが増えたときに黙って別のファイルを監視しに行って本命が
+  # 無検査になるので、claude/README.md と同じくパスを固定する。UUID が変わったら
+  # NOLINK として鳴るので、そのとき張り直してここも直す。
+  "$APP_SUPPORT/Claude/local-agent-mode-sessions/d3428c2b-f6cc-4363-a78f-6557cbe8c927/f606b23b-39a1-482e-98f1-ea0c737b8052/scheduled-tasks.json|$CLAUDE_REPO/scheduled-tasks.json"
   "$HOME/.zshrc|$SETUP_REPO/.zshrc"
   "$HOME/.config/ghostty/config|$SETUP_REPO/ghostty/config"
   "$HOME/.config/cmux/cmux.json|$SETUP_REPO/cmux/cmux.json"
+  "$HOME/.config/yazi/yazi.toml|$SETUP_REPO/yazi/yazi.toml"
+  "$HOME/.config/herdr/config.toml|$SETUP_REPO/herdr/config.toml"
   "$APP_SUPPORT/iTerm2/Scripts/AutoLaunch/PaneCount.py|$SETUP_REPO/iterm2/PaneCount.py"
   "$HOME/.orca|$SETUP_REPO/orca"
+  "$HOME/.hyper.js|$GHQ/hyper/.hyper.js"
 )
-[ -n "$SCHEDULED_TASKS" ] && ENTRIES+=("$SCHEDULED_TASKS|$CLAUDE_REPO/scheduled-tasks.json")
 
 # テスト用: 管理対象を外から差し替える（1 行 1 エントリ。tests/check-config-symlinks.bats）
 if [ -n "${CHECK_CONFIG_SYMLINKS_ENTRIES:-}" ]; then
@@ -66,8 +76,10 @@ if [ -n "${CHECK_CONFIG_SYMLINKS_ENTRIES:-}" ]; then
 fi
 
 # 定期実行で同じ問題を毎回鳴らすと無視されるようになるので、問題の顔ぶれが前回と
-# 変わったときだけ通知する（直したら状態ファイルも消えて、次に壊れたらまた鳴る）。
-STATE_FILE="${TMPDIR:-/tmp}/check-config-symlinks.state"
+# 変わったときだけ通知する。ただし**顔ぶれが同じでも RENOTIFY_DAYS 経過したら鳴らし直す**
+# ——通知を 1 回見逃したら永久に黙る、では 7 週間気づかなかった事故の再来になる。
+STATE_FILE="${STATE_DIR:-$HOME/Library/Application Support/check-config-symlinks}/state"
+RENOTIFY_DAYS="${RENOTIFY_DAYS:-7}"
 
 notify() {
   local title="$1" message="$2"
@@ -102,7 +114,24 @@ drift_note() {
   fi
 }
 
+# 直し方は対象がファイルかディレクトリかで変わる。ディレクトリに `cp`（-R 無し）は失敗し、
+# `ln -sfn <repo> <home>` は home が実ディレクトリだと **exit 0 のまま中に入れ子リンクを作る**。
+# 助言どおりにやって直らない、が起きないよう種別で出し分ける。
+fix_hint() {
+  local link="$1" target="$2"
+  if [ -d "$link" ]; then
+    printf '    diff -r "%s" "%s"\n' "$link" "$target"
+    printf '    cp -R "%s/." "%s/"   # ホーム側が現行の場合\n' "$link" "$target"
+    printf '    rm -rf "%s" && ln -s "%s" "%s"\n' "$link" "$target" "$link"
+  else
+    printf '    diff "%s" "%s"\n' "$link" "$target"
+    printf '    cp "%s" "%s"   # ホーム側が現行の場合\n' "$link" "$target"
+    printf '    ln -sfn "%s" "%s"\n' "$target" "$link"
+  fi
+}
+
 problems=()
+hints=()
 rows=()
 for entry in "${ENTRIES[@]}"; do
   # `|` を書き忘れると link と target が同じ文字列になり、MISSING や「中身は同じ DETACHED」に
@@ -118,10 +147,12 @@ for entry in "${ENTRIES[@]}"; do
     if [ "$(strip_slash "$actual")" != "$(strip_slash "$target")" ]; then
       rows+=("WRONG    $link -> $actual (期待: $target)")
       problems+=("$link はリンク先が違う")
+      hints+=("$(fix_hint "$link" "$target")")
     elif [ ! -e "$link" ]; then
       # symlink はあるが解決できない（リンク切れ）
       rows+=("BROKEN   $link -> $actual")
       problems+=("$link がリンク切れ")
+      hints+=("$(fix_hint "$link" "$target")")
     else
       rows+=("OK       $link")
     fi
@@ -133,9 +164,16 @@ for entry in "${ENTRIES[@]}"; do
     else
       rows+=("DETACHED $link が symlink でない（$(drift_note "$link" "$target")）")
       problems+=("$link の symlink が外れている")
+      hints+=("$(fix_hint "$link" "$target")")
     fi
+  elif [ -e "$target" ]; then
+    # ホーム側に何も無いのにリポジトリ側には実体がある＝リンクが消されたか、まだ張っていない。
+    # どちらにせよ「リポジトリの編集が効かない」状態なので、黙らせない。
+    rows+=("NOLINK   $link が無い（リポジトリ側の $target は管理されていない）")
+    problems+=("$link のリンクが無い")
+    hints+=("    ln -s \"$target\" \"$link\"")
   else
-    rows+=("MISSING  $link は未設定")
+    rows+=("MISSING  $link は未設定（リポジトリ側にも実体が無い）")
   fi
 done
 
@@ -151,19 +189,31 @@ if [ "${#problems[@]}" -gt 0 ]; then
   echo
   echo "$(date '+%Y-%m-%d %H:%M:%S') symlink が外れている項目が ${#problems[@]} 件ある。"
   echo "直す前に必ず中身を見比べる（ホーム側が現行なら repo へ取り込んでから張り直す）:"
-  echo "  diff <ホーム側> <リポジトリ側>"
-  echo "  cp <ホーム側> <リポジトリ側>    # ホーム側が現行の場合"
-  echo "  ln -sfn <リポジトリ側> <ホーム側>"
-  # 状態ファイルは「前回ユーザーに通知した顔ぶれ」を表す。通知していない実行（--no-notify）で
-  # 書くと、次の定期実行が「前回と同じ＝通知済み」と誤認して黙ってしまうので書かない。
-  current="$(printf '%s\n' "${problems[@]}")"
-  if [ "$NOTIFY" -eq 1 ] && [ "$current" != "$(cat "$STATE_FILE" 2>/dev/null)" ]; then
-    notify "設定の symlink が外れている" "${#problems[@]} 件: ${problems[0]}"
-    printf '%s\n' "$current" > "$STATE_FILE"
+  printf '%s\n' "${hints[@]}"
+
+  # 状態ファイルは「前回ユーザーに通知した顔ぶれと時刻」を表す。通知していない実行
+  # （--no-notify / --list）で書くと、次の定期実行が「前回と同じ＝通知済み」と誤認して黙る。
+  if [ "$NOTIFY" -eq 1 ]; then
+    current="$(printf '%s\n' "${problems[@]}")"
+    previous=""
+    last_notified=0
+    if [ -f "$STATE_FILE" ]; then
+      last_notified="$(head -1 "$STATE_FILE")"
+      previous="$(tail -n +2 "$STATE_FILE")"
+      case "$last_notified" in ''|*[!0-9]*) last_notified=0 ;; esac
+    fi
+    now="$(date +%s)"
+    stale=$(( now - last_notified > RENOTIFY_DAYS * 86400 ))
+    if [ "$current" != "$previous" ] || [ "$stale" -eq 1 ]; then
+      notify "設定の symlink が外れている" "${#problems[@]} 件: ${problems[0]}"
+      mkdir -p "$(dirname "$STATE_FILE")"
+      { echo "$now"; printf '%s\n' "$current"; } > "$STATE_FILE"
+    fi
   fi
   exit 1
 fi
 
+# 問題が無いときの状態クリアは、通知したかどうかに関係なく常に正しい（次に壊れたら鳴る）。
 rm -f "$STATE_FILE"
 echo "$(date '+%Y-%m-%d %H:%M:%S') OK: 管理対象 ${#ENTRIES[@]} 件に外れているリンクは無い"
 exit 0

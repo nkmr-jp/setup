@@ -7,11 +7,37 @@
 SCRIPT="${BATS_TEST_DIRNAME}/../bin/check-config-symlinks.sh"
 
 setup() {
-    export TMPDIR="$BATS_TEST_TMPDIR"   # 通知の重複抑止に使う state file をテスト間で隔離する
+    # 通知の重複抑止に使う state file をテスト間で隔離する（実環境のものを触らない）
+    export STATE_DIR="$BATS_TEST_TMPDIR/state"
+    STATE_FILE="$STATE_DIR/state"
     REPO="$BATS_TEST_TMPDIR/repo"
     HOMEDIR="$BATS_TEST_TMPDIR/home"
     mkdir -p "$REPO" "$HOMEDIR"
     echo "managed" > "$REPO/config.json"
+}
+
+# 通知を実際に撃つ経路のテスト用に terminal-notifier をダミーへ差し替える。
+# 呼ばれた回数を数えるので「鳴ったか / 鳴らなかったか」を検証できる。
+stub_notifier() {
+    mkdir -p "$BATS_TEST_TMPDIR/bin"
+    cat > "$BATS_TEST_TMPDIR/bin/terminal-notifier" <<'STUB'
+#!/bin/bash
+echo "notified" >> "$NOTIFY_LOG"
+STUB
+    chmod +x "$BATS_TEST_TMPDIR/bin/terminal-notifier"
+    export NOTIFY_LOG="$BATS_TEST_TMPDIR/notify.log"
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH"
+}
+
+notify_count() {
+    [ -f "$NOTIFY_LOG" ] && wc -l < "$NOTIFY_LOG" | tr -d ' ' || echo 0
+}
+
+# 通知あり（既定モード）で実行する
+run_check_notify() {
+    export CHECK_CONFIG_SYMLINKS_ENTRIES="$1"
+    shift
+    run bash "$SCRIPT" "$@"
 }
 
 run_check() {
@@ -59,13 +85,6 @@ run_check() {
     [[ "$output" == *"WRONG"* ]]
 }
 
-@test "MISSING: ホーム側に何も無ければ警告しない（--list には出る）" {
-    run_check "$HOMEDIR/config.json|$REPO/config.json"
-    [ "$status" -eq 0 ]
-    run_check "$HOMEDIR/config.json|$REPO/config.json" --list
-    [[ "$output" == *"MISSING"* ]]
-}
-
 @test "PENDING: リポジトリ側に実体が無ければ未管理として警告しない" {
     echo "local only" > "$HOMEDIR/notyet.json"
     run_check "$HOMEDIR/notyet.json|$REPO/notyet.json"
@@ -105,15 +124,71 @@ $HOMEDIR/other.json|$REPO/other.json"
     echo "overwritten" > "$HOMEDIR/config.json"
     run_check "$HOMEDIR/config.json|$REPO/config.json"
     [ "$status" -eq 1 ]
-    [ ! -f "$BATS_TEST_TMPDIR/check-config-symlinks.state" ]
+    [ ! -f "$STATE_FILE" ]
+}
+
+@test "--list も通知せず state file を書かない（棚卸しで監視を止めない）" {
+    stub_notifier
+    echo "overwritten" > "$HOMEDIR/config.json"
+    run_check_notify "$HOMEDIR/config.json|$REPO/config.json" --list
+    [ "$status" -eq 1 ]
+    [ ! -f "$STATE_FILE" ]
+    [ "$(notify_count)" -eq 0 ]
 }
 
 @test "問題が解消したら state file を消す（次に壊れたらまた鳴る）" {
-    echo "stale" > "$BATS_TEST_TMPDIR/check-config-symlinks.state"
+    mkdir -p "$STATE_DIR"
+    echo "stale" > "$STATE_FILE"
     ln -s "$REPO/config.json" "$HOMEDIR/config.json"
     run_check "$HOMEDIR/config.json|$REPO/config.json"
     [ "$status" -eq 0 ]
-    [ ! -f "$BATS_TEST_TMPDIR/check-config-symlinks.state" ]
+    [ ! -f "$STATE_FILE" ]
+}
+
+@test "同じ問題が続く間は鳴らし直さない" {
+    stub_notifier
+    echo "overwritten" > "$HOMEDIR/config.json"
+    local entry="$HOMEDIR/config.json|$REPO/config.json"
+    run_check_notify "$entry"
+    [ "$(notify_count)" -eq 1 ]
+    run_check_notify "$entry"
+    [ "$(notify_count)" -eq 1 ]
+}
+
+@test "同じ問題でも RENOTIFY_DAYS を過ぎたら鳴らし直す（見逃しても永久に黙らない）" {
+    stub_notifier
+    echo "overwritten" > "$HOMEDIR/config.json"
+    local entry="$HOMEDIR/config.json|$REPO/config.json"
+    run_check_notify "$entry"
+    [ "$(notify_count)" -eq 1 ]
+    # 前回通知を 8 日前に見せかける
+    mkdir -p "$STATE_DIR"
+    { echo "$(( $(date +%s) - 8 * 86400 ))"; tail -n +2 "$STATE_FILE"; } > "$STATE_FILE.tmp"
+    mv "$STATE_FILE.tmp" "$STATE_FILE"
+    run_check_notify "$entry"
+    [ "$(notify_count)" -eq 2 ]
+}
+
+@test "NOLINK: ホーム側のリンクが消えていてもリポジトリ側に実体があれば検出する" {
+    run_check "$HOMEDIR/config.json|$REPO/config.json"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"NOLINK"* ]]
+}
+
+@test "MISSING: 両側とも無ければ警告しない" {
+    run_check "$HOMEDIR/none.json|$REPO/none.json"
+    [ "$status" -eq 0 ]
+    run_check "$HOMEDIR/none.json|$REPO/none.json" --list
+    [[ "$output" == *"MISSING"* ]]
+}
+
+@test "ディレクトリの直し方には cp -R と rm -rf を出す（ln -sfn の入れ子リンクを避ける）" {
+    mkdir -p "$REPO/dir" "$HOMEDIR/dir"
+    run_check "$HOMEDIR/dir|$REPO/dir"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"cp -R"* ]]
+    [[ "$output" == *"rm -rf"* ]]
+    [[ "$output" != *"ln -sfn"* ]]
 }
 
 @test "末尾スラッシュ付きのリンクを WRONG と誤検知しない" {

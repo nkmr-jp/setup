@@ -6,22 +6,18 @@
   <string>com.nkmr.check-config-symlinks</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/nkmr/bin/check-config-symlinks.sh</string>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>exec "$HOME/bin/check-config-symlinks.sh" >> "$HOME/Library/Logs/check-config-symlinks.log" 2>&amp;1</string>
   </array>
   <key>StartInterval</key>
   <integer>21600</integer>
   <key>RunAtLoad</key>
   <true/>
-  <key>StandardOutPath</key>
-  <string>/Users/nkmr/Library/Logs/check-config-symlinks.log</string>
-  <key>StandardErrorPath</key>
-  <string>/Users/nkmr/Library/Logs/check-config-symlinks.log</string>
   <key>EnvironmentVariables</key>
   <dict>
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
-    <key>HOME</key>
-    <string>/Users/nkmr</string>
   </dict>
 </dict>
 </plist>

@@ -24,7 +24,7 @@ for arg in "$@"; do
   case "$arg" in
     --list)      MODE_LIST=1 ;;
     --no-notify) NOTIFY=0 ;;
-    -h|--help)   sed -n '2,18p' "$0"; exit 0 ;;
+    -h|--help)   sed -n '2,17p' "$0"; exit 0 ;;
     *) echo "unknown option: $arg" >&2; exit 2 ;;
   esac
 done
@@ -73,6 +73,12 @@ if [ -n "${CHECK_CONFIG_SYMLINKS_ENTRIES:-}" ]; then
   while IFS= read -r line; do
     [ -n "$line" ] && ENTRIES+=("$line")
   done <<< "$CHECK_CONFIG_SYMLINKS_ENTRIES"
+  # bash 3.2 + set -u では空配列の "${arr[@]}" が unbound variable で落ちる。
+  # 「非空だが 1 行も生まない」値を渡されたときに無言でクラッシュしないよう弾く。
+  if [ "${#ENTRIES[@]}" -eq 0 ]; then
+    echo "CHECK_CONFIG_SYMLINKS_ENTRIES に有効なエントリが 1 件も無い" >&2
+    exit 2
+  fi
 fi
 
 # 定期実行で同じ問題を毎回鳴らすと無視されるようになるので、問題の顔ぶれが前回と

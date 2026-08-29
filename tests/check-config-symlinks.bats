@@ -204,3 +204,37 @@ $HOMEDIR/other.json|$REPO/other.json"
     [ "$status" -eq 2 ]
     [[ "$output" == *"invalid entry"* ]]
 }
+
+@test "スペースを含むパスでも正しく判定する（実際の管理対象に存在する）" {
+    mkdir -p "$HOMEDIR/Application Support"
+    ln -s "$REPO/config.json" "$HOMEDIR/Application Support/my config.json"
+    run_check "$HOMEDIR/Application Support/my config.json|$REPO/config.json"
+    [ "$status" -eq 0 ]
+
+    rm "$HOMEDIR/Application Support/my config.json"
+    echo "overwritten" > "$HOMEDIR/Application Support/my config.json"
+    run_check "$HOMEDIR/Application Support/my config.json|$REPO/config.json"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"DETACHED"* ]]
+}
+
+@test "エントリが 1 件も無ければ黙って落ちずにエラーにする" {
+    run_check $'\n\n'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"有効なエントリが 1 件も無い"* ]]
+}
+
+@test "--help は使い方だけを出す（set -u まではみ出さない）" {
+    export CHECK_CONFIG_SYMLINKS_ENTRIES=""
+    run bash "$SCRIPT" --help
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"使い方"* ]]
+    [[ "$output" != *"set -u"* ]]
+}
+
+@test "未知のオプションはエラーにする" {
+    export CHECK_CONFIG_SYMLINKS_ENTRIES=""
+    run bash "$SCRIPT" --bogus
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"unknown option"* ]]
+}

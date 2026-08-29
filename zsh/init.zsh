@@ -38,7 +38,25 @@ if [[ -n "$CMUX_SHELL_INTEGRATION" ]]; then
 fi
 
 # Initialize tools
-eval "$(anyenv init -)"
+# rehash はシェル起動時に実行しない (--no-rehash)。理由:
+#   1. 5 つの env の rehash で起動が約 1 秒遅くなる
+#   2. rehash 中に端末が閉じられるとロック (.pyenv-shim) が残り、
+#      以降すべてのシェル起動が 60 秒ブロックして
+#      "pyenv: cannot rehash: couldn't acquire lock" を出す
+# 新しい実行ファイルを入れた後 (pip install / gem install / npm i -g など) は
+# 明示的に `pyenv rehash` などを実行する。
+eval "$(anyenv init - --no-rehash)"
+
+# --no-rehash は GOROOT/GOPATH を設定する goenv の呼び出しまで落とすので明示的に補う。
+# shim の rehash は伴わない (--only-manage-paths)。
+# cwd が削除されていると PWD が "." になり、goenv-version-file が
+# 親ディレクトリを辿るループから抜けられず 100% CPU で無限ループする
+# (goenv 2.2.39)。PWD が絶対パスのときだけ呼ぶ。
+if [[ "$PWD" == /* ]]; then
+    goenv rehash --only-manage-paths
+else
+    echo "goenv: cwd が削除されています (PWD=$PWD)。GOROOT/GOPATH は未設定です。有効なディレクトリへ cd してください。" >&2
+fi
 eval "$(uv generate-shell-completion zsh)"
 eval "$(uvx --generate-shell-completion zsh)"
 eval "$(zoxide init zsh)"

@@ -621,6 +621,61 @@ rm ~/bin/claude-stall-monitor.sh
   スクリプトの `IDLE_THRESHOLD` を縮める。
 - ack が無い旧セッション（導入前）は基準が無いため判定しない（誤検知防止）。
 
+### guard-agent-rm（LaunchAgent ではなく Claude Code の hook）
+
+エージェントが実行しようとする `rm` が、**ホームの実データをゴミ箱を経由せずに**
+消そうとしていないか検査する `PreToolUse` hook。
+
+`alias rm='trash'`（[zsh/aliases.zsh](zsh/aliases.zsh)）は **対話 zsh にしか効かない**。
+alias は子プロセスに継承されず、非対話シェルもスクリプトも `.zshrc` を読まないため:
+
+| 実行文脈 | `rm` の実体 |
+| --- | --- |
+| エージェントの Bash ツール（zsh） | `trash` ✅ |
+| `bash -lc '...'` | `/bin/rm` ❌ |
+| `bash script.sh` / `zsh script.sh` / `zsh -c` / `zsh -lc` | `/bin/rm` ❌ |
+
+長いコマンドは Bash ツールに弾かれるためスクリプト化はむしろ推奨経路で、安全網が
+主要な実行経路をカバーしていなかった（実害: 2026-08-29 に検証スクリプトが
+`mv ~/.prompt-line ~/.prompt-line.verifybak` のあと退避ごと `rm -rf` した。setup#19）。
+
+**コマンド文字列だけでなく、そこから呼ばれるスクリプトの中身も読む**のが要点。
+上記の事故はコマンド文字列が `bash verify-edge.sh` だけで、危険がそこに現れなかった。
+
+判定は best effort（変数越しのパスまでは追わない）。`$HOME` / `~/` / `/Users/<user>/` を
+指す `rm` の行をブロックし、`/tmp`・`$TMPDIR`・`/private/tmp`・ghq 配下のリポジトリは通す。
+`mv` は正当な退避と区別できず誤検知が多いので対象外。
+
+#### Install
+
+`~/.claude/settings.json` の `hooks.PreToolUse` に追加する（`matcher` は `Bash`）:
+
+```json
+{
+  "matcher": "Bash",
+  "hooks": [
+    { "type": "command", "command": "/Users/nkmr/ghq/github.com/nkmr-jp/setup/bin/guard-agent-rm.sh" }
+  ]
+}
+```
+
+#### Usage（動作確認）
+
+```sh
+echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf ~/.foo"}}' | bin/guard-agent-rm.sh; echo "exit=$?"   # 2
+echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /tmp/foo"}}' | bin/guard-agent-rm.sh; echo "exit=$?"  # 0
+```
+
+テストは `bats tests/guard-agent-rm.bats`（14 件）。**誤検知でブロックすると日常作業が
+壊れる**ので、通すべきケースのテストを厚くしてある。
+
+#### 注意
+
+- これは best effort の網であって、`rm` を変数越しに組み立てる形は捕まえられない。
+  **ホームの実データを検証で触らない**（`~/.prompt-line-isolated/` のような隔離環境を使う）
+  のが一次の対策で、この hook は二次の網。
+- `jq` が無い環境では黙って通す（hook が作業を止めない側に倒す）。
+
 ### check-config-symlinks
 
 リポジトリ管理の設定ファイルの **symlink が外れていないか**を 6 時間ごとに検査する。

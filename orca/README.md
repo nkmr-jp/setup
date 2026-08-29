@@ -153,12 +153,12 @@ terminal / settings に、`Mod+L` を global / browser に重ねている）。�
 | `renameWorkspace` | `cmd+shift+r` | `workspace.rename` | `Mod+Alt+R` | — |
 | `reloadConfiguration` | `cmd+shift+,` | `app.forceReload` | `Mod+Shift+R` | 上の玉突き（`Mod+Shift+R` を空ける）。cmux の設定リロードと同じ位置 |
 | `prevSidebarTab` / `nextSidebarTab` | `alt+↑` / `↓` | `worktree.navigateUp` / `navigateDown` | `Mod+Shift+Arrow` | **cmux と意図的に違える**（ユーザー指定）。ワークスペース移動は修飾子 1 つで打てるようにする |
-| `prevSurface` / `nextSurface` | `cmd+alt+←` / `→` | `tab.previousSameType` / `nextSameType` | `Mod+Alt+Bracket*` | cmux と同じキーにする。上下（ワークスペース移動）は `alt+↑` / `↓` に変えたので**対にはなっていない** |
+| `prevSurface` / `nextSurface` | `cmd+alt+←` / `→`（既定の `cmd+shift+[` / `]` も残す） | `tab.previousAllTypes` / `nextAllTypes` | `Mod+Shift+Bracket*` | cmux の surface 巡回は**種類をまたぐ**ので `AllTypes` に合わせる。`SameType` だとターミナルタブからエディタタブへ移動できない。既定キーも併記して残してあるのは、下の `SameType` 行と同じ起動時マイグレーション対策 |
 | `focusHistoryBack` / `Forward` (cmux で無効化) | — | `worktree.history.back` / `forward` | `Mod+Alt+ArrowLeft/Right` | `null`。上の行と同じキーになるため（cmux でも無効化していた）。scope が `global` と `tabs` で違うので競合検出には掛からないが、どちらも常時有効なので重ねない |
 | `focusLeft` / `focusRight` / `focusUp` / `focusDown` | `cmd+←` `→` / `cmd+↑` `↓` | `terminal.focusPreviousPane` / `focusNextPane` | `Mod+Bracket*` | Orca には**方向フォーカスが無い**（pane 系は前/次のみ）ので、両方を同じ 2 アクションに割り当てて代用。上下分割なら実質上下移動になるが、**左右分割では `cmd+↑` と `cmd+←` が同じ動作**になる |
 | `toggleSplitZoom` | `cmd+enter` | `terminal.expandPane` | `Mod+Shift+Enter` | — |
 | `openBrowser` | `cmd+shift+l` | `tab.newBrowser` | `Mod+Shift+B` | — |
-| （cmux に対応なし） | — | `tab.previousAllTypes` / `nextAllTypes` | `Mod+Shift+Bracket*` | **既定値をそのまま明示**。Orca が起動時の一回限りの移行でこの 2 つに `Mod+Alt+Bracket*` を書き足すことがあり、説明のつかない diff になるため先に固定しておく |
+| （cmux に対応なし） | `cmd+alt+[` / `]` | `tab.previousSameType` / `nextSameType` | `Mod+Alt+Bracket*` | **既定値をそのまま明示**。矢印キーを `AllTypes` に渡したので既定に戻すが、Orca が起動時の一回限りの移行で `Mod+Alt+Bracket*` を勝手に書き足すことがあり、説明のつかない diff になるため先に固定しておく |
 | `focusRightSidebar` (cmux で無効化) | — | `sidebar.right.toggle` | `Mod+L` | `null`。cmux と同じく無効化。既定が `browser.focusAddressBar` と同キーなのも解消する。使いたければ空いている `Mod+Alt+L` などに振る |
 
 ### Orca に対応するものが無い cmux のキー
@@ -171,6 +171,8 @@ terminal / settings に、`Mod+L` を global / browser に重ねている）。�
 
 ### 意図的に合わせていないもの
 
+- **同種タブだけの巡回（`tab.previousSameType` / `nextSameType`）**: cmux に対応する概念が無い。
+  既定の `cmd+alt+[` / `]` のままにしてあるので、ターミナルだけを回りたいときはこちらを使う。
 - **`closeWorkspace`（`cmd+shift+w`）**: Orca の `workspace.delete` は「閉じる」ではなく**削除**。
   同じキーに振ると閉じるつもりで消す事故になるため、既定の `Mod+Shift+Backspace` のままにしてある。
 - **`toggleReactGrab`（`cmd+shift+g`）**: 近いのは `browser.grabElement`（既定 `Mod+C`）だが、

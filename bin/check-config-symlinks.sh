@@ -35,8 +35,10 @@ SETUP_REPO="$GHQ/setup"
 APP_SUPPORT="$HOME/Library/Application Support"
 # Claude デスクトップの local-agent-mode-sessions はアカウント／セッションの UUID を含む。
 # 環境ごとに変わるので固定せず glob で解決する。
+# sort するのは、セッションが複数あるとき find の順序が実行ごとに変わりうるため。
+# 対象がぶれると「顔ぶれが変わった」と誤判定して 6 時間ごとに鳴り続ける。
 SCHEDULED_TASKS="$(/usr/bin/find "$APP_SUPPORT/Claude/local-agent-mode-sessions" \
-  -maxdepth 3 -name scheduled-tasks.json 2>/dev/null | head -1)"
+  -maxdepth 3 -name scheduled-tasks.json 2>/dev/null | sort | head -1)"
 
 # 管理対象: "<ホーム側のパス>|<リポジトリ側の実体>"
 # 「アプリが書き戻す設定ファイル」を対象にする（手でしか触らない bin/plist のリンクは対象外）。
@@ -74,8 +76,20 @@ notify() {
     terminal-notifier -title "$title" -message "$message" \
       -group "config-symlinks" -sound default >/dev/null 2>&1
   else
-    osascript -e "display notification \"$message\" with title \"$title\" sound name \"Submarine\"" >/dev/null 2>&1
+    # 文字列に埋め込むとパス中の " や \ で AppleScript が構文エラーになり（stderr は捨てられる）
+    # 通知が黙って消えるので、引数として渡す。
+    osascript -e 'on run {m, t}' \
+      -e 'display notification m with title t sound name "Submarine"' \
+      -e 'end run' "$message" "$title" >/dev/null 2>&1
   fi
+}
+
+# 末尾のスラッシュは指す先が同じなので比較前に落とす（zsh のディレクトリ補完や
+# `ln -sfn <dir>/ <link>` で付く）。付いたままだと OK なリンクを WRONG と誤検知する。
+strip_slash() {
+  local p="$1"
+  while [ "${p%/}" != "$p" ] && [ -n "${p%/}" ]; do p="${p%/}"; done
+  printf '%s' "$p"
 }
 
 # ホーム側が実体になっているとき、リポジトリ側と中身が違うか（＝実際に乖離しているか）
@@ -91,11 +105,17 @@ drift_note() {
 problems=()
 rows=()
 for entry in "${ENTRIES[@]}"; do
+  # `|` を書き忘れると link と target が同じ文字列になり、MISSING や「中身は同じ DETACHED」に
+  # 化けて黙って監視から外れる。宣言ミスは検知したいので落とす。
+  case "$entry" in
+    *\|*) ;;
+    *) echo "invalid entry (期待する形式は '<ホーム側>|<リポジトリ側>'): $entry" >&2; exit 2 ;;
+  esac
   link="${entry%%|*}"
   target="${entry#*|}"
   if [ -L "$link" ]; then
     actual="$(readlink "$link")"
-    if [ "$actual" != "$target" ]; then
+    if [ "$(strip_slash "$actual")" != "$(strip_slash "$target")" ]; then
       rows+=("WRONG    $link -> $actual (期待: $target)")
       problems+=("$link はリンク先が違う")
     elif [ ! -e "$link" ]; then
@@ -134,8 +154,10 @@ if [ "${#problems[@]}" -gt 0 ]; then
   echo "  diff <ホーム側> <リポジトリ側>"
   echo "  cp <ホーム側> <リポジトリ側>    # ホーム側が現行の場合"
   echo "  ln -sfn <リポジトリ側> <ホーム側>"
+  # 状態ファイルは「前回ユーザーに通知した顔ぶれ」を表す。通知していない実行（--no-notify）で
+  # 書くと、次の定期実行が「前回と同じ＝通知済み」と誤認して黙ってしまうので書かない。
   current="$(printf '%s\n' "${problems[@]}")"
-  if [ "$current" != "$(cat "$STATE_FILE" 2>/dev/null)" ]; then
+  if [ "$NOTIFY" -eq 1 ] && [ "$current" != "$(cat "$STATE_FILE" 2>/dev/null)" ]; then
     notify "設定の symlink が外れている" "${#problems[@]} 件: ${problems[0]}"
     printf '%s\n' "$current" > "$STATE_FILE"
   fi

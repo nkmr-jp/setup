@@ -100,3 +100,32 @@ $HOMEDIR/other.json|$REPO/other.json"
     [[ "$output" == *"other.json"* ]]
     [[ "$output" != *"OK       "* ]]
 }
+
+@test "--no-notify では state file を書かない（次の定期実行の通知を潰さない）" {
+    echo "overwritten" > "$HOMEDIR/config.json"
+    run_check "$HOMEDIR/config.json|$REPO/config.json"
+    [ "$status" -eq 1 ]
+    [ ! -f "$BATS_TEST_TMPDIR/check-config-symlinks.state" ]
+}
+
+@test "問題が解消したら state file を消す（次に壊れたらまた鳴る）" {
+    echo "stale" > "$BATS_TEST_TMPDIR/check-config-symlinks.state"
+    ln -s "$REPO/config.json" "$HOMEDIR/config.json"
+    run_check "$HOMEDIR/config.json|$REPO/config.json"
+    [ "$status" -eq 0 ]
+    [ ! -f "$BATS_TEST_TMPDIR/check-config-symlinks.state" ]
+}
+
+@test "末尾スラッシュ付きのリンクを WRONG と誤検知しない" {
+    mkdir -p "$REPO/dir"
+    ln -sfn "$REPO/dir/" "$HOMEDIR/dir"
+    run_check "$HOMEDIR/dir|$REPO/dir"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WRONG"* ]]
+}
+
+@test "区切り文字の無い不正なエントリは黙って無視せずエラーにする" {
+    run_check "$HOMEDIR/config.json"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"invalid entry"* ]]
+}

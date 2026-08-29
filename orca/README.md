@@ -2,7 +2,8 @@
 
 [Orca](https://github.com/stablyai/orca)（`com.stablyai.orca`）のキーバインド設定。
 **cmux と同じキー操作になるように** [`../cmux/cmux.json`](../cmux/cmux.json) の
-`shortcuts.bindings` を移植したもの。
+`shortcuts.bindings` を移植したもの（**一部はユーザー指定で意図的に違えている**——
+下の対応表の「理由」欄に明記してある）。
 
 ## Setup
 
@@ -151,10 +152,10 @@ terminal / settings に、`Mod+L` を global / browser に重ねている）。�
 | `commandPalette` | `cmd+shift+p` | `worktree.quickOpen` | `Mod+P` | 上の玉突き。Orca にコマンドパレットは無いのでファイル検索を置く |
 | `renameWorkspace` | `cmd+shift+r` | `workspace.rename` | `Mod+Alt+R` | — |
 | `reloadConfiguration` | `cmd+shift+,` | `app.forceReload` | `Mod+Shift+R` | 上の玉突き（`Mod+Shift+R` を空ける）。cmux の設定リロードと同じ位置 |
-| `prevSidebarTab` / `nextSidebarTab` | `cmd+alt+↑` / `↓` | `worktree.navigateUp` / `navigateDown` | `Mod+Shift+Arrow` | — |
-| `prevSurface` / `nextSurface` | `cmd+alt+←` / `→` | `tab.previousSameType` / `nextSameType` | `Mod+Alt+Bracket*` | 上下（ワークスペース移動）と対にする |
+| `prevSidebarTab` / `nextSidebarTab` | `alt+↑` / `↓` | `worktree.navigateUp` / `navigateDown` | `Mod+Shift+Arrow` | **cmux と意図的に違える**（ユーザー指定）。ワークスペース移動は修飾子 1 つで打てるようにする |
+| `prevSurface` / `nextSurface` | `cmd+alt+←` / `→` | `tab.previousSameType` / `nextSameType` | `Mod+Alt+Bracket*` | cmux と同じキーにする。上下（ワークスペース移動）は `alt+↑` / `↓` に変えたので**対にはなっていない** |
 | `focusHistoryBack` / `Forward` (cmux で無効化) | — | `worktree.history.back` / `forward` | `Mod+Alt+ArrowLeft/Right` | `null`。上の行と同じキーになるため（cmux でも無効化していた）。scope が `global` と `tabs` で違うので競合検出には掛からないが、どちらも常時有効なので重ねない |
-| `focusLeft` / `focusRight` | `cmd+←` / `→` | `terminal.focusPreviousPane` / `focusNextPane` | `Mod+Bracket*` | Orca には**方向フォーカスが無い**ので前/次ペインで代用（上下は非対応） |
+| `focusLeft` / `focusRight` / `focusUp` / `focusDown` | `cmd+←` `→` / `cmd+↑` `↓` | `terminal.focusPreviousPane` / `focusNextPane` | `Mod+Bracket*` | Orca には**方向フォーカスが無い**（pane 系は前/次のみ）ので、両方を同じ 2 アクションに割り当てて代用。上下分割なら実質上下移動になるが、**左右分割では `cmd+↑` と `cmd+←` が同じ動作**になる |
 | `toggleSplitZoom` | `cmd+enter` | `terminal.expandPane` | `Mod+Shift+Enter` | — |
 | `openBrowser` | `cmd+shift+l` | `tab.newBrowser` | `Mod+Shift+B` | — |
 | （cmux に対応なし） | — | `tab.previousAllTypes` / `nextAllTypes` | `Mod+Shift+Bracket*` | **既定値をそのまま明示**。Orca が起動時の一回限りの移行でこの 2 つに `Mod+Alt+Bracket*` を書き足すことがあり、説明のつかない diff になるため先に固定しておく |
@@ -170,8 +171,6 @@ terminal / settings に、`Mod+L` を global / browser に重ねている）。�
 
 ### 意図的に合わせていないもの
 
-- **`focusUp` / `focusDown`（`cmd+↑` `cmd+↓`）**: Orca に上下方向のペインフォーカス移動が無い。
-  左右のみ `terminal.focusPreviousPane` / `focusNextPane` で代用している。
 - **`closeWorkspace`（`cmd+shift+w`）**: Orca の `workspace.delete` は「閉じる」ではなく**削除**。
   同じキーに振ると閉じるつもりで消す事故になるため、既定の `Mod+Shift+Backspace` のままにしてある。
 - **`toggleReactGrab`（`cmd+shift+g`）**: 近いのは `browser.grabElement`（既定 `Mod+C`）だが、
@@ -184,6 +183,10 @@ Orca の `terminalShortcutPolicy` は既定 `orca-first` で、**ターミナル
 アプリのショートカットが優先して発火する**。`terminal-first` にすると `scope: terminal` のアクションと
 `allowInTerminal` が付いた一部だけになる。cmux で踏んだ「Option 単体が端末優先になって
 ショートカットが発火しない」（cmux #6007）に相当する制約は、既定では起きない。
+
+裏返しの副作用として、**ワークスペース移動に振った `alt+↑` / `↓` はターミナルペインでも Orca が
+先に奪う**。同じキーをシェル側（zsh の history-substring-search など）に割り当てていると、
+Orca の中では効かなくなる。
 
 ## 経緯
 

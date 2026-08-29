@@ -621,6 +621,103 @@ rm ~/bin/claude-stall-monitor.sh
   スクリプトの `IDLE_THRESHOLD` を縮める。
 - ack が無い旧セッション（導入前）は基準が無いため判定しない（誤検知防止）。
 
+### check-config-symlinks
+
+リポジトリ管理の設定ファイルの **symlink が外れていないか**を 6 時間ごとに検査する。
+
+設定を「リポジトリに実体を置いてホームから symlink」で管理していると、アプリが
+**atomic write（`<path>.tmp` に書いて `rename`）で書き戻したときに symlink が実体ファイルに
+置き換わる**。以後リポジトリ側の編集は無言で効かなくなり、エラーも警告も出ない。
+実例: `~/.claude/settings.json` が `claude doctor` / `/config` に置換され、
+**2026-06-25〜08-16 の約 7 週間、乖離に気づかなかった**（詳細は
+[docs/agent-knowledge.md](https://github.com/nkmr-jp/claude/blob/main/docs/agent-knowledge.md)）。
+アプリ側の書き方は変えられない＝**予防はできない**ので、代わりに検知する。
+
+**判定** (`bin/check-config-symlinks.sh`):
+
+| 状態 | 意味 | 通知 |
+| --- | --- | --- |
+| `OK` | 期待どおりのリンク | — |
+| `DETACHED` | ホーム側が symlink でなくなっている（本命の壊れ方。中身が乖離しているかも表示） | する |
+| `BROKEN` | リンク先が消えている | する |
+| `WRONG` | 別のリンク先を向いている | する |
+| `NOLINK` | ホーム側にリンクが無い。リポジトリ側には実体がある（＝管理しているつもりが効いていない） | する |
+| `PENDING` | ホーム側が実体で、リポジトリ側に実体が無い（まだ管理下に入れていない） | しない |
+| `MISSING` | どちらにも実体が無い | しない |
+
+**対象は「ghq 配下のリポジトリを指しているホーム配下の symlink 全部」**。種別で絞らない
+（`bin/` のスクリプトも launchd の plist も入れる）。「アプリが書き戻すものだけ」のように
+**判断が要る絞り方はしない——判断が入る時点で漏れる**。実際その方針では
+`~/.codex/AGENTS.md`・yazi・herdr が抜け、さらに **`~/.prompt-line` が抜けていたために
+実際の事故（別セッションの検証スクリプトが誤ってリンクを削除し、以後アプリの書き込みが
+リポジトリに届かなくなっていた）を検知できなかった**。
+
+管理対象を増やすときは手で探さず `--suggest` を使う（ホーム配下を走査して、リポジトリを
+指しているのに `ENTRIES` に無い symlink を、そのまま貼れる形で出す）。
+
+**自動復旧はしない**。ホーム側とリポジトリ側のどちらが「現行」かは状況次第で、自動で倒すと
+編集を失うため、`diff` してから手で直す。**直し方は項目ごとに出力される**（対象がディレクトリなら
+`cp -R` と `rm -rf` + `ln -s`。ディレクトリに `ln -sfn` を使うと exit 0 のまま中に入れ子リンクが
+できて直ったように見えるため、種別で出し分けている）。
+
+通知は**問題の顔ぶれが前回と変わったとき**、および**顔ぶれが同じでも前回通知から
+`RENOTIFY_DAYS`（既定 7 日）経過したとき**に出す。毎回鳴らすと無視されるようになるが、
+一度きりにすると通知を見逃したまま永久に黙る（＝7 週間気づかなかった事故の再来）ため。
+
+#### Install
+
+```sh
+# 1. ~/bin と ~/Library/LaunchAgents から symlink で参照
+ln -sf ~/ghq/github.com/nkmr-jp/setup/bin/check-config-symlinks.sh ~/bin/check-config-symlinks.sh
+ln -sf ~/ghq/github.com/nkmr-jp/setup/launchd/com.nkmr.check-config-symlinks.plist ~/Library/LaunchAgents/com.nkmr.check-config-symlinks.plist
+
+# 2. launchd に登録（6 時間ごと・ロード時にも 1 回実行）
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.check-config-symlinks.plist
+
+# 3. 動作確認
+launchctl kickstart gui/$(id -u)/com.nkmr.check-config-symlinks
+tail ~/Library/Logs/check-config-symlinks.log
+```
+
+#### Usage（手動実行）
+
+```sh
+check-config-symlinks.sh              # 壊れている項目だけ表示。あれば通知して exit 1
+check-config-symlinks.sh --list       # 全項目を表示するだけ（通知も状態更新もしない）
+check-config-symlinks.sh --suggest    # 管理対象に入っていない repo 向け symlink を探す
+check-config-symlinks.sh --no-notify  # 通知しない（状態も更新しない）
+check-config-symlinks.sh --help       # 使い方
+```
+
+`--list` / `--no-notify` は**状態ファイルを書かない**。書いてしまうと、手で 1 回眺めただけで
+定期実行が「前回と同じ＝通知済み」と誤認して黙る（実際にその不具合を踏んだ）。
+
+対象リンクはスクリプト冒頭の `ENTRIES` に宣言的に書いてある。管理するリンクを増やしたら
+ここに 1 行足す（テストは `tests/check-config-symlinks.bats`）。
+
+#### Uninstall / 停止
+
+```sh
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.check-config-symlinks.plist
+rm ~/Library/LaunchAgents/com.nkmr.check-config-symlinks.plist
+rm ~/bin/check-config-symlinks.sh
+```
+
+#### ログ・状態
+
+- ログ: `~/Library/Logs/check-config-symlinks.log` に追記される。
+  問題が無い場合: `OK: 管理対象 N 件に外れているリンクは無い`。
+- 状態: `~/Library/Application Support/check-config-symlinks/state`（前回通知した時刻と
+  問題の顔ぶれ）。消しても次の実行で作り直される（消すと次回必ず鳴る）。
+
+#### 注意
+
+- **検知だけで復旧はしない**。通知が来たら `--list` で全体を見てから手で直す。
+- 6 時間間隔なので検知最大遅延は 6 時間。急ぐなら plist の `StartInterval` を縮める。
+- **`~/.orca` は `setup/orca/` をマージした直後、Setup を実行するまで `DETACHED` として鳴る**
+  （[orca/README.md](orca/README.md) の Setup を実行すれば `OK` になる）。マージしたら間を
+  空けずに移行する。
+
 ### git-auto-backup
 
 リポジトリを 30 分毎に自動バックアップ（`pull --rebase → add -A → commit → push`）する汎用ジョブ。

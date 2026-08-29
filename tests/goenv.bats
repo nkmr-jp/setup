@@ -9,7 +9,8 @@ GOENV_WRAPPER="${BATS_TEST_DIRNAME}/goenv_wrapper.zsh"
 setup() {
     # テスト用の goenv ルート（versions/ と version を持つだけの最小構成）
     export GOENV_ROOT="$BATS_TEST_TMPDIR/goenv"
-    mkdir -p "$GOENV_ROOT/versions/1.20.0" "$GOENV_ROOT/versions/1.26.1"
+    mkdir -p "$GOENV_ROOT/versions/1.20.0" "$GOENV_ROOT/versions/1.20.9" \
+             "$GOENV_ROOT/versions/1.20.10" "$GOENV_ROOT/versions/1.26.1"
     echo "1.26.1" > "$GOENV_ROOT/version"
 
     export WORK="$BATS_TEST_TMPDIR/work"
@@ -76,6 +77,62 @@ run_goenv_from() {
     # //versions のような二重スラッシュにならないこと
     [[ "$output" != *"//versions"* ]]
     [[ "$output" == *"/versions/1.26.1"* ]]
+}
+
+# ============================================================
+# インストール済みバージョンへの解決（本家 goenv-prefix と同じ規則）
+# ============================================================
+
+@test "resolve: major.minor 指定は最新パッチに解決する" {
+    echo "1.20" > "$WORK/proj/.go-version"
+    run_goenv_from "$WORK/proj"
+    [ "$status" -eq 0 ]
+    # 数値順なので 1.20.9 ではなく 1.20.10 が選ばれる
+    [[ "$output" == *"GOROOT=$GOENV_ROOT/versions/1.20.10"* ]]
+    # GOPATH も解決後の版で決まる（本家と同じ）
+    [[ "$output" == *"GOPATH=$HOME/go/1.20.10"* ]]
+}
+
+@test "resolve: go- 接頭辞を落として解決する" {
+    echo "go-1.20.0" > "$WORK/proj/.go-version"
+    run_goenv_from "$WORK/proj"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"GOROOT=$GOENV_ROOT/versions/1.20.0"* ]]
+}
+
+@test "resolve: 未インストールの版なら何も設定しない" {
+    # 素通しすると存在しないディレクトリを GOROOT に入れてしまう
+    echo "1.99.0" > "$WORK/proj/.go-version"
+    run_goenv_from "$WORK/proj"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"GOROOT=$GOENV_ROOT"* ]]
+    [[ "$output" != *"GOPATH=$HOME/go/1.99.0"* ]]
+}
+
+@test "resolve: .go-version が複数行なら先頭を使う" {
+    printf '1.20.0\n1.26.1\n' > "$WORK/proj/.go-version"
+    run_goenv_from "$WORK/proj"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"GOROOT=$GOENV_ROOT/versions/1.20.0"* ]]
+}
+
+# ============================================================
+# GOENV_VERSION（`goenv shell` が export する）
+# ============================================================
+
+@test "GOENV_VERSION: .go-version より優先する" {
+    echo "1.20.0" > "$WORK/proj/.go-version"
+    cd "$WORK/proj"
+    run env -u GOROOT -u GOPATH GOENV_VERSION=1.26.1 zsh "$GOENV_WRAPPER"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"GOROOT=$GOENV_ROOT/versions/1.26.1"* ]]
+}
+
+@test "GOENV_VERSION: system なら何も設定しない" {
+    cd "$WORK"
+    run env -u GOROOT -u GOPATH GOENV_VERSION=system zsh "$GOENV_WRAPPER"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"GOROOT=$GOENV_ROOT"* ]]
 }
 
 # ============================================================

@@ -16,23 +16,27 @@ fpath=("$ZSH_CACHE_DIR/completions" $fpath)
 
 # uv の補完は 52 万バイトあり eval に 70ms かかる。#compdef 形式なので
 # fpath に置けば compinit が遅延ロードしてくれて起動時のコストがゼロになる。
+_zcomp_before=("$ZSH_CACHE_DIR"/completions/*(N.))
 _zsh_cache_completion _uv  "${commands[uv]}"  -- uv generate-shell-completion zsh
 _zsh_cache_completion _uvx "${commands[uvx]}" -- uvx --generate-shell-completion zsh
+_zcomp_after=("$ZSH_CACHE_DIR"/completions/*(N.))
 
 # Completion system
 # フルの compinit は 240ms かかるが -C なら 10ms。ただし -C は dump をそのまま使うため
-# 新しく fpath に置いた補完が認識されない。dump が 24 時間より古い (または無い) ときだけ
-# フルで作り直す。
+# 新しく fpath に置いた補完が認識されない。dump が 24 時間より古い (または無い) とき、
+# および補完ファイルを新しく置いたときだけフルで作り直す。
+# (更新は遅延ロードが拾うので -C のままでよい。取りこぼすのは「新規登録」だけ。
+#  ここを見ないと、この設定を入れた直後の 1 回目で _uv が最大 24 時間認識されない)
 autoload -Uz compinit
 # glob qualifier は素の形で書く ((#q...) は EXTENDED_GLOB が要る)。
 # N=無ければ空 / .=通常ファイル / mh-24=24時間以内に更新
 _zcompdump_fresh=("${ZDOTDIR:-$HOME}"/.zcompdump(N.mh-24))
-if (( $#_zcompdump_fresh )); then
+if (( $#_zcompdump_fresh )) && (( $#_zcomp_after == $#_zcomp_before )); then
     compinit -C
 else
     compinit
 fi
-unset _zcompdump_fresh
+unset _zcompdump_fresh _zcomp_before _zcomp_after
 
 # Enable colors
 autoload -Uz colors

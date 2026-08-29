@@ -74,7 +74,12 @@ _zsh_cache_var() {
         local value
         if (( $# )) && value=$("$@" 2>/dev/null) && [[ -n $value ]]; then
             mkdir -p "${cache:h}" || return 1
-            print -r -- "typeset -g $var=${(q)value}" > "$cache"
+            # 端末を同時に何枚も開いたとき、書きかけのファイルを別のシェルが
+            # source しないように一時ファイル経由で差し替える
+            local tmp="$cache.$$.tmp"
+            print -r -- "typeset -g $var=${(q)value}" > "$tmp" \
+                && mv -f "$tmp" "$cache" \
+                || rm -f "$tmp"
         fi
     fi
     [[ -s $cache ]] || return 1

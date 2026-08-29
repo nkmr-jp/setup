@@ -654,7 +654,7 @@ alias は子プロセスに継承されず、非対話シェルもスクリプ�
 {
   "matcher": "Bash",
   "hooks": [
-    { "type": "command", "command": "/Users/nkmr/ghq/github.com/nkmr-jp/setup/bin/guard-agent-rm.sh" }
+    { "type": "command", "command": "$HOME/ghq/github.com/nkmr-jp/setup/bin/guard-agent-rm.sh" }
   ]
 }
 ```
@@ -764,6 +764,13 @@ rm ~/bin/check-config-symlinks.sh
   問題が無い場合: `OK: 管理対象 N 件に外れているリンクは無い`。
 - 状態: `~/Library/Application Support/check-config-symlinks/state`（前回通知した時刻と
   問題の顔ぶれ）。消しても次の実行で作り直される（消すと次回必ず鳴る）。
+
+> **plist でホームのパスをベタ書きしない書き方**: launchd は plist 内の文字列を変数展開しないため、
+> `ProgramArguments` / `StandardOutPath` に `$HOME` は書けない。このジョブは
+> `/bin/sh -c 'exec "$HOME/bin/... " >> "$HOME/Library/Logs/..." 2>&1'` の形にして、
+> パスの解決とログのリダイレクトを**シェル側**でやることで plist からホームのベタ書きを無くしている
+> （`HOME` は launchd が gui ドメインのジョブに渡すので `EnvironmentVariables` で与える必要も無い）。
+> 既存の 3 ジョブはベタ書きのままなので、触る機会があれば揃える。
 
 #### 注意
 

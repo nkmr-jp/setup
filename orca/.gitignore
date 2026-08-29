@@ -1,0 +1,7 @@
+# Orca がこのディレクトリ (~/.orca) に自動生成する状態物。設定として管理するのは
+# keybindings.json だけなので、それ以外はすべて無視する。
+*
+!.gitignore
+!README.md
+!keybindings.json
+!check-keybindings.py

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """keybindings.json を Orca 本体のアクション定義と突き合わせて検証する。
 
-Orca は競合する override を **無言で捨てる**（Settings に diagnostic が出るだけ）。
-捨てられた override はそのアクションの既定キーに戻るので、`null` で無効化したつもりの
-キーが既定の動作のまま復活する、という壊れ方をする。それを検知するのがこのスクリプト。
+Orca は受け付けられない override や競合する override を **無言で捨てる**（Settings に
+diagnostic が出るだけ）。捨てられた override は無効になるのではなく**そのアクションの
+既定キーに戻る**ので、「書いたキーが効かず、代わりに既定のキーが動いている」という
+気づきにくい壊れ方をする。それを検知するのがこのスクリプト。
 
 アクション定義は導入済みの Orca.app の app.asar から抽出するので、Orca を更新して
 既定キーが変わった場合もそのまま追随する（更新後に流し直すと、上流の既定変更で
@@ -99,6 +100,11 @@ def load_registry(asar_path):
             "buckets": {group.group(1) if group else (scope.group(1) if scope else "?")}
             | ({scope.group(1)} if group and scope else set()),
             "darwin": [x.strip().strip('"') for x in raw.split(",") if x.strip()],
+            # 修飾子なし／Shift 単独を許すかはアクションごとに違う（実測で前者 3 件・後者 1 件）。
+            # 同じセグメントから取れるので、アクションを見ない緩い判定にしない。
+            "allow_bare": "allowBareKeybindings:!0" in seg,
+            "allow_shift_only": "allowShiftOnlyKeybindings:!0" in seg,
+            "digit_index": head.group(1) in DIGIT_INDEX_ACTIONS,
         }
     return registry
 
@@ -118,16 +124,30 @@ def normalize_key(token):
     return KEY_ALIASES.get(upper)
 
 
-def canonical(binding):
-    """darwin 向けに正規化する（Mod は Cmd と同一視）。不正なら None。"""
+def canonical(binding, definition=None):
+    """darwin 向けに正規化する（Mod は Cmd と同一視）。Orca が受け付けないものは None。
+
+    `definition`（load_registry の 1 エントリ）を渡すと、そのアクションに許された
+    修飾子なしキー・digit index の制約まで見る。渡さないと**緩く通してしまう**ので、
+    アクションが分かる場所では必ず渡すこと（渡し忘れが見逃しになる）。
+    """
+    # Orca は文字列値も配列要素も、まず `,` で split してから 1 つずつパースする
+    # （normalizeKeybindingListWithOptions）。`Mod+Shift+,` のようにキー名として
+    # カンマを書くと分割されてパースに失敗し、**override 全体が捨てられる**。
+    # `Comma` と書けば通るので、ここでは lint として一律拒否する。
+    if "," in binding:
+        return None
     parts = [p.strip() for p in binding.split("+") if p.strip()]
     if not parts:
         return None
     if any(p.lower() == "doubletap" for p in parts):
+        # Orca の parseDoubleTapKeybinding は修飾子ちょうど 1 つだけを受ける。
         tokens = [MODIFIER_ALIASES.get(p.upper()) for p in parts if p.lower() != "doubletap"]
-        if not tokens or any(t is None for t in tokens):
+        if len(tokens) != 1 or tokens[0] is None:
             return None
-        return "DoubleTap:" + "+".join(sorted({t for t in tokens if t}))
+        # darwin では Mod = Cmd。ここを分けると同じ二度押しの競合を見逃す。
+        token = "Cmd" if tokens[0] == "Mod" else tokens[0]
+        return f"DoubleTap+{token}"
     mods, key = set(), None
     for part in parts:
         modifier = MODIFIER_ALIASES.get(part.upper())
@@ -143,13 +163,31 @@ def canonical(binding):
         return None
     if "Mod" in mods and ("Cmd" in mods or "Ctrl" in mods):
         return None  # Orca: "Use either Mod or a platform-specific modifier, not both."
+
+    allow_bare = bool(definition and definition["allow_bare"])
+    allow_shift_only = bool(definition and definition["allow_shift_only"])
     if not (mods - {"Shift"}):  # 修飾子が Shift だけ／全く無い
+        # Orca の normalizeKeybindingWithOptions + isSafeBareKey と同じ判定。
+        # 修飾子なしを許すのは allowBareKeybindings が付いた 3 アクションだけ、
+        # Shift 単独は allowShiftOnlyKeybindings が付いた 1 アクションだけ。
+        # ここをアクションに関係なく通していたため、`{"tab.close": ["Enter"]}` のような
+        # 「Orca が override ごと捨てる」設定を OK と報告していた。
+        is_function = bool(FUNCTION_KEY.match(key))
         if "Shift" in mods:
-            allowed = bool(FUNCTION_KEY.match(key)) or key == "Insert"
+            safe_bare = allow_bare and is_function
+            allowed = (key == "Insert") or safe_bare or allow_shift_only
         else:
-            allowed = bool(FUNCTION_KEY.match(key)) or key in BARE_OK
+            allowed = allow_bare and (is_function or key in BARE_OK)
         if not allowed:
             return None
+
+    if definition and definition["digit_index"]:
+        # tab.selectByIndex / workspace.selectByIndex は 1〜9 のみ受け付け、
+        # それ以外だと override が丸ごと捨てられる（canonicalizeDigitIndexBinding）。
+        if not re.fullmatch(r"[1-9]", key):
+            return None
+        key = "1"  # Orca 自身が 1 に正規化する
+
     # darwin では Mod = Cmd。修飾子の並び順を固定して同一性の判定に使う。
     meta = "Mod" in mods or "Cmd" in mods
     order = (["Cmd"] if meta else []) + [m for m in ("Ctrl", "Alt", "Shift") if m in mods]
@@ -167,9 +205,9 @@ def as_bindings(value):
     return None
 
 
-def identities(action_id, binding):
+def identities(action_id, binding, definition):
     """selectByIndex 系は 1〜9 に展開される（Orca 本体と同じ）。"""
-    canon = canonical(binding)
+    canon = canonical(binding, definition)
     if canon is None:
         return []
     if action_id in DIGIT_INDEX_ACTIONS and re.fullmatch(r"[1-9]", canon.split("+")[-1]):
@@ -208,7 +246,9 @@ def main():
 
     for key in document:
         if key not in ROOT_KEYS:
-            errors.append(f"未知のルートキー: {key}（Orca は無視する）")
+            # `keybindings` キーが無いと、Orca はルート直下をバインドセクションとして
+            # 読みにいく（parseBindingSection の skipRootKeys 経路）。「無視される」ではない。
+            errors.append(f"未知のルートキー: {key}（$schema/version/keybindings/platforms のみ）")
 
     # keybindings（共通）→ platforms.darwin の順にマージされる
     overrides = dict(document.get("keybindings") or {})
@@ -227,21 +267,25 @@ def main():
             errors.append(f"未知のアクション: {action_id}")
             continue
         for binding in bindings:
-            if canonical(binding) is None:
-                errors.append(f"キー指定が不正: {action_id} = {binding}")
+            if canonical(binding, registry[action_id]) is None:
+                errors.append(
+                    f"キー指定が不正（Orca はこの override を丸ごと捨てて既定に戻す）: "
+                    f"{action_id} = {binding}"
+                )
 
     owners = {}
     for action_id, definition in registry.items():
         effective = normalized.get(action_id, definition["darwin"])
         for binding in effective:
-            for identity in identities(action_id, binding):
+            for identity in identities(action_id, binding, definition):
                 for bucket in definition["buckets"]:
                     owners.setdefault((bucket, identity), set()).add(action_id)
 
     for (bucket, identity), action_ids in sorted(owners.items()):
         # override が絡む競合だけが捨てられる。既定同士は Orca が意図して重ねている。
-        # 捨てられた override は「無効」になるのではなく**そのアクションの既定キーに戻る**
-        # ので、null による無効化が巻き込まれると既定のキーがそのまま復活する。
+        # 捨てられた override は「無効」になるのではなく**そのアクションの既定キーに戻る**。
+        # なお `null`（= 空リスト）にしたアクションは有効なバインドを 1 つも持たないので
+        # 競合判定に参加せず、捨てられることは無い（＝無効化は常に効く）。
         if len(action_ids) > 1 and action_ids & set(normalized):
             errors.append(
                 f"競合（override が捨てられ既定に戻る）: {bucket} / {identity} -> "

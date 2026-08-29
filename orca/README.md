@@ -9,7 +9,14 @@
 このディレクトリは **`~/.orca` そのもの**として使う（ファイル単体ではなく**ディレクトリごと**
 symlink する。理由は後述）。
 
+**前提: この手順は `setup/orca/` が存在する状態で実行する**（＝この変更が main に入ったあと）。
+まだ無い状態で流すと、`cp` が `orca/` を勝手に作ってしまい、`git checkout` だけが静かに失敗して、
+**管理下の `keybindings.json` が入っていないディレクトリ**を `~/.orca` が指すことになる。
+
 ```sh
+REPO=~/ghq/github.com/nkmr-jp/setup/orca
+test -f "$REPO/keybindings.json" || echo "先に main を pull すること"
+
 # 1. Orca を終了する（agent-hooks/ を動作中のエージェントセッションが参照しているため）
 osascript -e 'quit app "Orca"'
 
@@ -17,19 +24,24 @@ osascript -e 'quit app "Orca"'
 #    ※ `~/.orca/*` はドットファイルを取りこぼすので、末尾 `/.` で中身ごとコピーする
 #    ※ この cp は既存の ~/.orca/keybindings.json でリポジトリ側の keybindings.json を
 #      上書きする。管理している設定が消えるので、コピー後に必ず戻す（下の checkout）
-cp -R ~/.orca/. ~/ghq/github.com/nkmr-jp/setup/orca/
-git -C ~/ghq/github.com/nkmr-jp/setup checkout -- orca/keybindings.json
-rm -rf ~/.orca
-ln -s ~/ghq/github.com/nkmr-jp/setup/orca ~/.orca
+#    ※ 1 行でも失敗したら止まるよう `&&` で繋ぐ。改行で並べると cp が失敗しても
+#      `rm -rf ~/.orca` が走って agent-hooks/ ごと消える
+test -f "$REPO/keybindings.json" \
+  && cp -R ~/.orca/. "$REPO"/ \
+  && git -C ~/ghq/github.com/nkmr-jp/setup checkout -- orca/keybindings.json \
+  && rm -rf ~/.orca \
+  && ln -s "$REPO" ~/.orca
 
 # 3. 確認（リンクになっていること・keybindings.json が見えること）
 ls -ld ~/.orca
 ls -l ~/.orca/keybindings.json
 ```
 
-`~/.orca` がまだ無い場合は 2 の `cp` / `rm -rf` を飛ばして `ln -s` だけでよい。
+`~/.orca` がまだ無い場合は 2 を飛ばして `ln -s "$REPO" ~/.orca` だけでよい。
+逆に **`~/.orca` が既にある状態で `ln -s` だけを実行してはいけない**——`ln` は失敗せず
+`~/.orca/orca` という入れ子のリンクを作る（`rm -rf ~/.orca` が先に必要）。
 
-設定を反映するには **Orca の Settings → Shortcuts → Reload**（`keybindings.json` の再読込）。
+設定を反映するには **Orca の Settings → Shortcuts → "Reload from Disk"**。
 **ファイル監視は無いので、編集しただけでは反映されない**。cmux の `cmux reload-config` に相当する
 CLI サブコマンドは Orca には無い。
 
@@ -52,6 +64,13 @@ Settings UI から変更しても将来のマイグレーションが走って�
 
 `~/.orca` はキーバインド専用ディレクトリではなく Orca が状態物（`agent-hooks/` など）も置くので、
 `.gitignore` は**ホワイトリスト方式**（`*` を無視して `keybindings.json` などだけ通す）にしてある。
+注意点が 2 つ:
+
+- `*` でディレクトリごと無視すると git はその中に降りないため、**`!` による復活はトップレベルの
+  ファイルにしか効かない**。Orca が将来サブディレクトリ配下に設定を置いたら、`.gitignore` を
+  そのディレクトリ用に書き足す必要がある。
+- **このディレクトリで `git clean -fdx` を使わない**。無視されている `agent-hooks/` などは
+  Orca のライブ状態なので、掃除のつもりで消すとアプリ側が壊れる。
 
 ## keybindings.json の書き方
 
@@ -65,17 +84,31 @@ Settings UI から変更しても将来のマイグレーションが走って�
   （書くと `Could not read keybindings file` になる）。意図はこの README 側に書く。
 - 値は文字列または文字列配列（1 アクションに複数割当可）。**`null` で無効化**。
 - キーは `Mod+Shift+P` 形式。`Mod` は macOS では Cmd。修飾子は `Mod` / `Cmd` / `Ctrl` / `Alt` / `Shift`。
-  修飾子なしは原則エラー。キー名は `[`→`BracketLeft`、`,`→`Comma`、`Up`→`ArrowUp` のように
-  エイリアスが効く（大文字小文字は不問）。
+  キー名は `[`→`BracketLeft`、`.`→`Period`、`Up`→`ArrowUp` のようにエイリアスが効く
+  （大文字小文字は不問）。
+- **カンマだけは記号のまま書けない**。Orca は値をまず `,` で分割してから 1 つずつ解釈するので
+  （複数割当の区切りに使う）、`Mod+Shift+,` は分割されて解釈に失敗し **override ごと捨てられる**。
+  必ず `Mod+Shift+Comma` と書く。
+- **修飾子なし・Shift 単独のキーはほぼ使えない**。許されるのは
+  `allowBareKeybindings` が付いた 3 アクション（`editor.previousChange` / `editor.nextChange` /
+  `fileExplorer.delete`）と `allowShiftOnlyKeybindings` が付いた 1 アクション
+  （`terminal.switchInputSource`）、あとは `Shift+Insert` だけ。それ以外に `Enter` や `F7` を
+  振っても override ごと捨てられる。
+- **`tab.selectByIndex` / `workspace.selectByIndex` は `1`〜`9` のキーしか受け付けない**
+  （`Mod+1` のように書く。それ以外だと override ごと捨てられる）。
 - `$schema` はルートキーとして許容されるだけで**公開スキーマは存在しない**（書いても無視される）。
 
 ### 競合すると override が無言で捨てられる
 
 競合は `conflictGroup ?? scope` のバケット単位で判定され、**衝突に関わった override が
 無言で捨てられる**（Settings に diagnostic が出るだけ / `removeConflictingOverrides`）。
-捨てられた側は**無効になるのではなく、そのアクションの既定キーに戻る**——
-`null` での無効化が巻き込まれると**既定のキーがそのまま復活する**（意図の逆）。
-「書いたキーが効かない」「消したはずのキーが生きている」という壊れ方をするので、
+捨てられた側は**無効になるのではなく、そのアクションの既定キーに戻る**。つまり
+「書いたキーが効かず、代わりに既定のキーが動いている」という気づきにくい壊れ方をする。
+
+`null`（＝空リスト）にしたアクションは**有効なバインドを 1 つも持たないので競合判定に
+参加せず、捨てられることが無い**——無効化は常に効く。
+
+競合以外に、**Orca が受け付けないキー指定でも override は丸ごと捨てられる**（同じく既定に戻る）。
 編集したら必ず検証する:
 
 ```sh
@@ -84,7 +117,10 @@ Settings UI から変更しても将来のマイグレーションが走って�
 
 アクション定義は導入済みの `Orca.app` の `app.asar` から抽出するので、**Orca を更新したあとに
 流し直すと、上流の既定キー変更で新しく競合が生まれていないか分かる**。
-検出するのは「未知のアクション ID」「不正なキー指定」「override が絡む競合」の 3 つ。
+検出するのは「未知のアクション ID」「不正なキー指定（上の制約に反するもの）」
+「override が絡む競合」の 3 つ。判定は本体の
+`normalizeKeyToken` / `isSafeBareKey` / `canonicalizeDigitIndexBinding` /
+`findKeybindingConflictsForDefinitions` を写している。
 
 なお **scope が違うだけの同キーは競合ではない**（Orca の既定自体が `Mod+F` を browser / editor /
 terminal / settings に、`Mod+L` を global / browser に重ねている）。フォーカス中の UI で解決される
@@ -102,8 +138,10 @@ terminal / settings に、`Mod+L` を global / browser に重ねている）。�
 
 `cmd+,` 設定 / `cmd+b` サイドバー / `cmd+t` 新規ターミナル / `cmd+w` 閉じる / `cmd+r` リネーム・リロード /
 `cmd+shift+t` 閉じたタブを復元 / `cmd+d` `cmd+shift+d` 分割 / `cmd+f` 検索 / `cmd+[` `cmd+]` ブラウザ戻る進む /
-`cmd+l` アドレスバー / `cmd+=` `cmd+-` `cmd+0` ズーム / `cmd+1` ワークスペース選択 / `ctrl+1` タブ選択 /
-`cmd+n` `cmd+shift+n` 新規作成。
+`cmd+l` アドレスバー / `cmd+=` `cmd+-` `cmd+0` ズーム / `cmd+1` ワークスペース選択 / `ctrl+1` タブ選択。
+
+`cmd+n` / `cmd+shift+n` はキーとしては一致するが意味が違う。Orca では**どちらも
+`workspace.create`（worktree を作る）**で、cmux の `newTab` / `newWindow` のような別動作ではない。
 
 ### override して合わせたもの（`keybindings.json` の中身）
 
@@ -119,6 +157,7 @@ terminal / settings に、`Mod+L` を global / browser に重ねている）。�
 | `focusLeft` / `focusRight` | `cmd+←` / `→` | `terminal.focusPreviousPane` / `focusNextPane` | `Mod+Bracket*` | Orca には**方向フォーカスが無い**ので前/次ペインで代用（上下は非対応） |
 | `toggleSplitZoom` | `cmd+enter` | `terminal.expandPane` | `Mod+Shift+Enter` | — |
 | `openBrowser` | `cmd+shift+l` | `tab.newBrowser` | `Mod+Shift+B` | — |
+| （cmux に対応なし） | — | `tab.previousAllTypes` / `nextAllTypes` | `Mod+Shift+Bracket*` | **既定値をそのまま明示**。Orca が起動時の一回限りの移行でこの 2 つに `Mod+Alt+Bracket*` を書き足すことがあり、説明のつかない diff になるため先に固定しておく |
 | `focusRightSidebar` (cmux で無効化) | — | `sidebar.right.toggle` | `Mod+L` | `null`。cmux と同じく無効化。既定が `browser.focusAddressBar` と同キーなのも解消する。使いたければ空いている `Mod+Alt+L` などに振る |
 
 ### Orca に対応するものが無い cmux のキー
@@ -135,6 +174,9 @@ terminal / settings に、`Mod+L` を global / browser に重ねている）。�
   左右のみ `terminal.focusPreviousPane` / `focusNextPane` で代用している。
 - **`closeWorkspace`（`cmd+shift+w`）**: Orca の `workspace.delete` は「閉じる」ではなく**削除**。
   同じキーに振ると閉じるつもりで消す事故になるため、既定の `Mod+Shift+Backspace` のままにしてある。
+- **`toggleReactGrab`（`cmd+shift+g`）**: 近いのは `browser.grabElement`（既定 `Mod+C`）だが、
+  cmux 側が cmux 内部向けの機能なので合わせていない。なお Orca の `Mod+Shift+G` は
+  `sidebar.sourceControl.toggle`。
 
 ## ターミナル内でのショートカット
 

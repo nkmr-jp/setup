@@ -11,6 +11,8 @@
       "worktree.navigateDown": ["Mod+Alt+ArrowDown"],
       "tab.previousSameType": ["Mod+Alt+ArrowLeft"],
       "tab.nextSameType": ["Mod+Alt+ArrowRight"],
+      "tab.previousAllTypes": ["Mod+Shift+BracketLeft"],
+      "tab.nextAllTypes": ["Mod+Shift+BracketRight"],
       "worktree.history.back": null,
       "worktree.history.forward": null,
       "terminal.focusPreviousPane": ["Mod+ArrowLeft"],

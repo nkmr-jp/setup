@@ -583,6 +583,59 @@ rm ~/bin/claude-stall-monitor.sh
   スクリプトの `IDLE_THRESHOLD` を縮める。
 - ack が無い旧セッション（導入前）は基準が無いため判定しない（誤検知防止）。
 
+### check-config-symlinks
+
+リポジトリ管理の設定ファイルの **symlink が外れていないか**を 6 時間ごとに検査する。
+
+設定を「リポジトリに実体を置いてホームから symlink」で管理していると、アプリが
+**atomic write（`<path>.tmp` に書いて `rename`）で書き戻したときに symlink が実体ファイルに
+置き換わる**。以後リポジトリ側の編集は無言で効かなくなり、エラーも警告も出ない。
+実例: `~/.claude/settings.json` が `claude doctor` / `/config` に置換され、
+**2026-06-25〜08-16 の約 7 週間、乖離に気づかなかった**（詳細は
+[docs/agent-knowledge.md](https://github.com/nkmr-jp/claude/blob/main/docs/agent-knowledge.md)）。
+アプリ側の書き方は変えられない＝**予防はできない**ので、代わりに検知する。
+
+**判定** (`bin/check-config-symlinks.sh`):
+
+| 状態 | 意味 | 通知 |
+| --- | --- | --- |
+| `OK` | 期待どおりのリンク | — |
+| `DETACHED` | symlink でなくなっている（本命の壊れ方。中身が乖離しているかも表示） | する |
+| `BROKEN` | リンク先が消えている | する |
+| `WRONG` | 別のリンク先を向いている | する |
+| `MISSING` | ホーム側に何も無い（未設定） | しない |
+| `PENDING` | リポジトリ側に実体が無い（まだ管理下に入れていない） | しない |
+
+**自動復旧はしない**。ホーム側とリポジトリ側のどちらが「現行」かは状況次第で、自動で倒すと
+編集を失うため、`diff` してから手で直す（直し方はスクリプトが出力する）。
+同じ問題で毎回鳴らないよう、**問題の顔ぶれが前回と変わったときだけ通知**する。
+
+#### Install
+
+```sh
+# 1. ~/bin と ~/Library/LaunchAgents から symlink で参照
+ln -sf ~/ghq/github.com/nkmr-jp/setup/bin/check-config-symlinks.sh ~/bin/check-config-symlinks.sh
+ln -sf ~/ghq/github.com/nkmr-jp/setup/launchd/com.nkmr.check-config-symlinks.plist ~/Library/LaunchAgents/com.nkmr.check-config-symlinks.plist
+
+# 2. launchd に登録（6 時間ごと・ロード時にも 1 回実行）
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.check-config-symlinks.plist
+
+# 3. 動作確認
+launchctl kickstart gui/$(id -u)/com.nkmr.check-config-symlinks
+tail ~/Library/Logs/check-config-symlinks.log
+```
+
+#### Usage（手動実行）
+
+```sh
+check-config-symlinks.sh              # 壊れている項目だけ表示。あれば通知して exit 1
+check-config-symlinks.sh --list       # OK・未設定も含めて全項目表示（棚卸し用）
+check-config-symlinks.sh --no-notify  # 通知を出さない
+```
+
+対象リンクはスクリプト冒頭の `ENTRIES` に宣言的に書いてある。管理するリンクを増やしたら
+ここに 1 行足す（テストは `tests/check-config-symlinks.bats`）。
+
 ### git-auto-backup
 
 リポジトリを 30 分毎に自動バックアップ（`pull --rebase → add -A → commit → push`）する汎用ジョブ。

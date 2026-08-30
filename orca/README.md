@@ -97,6 +97,15 @@ Settings UI から変更しても将来のマイグレーションが走って�
   振っても override ごと捨てられる。
 - **`tab.selectByIndex` / `workspace.selectByIndex` は `1`〜`9` のキーしか受け付けない**
   （`Mod+1` のように書く。それ以外だと override ごと捨てられる）。
+- **JIS 配列では Shift が要る記号キーを、Shift 無しのバインドに書かない**。JIS には `=` の独立キーが
+  無く `Shift+-` で入力するため、`Mod+Alt+Equal` と書いても、押したときに届くのは
+  `Mod+Alt+Shift+Minus` になり**修飾子が一致せず永久に発火しない**（`keybindingMatchesInput` は
+  `modifierStateMatches && keyMatches` で修飾子の完全一致を要求する）。JIS で Shift が要るのは
+  `=` `+` `_` `|` `~` `"` `&` `(` `)` `*` `<` `>` `?` など。逆に `-` `^` `¥` `@` `[` `]` `;` `:`
+  `,` `.` `/` は Shift 無しで押せる。**英字・数字キーは配列に依存しない**ので、記号で迷うなら
+  そちらを使う。なお `check-keybindings.py` はこれを検出しない——Orca が設定を受理するかは見るが、
+  そのキーが手元のキーボードで打てるかは見ないため。実例: `terminal.equalizePaneSizes` を
+  `Mod+Alt+Equal` にして検証は OK だったのに、Reload from Disk しても無反応だった。
 - `$schema` はルートキーとして許容されるだけで**公開スキーマは存在しない**（書いても無視される）。
 
 ### 競合すると override が無言で捨てられる
@@ -157,7 +166,7 @@ terminal / settings に、`Mod+L` を global / browser に重ねている）。�
 | `focusHistoryBack` / `Forward` (cmux で無効化) | — | `worktree.history.back` / `forward` | `Mod+Alt+ArrowLeft/Right` | `null`。上の行と同じキーになるため（cmux でも無効化していた）。scope が `global` と `tabs` で違うので競合検出には掛からないが、どちらも常時有効なので重ねない |
 | `focusLeft` / `focusRight` / `focusUp` / `focusDown` | `cmd+←` `→` / `cmd+↑` `↓` | `terminal.focusPreviousPane` / `focusNextPane` | `Mod+Bracket*` | Orca には**方向フォーカスが無い**（pane 系は前/次のみ）ので、両方を同じ 2 アクションに割り当てて代用。上下分割なら実質上下移動になるが、**左右分割では `cmd+↑` と `cmd+←` が同じ動作**になる |
 | `toggleSplitZoom` | `cmd+enter` | `terminal.expandPane` | `Mod+Shift+Enter` | — |
-| （cmux に対応なし） | `cmd+alt+=` | `terminal.equalizePaneSizes` | **なし** | ペインを分割するたびに幅が半分になっていくのを均等に戻す。アクションは存在するが**既定キーが空**なので、割り当てないと呼べない |
+| （cmux に対応なし） | `cmd+alt+e` | `terminal.equalizePaneSizes` | **なし** | ペインを分割するたびに幅が半分になっていくのを均等に戻す。アクションは存在するが**既定キーが空**なので、割り当てないと呼べない。当初 `cmd+alt+=` にしたが JIS 配列では押せなかった（下記）ので英字キーにした |
 | `openBrowser` | `cmd+shift+l` | `tab.newBrowser` | `Mod+Shift+B` | — |
 | （cmux に対応なし） | `cmd+alt+[` / `]` | `tab.previousSameType` / `nextSameType` | `Mod+Alt+Bracket*` | **既定値をそのまま明示**。矢印キーを `AllTypes` に渡したので既定に戻すが、Orca が起動時の一回限りの移行で `Mod+Alt+Bracket*` を勝手に書き足すことがあり、説明のつかない diff になるため先に固定しておく |
 | `focusRightSidebar` (cmux で無効化) | — | `sidebar.right.toggle` | `Mod+L` | `null`。cmux と同じく無効化。既定が `browser.focusAddressBar` と同キーなのも解消する。使いたければ空いている `Mod+Alt+L` などに振る |

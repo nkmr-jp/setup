@@ -239,6 +239,20 @@ codex plugin add session-monitor@setup
 
 インストール後は、新しいスレッドを開始してプラグインを読み込む。個別の前提条件や Claude Code へのインストール方法は、[cmux](plugins/cmux/README.md) と [session-monitor](plugins/session-monitor/README.md) を参照。
 
+## Antigravity (AGY) Plugins
+
+Google Antigravity (AGY CLI / IDE) 向けには、AGY CLI のネイティブインポーターまたは [`nkmr-jp/agy`](https://github.com/nkmr-jp/agy) リポジトリの管理スクリプトでインストールする:
+
+```sh
+# agy リポジトリ経由（推奨）
+make -C ~/ghq/github.com/nkmr-jp/agy plugin-install name=cmux
+make -C ~/ghq/github.com/nkmr-jp/agy plugin-install name=session-monitor
+
+# または AGY CLI ネイティブで直接インストール
+agy plugin install ~/ghq/github.com/nkmr-jp/setup/plugins/cmux
+agy plugin install ~/ghq/github.com/nkmr-jp/setup/plugins/session-monitor
+```
+
 ## Zsh Configuration
 Get plugin
 ```sh

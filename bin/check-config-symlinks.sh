@@ -37,6 +37,7 @@ done
 
 GHQ="$HOME/ghq/github.com/nkmr-jp"
 CLAUDE_REPO="$GHQ/claude"
+CODEX_REPO="$GHQ/codex"
 SETUP_REPO="$GHQ/setup"
 APP_SUPPORT="$HOME/Library/Application Support"
 
@@ -55,8 +56,12 @@ ENTRIES=(
   "$HOME/.claude/settings.json|$CLAUDE_REPO/settings.json"
   "$HOME/.claude/CLAUDE.md|$CLAUDE_REPO/HOME_CLAUDE.md"
   "$HOME/.claude/docs|$CLAUDE_REPO/docs"
-  "$HOME/.codex/AGENTS.md|$CLAUDE_REPO/HOME_CLAUDE.md"
-  "$HOME/.codex/config.toml|$CLAUDE_REPO/config.toml"
+  "$HOME/.codex/AGENTS.md|$CODEX_REPO/home/AGENTS.md"
+  "$HOME/.codex/config.toml|$CODEX_REPO/home/config.toml"
+  "$HOME/.codex/auto.config.toml|$CODEX_REPO/home/auto.config.toml"
+  "$HOME/.codex/hooks.json|$CODEX_REPO/home/hooks.json"
+  "$HOME/.codex/rules/default.rules|$CODEX_REPO/home/rules/default.rules"
+  "$HOME/.codex/docs|$CODEX_REPO/home/docs"
   "$APP_SUPPORT/Claude/claude_desktop_config.json|$CLAUDE_REPO/claude_desktop_config.json"
   "$HOME/Documents/Claude|$CLAUDE_REPO/Documents/Claude"
   # Claude デスクトップの local-agent-mode-sessions のパスはアカウント／セッションの UUID を

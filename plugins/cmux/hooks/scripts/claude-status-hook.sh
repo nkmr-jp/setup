@@ -92,31 +92,9 @@ session_id=""
 hook_event=""
 hook_cwd=""
 if command -v jq >/dev/null 2>&1; then
-  session_id=$(jq -r '.session_id // .sessionId // .conversationId // empty' < "$input_file" 2>/dev/null)
-  hook_event=$(jq -r '.hook_event_name // .hookEventName // empty' < "$input_file" 2>/dev/null)
-  hook_cwd=$(jq -r '.cwd // (.workspacePaths[0]?) // empty' < "$input_file" 2>/dev/null)
-fi
-
-if [ -z "$hook_event" ]; then
-  case "$state" in
-    running)  hook_event="PreInvocation" ;;
-    awaiting) hook_event="Notification" ;;
-    idle)     hook_event="Stop" ;;
-    clear)    hook_event="SessionEnd" ;;
-  esac
-fi
-
-# 自動実行・要約セッション (claude-auto / codex-auto / agy-auto など) は cmux ワークスペースを持たない
-# ため、セッションマッピングや pill を更新しない。
-if [ -n "${CCDASH_AUTO:-}" ] || [ -n "${CLAUDE_AUTO:-}" ]; then
-  exit 0
-fi
-
-if command -v jq >/dev/null 2>&1; then
-  auto_indicator=$(jq -r '[(.transcriptPath // ""), (.artifactDirectoryPath // ""), (.cwd // "")] | join(" ")' < "$input_file" 2>/dev/null)
-  case "$auto_indicator" in
-    *-auto*|*antigravity-cli-auto*|*/.gemini/config*) exit 0 ;;
-  esac
+  session_id=$(jq -r '.session_id // empty' < "$input_file" 2>/dev/null)
+  hook_event=$(jq -r '.hook_event_name // empty' < "$input_file" 2>/dev/null)
+  hook_cwd=$(jq -r '.cwd // empty' < "$input_file" 2>/dev/null)
 fi
 
 # clear の detach 子プロセスは stdin が /dev/null になるため、親が抽出済みの

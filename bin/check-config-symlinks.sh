@@ -92,8 +92,6 @@ ENTRIES=(
   "$HOME/bin/claude-terminal-title.sh|$GHQ/ccdash/claude-auto/bin/claude-terminal-title.sh"
   "$HOME/bin/codex-terminal-title.sh|$GHQ/ccdash/codex-auto/bin/codex-terminal-title.sh"
   "$HOME/bin/codex-auto|$GHQ/ccdash/codex-auto/bin/codex-auto.sh"
-  "$HOME/bin/agy-terminal-title.sh|$GHQ/ccdash/agy-auto/bin/agy-terminal-title.sh"
-  "$HOME/bin/agy-auto|$GHQ/ccdash/agy-auto/bin/agy-auto.sh"
 )
 
 # テスト用: 管理対象を外から差し替える（1 行 1 エントリ。tests/check-config-symlinks.bats）

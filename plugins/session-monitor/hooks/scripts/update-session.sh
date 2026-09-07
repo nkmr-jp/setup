@@ -23,11 +23,12 @@
 #   実処理は detach 子プロセスで行う (cmux pill と同様)。
 
 exec 2>/dev/null
+umask 077
 
 command -v jq >/dev/null 2>&1 || exit 0
 
 # stdin の JSON を一度だけ読む (jq に何度もパイプしないようファイルに保存)。
-input_file="${TMPDIR:-/tmp}/session-monitor-input-$$"
+input_file=$(mktemp "${TMPDIR:-/tmp}/session-monitor-input.XXXXXX") || exit 0
 trap 'rm -f "$input_file"' EXIT INT TERM HUP
 cat > "$input_file"
 
@@ -64,7 +65,10 @@ printf '%s\n' "$data_dir" > "$anchor_dir/data-dir" 2>/dev/null
 # SessionEnd は短時間制約があるので detach して子プロセスに処理を任せる。
 # 親はすぐに 0 で抜けて Claude Code 側の hook タイムアウトを救済する。
 if [ "$hook_event" = SessionEnd ] && [ -z "$SESSION_MONITOR_BG" ]; then
-  SESSION_MONITOR_BG=1 nohup "$0" </dev/null >/dev/null 2>&1 < "$input_file" &
+  # Open before spawning: parent cleanup may unlink the path before the child starts.
+  exec 3< "$input_file" || exit 0
+  SESSION_MONITOR_BG=1 nohup "$0" <&3 3<&- >/dev/null 2>&1 &
+  exec 3<&-
   exit 0
 fi
 
@@ -218,7 +222,8 @@ while ! mkdir "$lock_dir" 2>/dev/null; do
 done
 trap 'rm -rf "$lock_dir" 2>/dev/null; rm -f "$input_file"' EXIT INT TERM HUP
 
-tmp_file="$sessions_file.tmp"
+tmp_file=$(mktemp "$sessions_file.tmp.XXXXXX") || exit 0
+trap 'rm -rf "$lock_dir" 2>/dev/null; rm -f "$input_file" "$tmp_file"' EXIT INT TERM HUP
 if [ -f "$sessions_file" ]; then
   # 当該 session_id の既存行を除いた jsonl を書き出す
   jq -c --arg sid "$session_id" 'select(.session_id != $sid)' "$sessions_file" > "$tmp_file" 2>/dev/null || : > "$tmp_file"

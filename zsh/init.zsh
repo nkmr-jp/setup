@@ -72,7 +72,7 @@ source "$SETUP_DIR/zsh/iterm2.zsh"
 
 # cmux サイドバーへの cwd 表示 (cmux 内でのみ)
 if [[ -n "$CMUX_SHELL_INTEGRATION" ]]; then
-    source "$SETUP_DIR/cmux/sidebar-cwd.zsh"
+    source "$HOME/.config/cmux/sidebar-cwd.zsh"
 fi
 
 # Initialize tools

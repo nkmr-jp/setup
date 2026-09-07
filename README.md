@@ -1,39 +1,71 @@
 # Setup
 
 <!-- TOC -->
-* [Setup](#setup)
-  * [Homebrew Settings (homebrew)](#homebrew-settings-homebrew)
-    * [Install homebrew](#install-homebrew)
-    * [Install commands](#install-commands)
-    * [Setup Starship preset](#setup-starship-preset)
-    * [Iterm2](#iterm2)
-    * [Install QucickLook Plugins](#install-qucicklook-plugins)
-  * [Git Settings](#git-settings)
-    * [Set ssh key to github](#set-ssh-key-to-github)
-    * [clone this repository](#clone-this-repository)
-    * [Set .gitconfig](#set-gitconfig)
-    * [Set git user](#set-git-user)
-  * [Repository Structure](#repository-structure)
-  * [Codex Plugins](#codex-plugins)
-  * [Zsh Configuration](#zsh-configuration)
-    * [Optional: Set greeting messages](#optional-set-greeting-messages)
-  * [Anyenv (anyenv)](#anyenv-anyenv)
-    * [Install env commands](#install-env-commands)
-    * [Install programing langages and set global version](#install-programing-langages-and-set-global-version)
-    * [To get the latest version](#to-get-the-latest-version)
-  * [Install Rust](#install-rust)
-  * [Install Java](#install-java)
-  * [Install AWS CLI v2](#install-aws-cli-v2)
-    * [Install](#install)
-    * [Setup](#setup-1)
-  * [Install Commands for each language](#install-commands-for-each-language)
-  * [Install Commands from Binary](#install-commands-from-binary)
-  * [Settings](#settings)
-    * [pack](#pack)
-    * [Google Cloud SDK](#google-cloud-sdk)
-    * [yazi](#yazi)
-    * [tig](#tig)
+- [Setup](#setup)
+  - [公開設定とローカル設定](#公開設定とローカル設定)
+  - [Homebrew Settings (homebrew)](#homebrew-settings-homebrew)
+    - [Install homebrew](#install-homebrew)
+    - [Install commands](#install-commands)
+    - [Setup Starship preset](#setup-starship-preset)
+    - [Iterm2](#iterm2)
+    - [Terminal app configs](#terminal-app-configs)
+    - [Install QucickLook Plugins](#install-qucicklook-plugins)
+  - [Git Settings](#git-settings)
+    - [Set ssh key to github](#set-ssh-key-to-github)
+    - [clone this repository](#clone-this-repository)
+    - [Set .gitconfig](#set-gitconfig)
+    - [Set git user](#set-git-user)
+    - [コミット署名は公開リポジトリのみ](#コミット署名は公開リポジトリのみ)
+    - [Set gtr](#set-gtr)
+    - [opg - Open GitHub repository in browser](#opg---open-github-repository-in-browser)
+  - [Repository Structure](#repository-structure)
+  - [Claude Code Plugins](#claude-code-plugins)
+  - [Codex Plugins](#codex-plugins)
+  - [Antigravity (AGY) Plugins](#antigravity-agy-plugins)
+  - [Zsh Configuration](#zsh-configuration)
+    - [Optional: Set greeting messages](#optional-set-greeting-messages)
+    - [起動時のキャッシュ](#起動時のキャッシュ)
+  - [Anyenv (anyenv)](#anyenv-anyenv)
+    - [Install env commands](#install-env-commands)
+    - [Install programing langages and set global version](#install-programing-langages-and-set-global-version)
+    - [To get the latest version](#to-get-the-latest-version)
+  - [Install Rust](#install-rust)
+  - [Install Java](#install-java)
+  - [Install AWS CLI v2](#install-aws-cli-v2)
+    - [Install](#install)
+    - [Setup](#setup-1)
+  - [Install Commands for each language](#install-commands-for-each-language)
+  - [Install Commands from Binary](#install-commands-from-binary)
+  - [Settings](#settings)
+    - [yazi](#yazi)
+    - [pack](#pack)
+    - [Google Cloud SDK](#google-cloud-sdk)
+    - [tig](#tig)
+    - [obsidian](#obsidian)
+  - [guard-agent-rm（Claude Code の hook）](#guard-agent-rmclaude-code-の-hook)
 <!-- TOC -->
+
+## 公開設定とローカル設定
+
+このリポジトリはmacOS用の共有設定です。エージェント個別設定と個人ジョブは別管理します。
+ターミナルの挙動を維持するため、シェル設定の汎用化は保留しています。
+現在の `.zshrc` は従来の `~/ghq/github.com/nkmr-jp/setup` を読み込みます。
+
+```sh
+git clone https://github.com/nkmr-jp/setup.git "$HOME/src/setup"
+export SETUP_DIR="$HOME/src/setup"  # 任意のclone先
+```
+
+以下の `SETUP_DIR` は導入コマンド用です。現在のシェル初期化の配置先を変更するものではありません。Git設定のincludeには
+`git config --global --add include.path "$SETUP_DIR/gitconfig"` で実際の絶対パスを設定してください
+（Git設定ファイル内ではshellの `${SETUP_DIR}` は展開されません）。
+
+マシン固有のシェル上書き設定は `~/.zshrc.local` に記述します。
+個人設定や認証情報を公開リポジトリへ追加しないでください。
+
+シェルは従来の初期化・PATH・alias・終了時処理を維持します。
+`make login` 自動実行、GUIへのPATH反映、PromptLine更新、AGYのaliasも従来どおりです。
+未導入ツールへの対応やシェル側の個人設定分離は、挙動変更とあわせて別途検討します。
 
 
 ## Homebrew Settings ([homebrew](https://brew.sh/index_ja))
@@ -88,18 +120,18 @@ menu -> Install Shell Integration
 
 ### Terminal app configs
 
-ghostty / iTerm2 Scripts / cmux / Orca の設定は本リポジトリ配下で管理している。詳細とインストール手順は各 README を参照:
+ghostty / iTerm2 Scripts / Orca の設定は本リポジトリ配下で管理している。詳細とインストール手順は各 README を参照:
 
 - [ghostty/README.md](ghostty/README.md)
-- [cmux/README.md](cmux/README.md)
+- [cmux/README.md](cmux/README.md) — ユーザー設定・sidebar 連携・プラグインは setup で管理する。
 - [orca/README.md](orca/README.md)
 - [iterm2/README.md](iterm2/README.md)
 
 ```sh
 mkdir -p ~/.config/ghostty ~/.config/cmux ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch
-ln -sf ~/ghq/github.com/nkmr-jp/setup/ghostty/config ~/.config/ghostty/config
-ln -sf ~/ghq/github.com/nkmr-jp/setup/cmux/cmux.json ~/.config/cmux/cmux.json
-ln -sf ~/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount.py ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount.py
+ln -sf "$SETUP_DIR/ghostty/config" ~/.config/ghostty/config
+./cmux/link.sh --install # setup リポジトリのルートで実行
+ln -sf "$SETUP_DIR/iterm2/PaneCount.py" ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount.py
 ```
 
 Orca だけは**ディレクトリごと** symlink する（ファイル単体の symlink は Orca 側の
@@ -131,7 +163,7 @@ ghq get -p nkmr-jp/setup
 ```ini
 # ~/.gitconfig
 [include]
-    path = ~/ghq/github.com/nkmr-jp/setup/gitconfig
+    path = /absolute/path/to/setup/gitconfig
 ```
 
 ### Set git user
@@ -151,8 +183,6 @@ git config --global user.email "mailaddress"
     gpgsign = false                      # 既定: 署名なし
 [include]
     path = ~/.gitconfig-signing-includes # public リポジトリだけ署名ONに戻す
-[includeIf "gitdir:~/ghq/github.com/nkmr-jp/prompt-line-plugins/"]
-    path = ~/.gitconfig-scheduler        # agent-scheduler 対象は public でも署名OFF
 ```
 
 `~/.gitconfig-signing-includes` は生成物。GitHub 上で public なリポジトリすべての
@@ -161,7 +191,7 @@ git config --global user.email "mailaddress"
 未 clone のリポジトリも含めて生成するので、clone しただけなら再実行不要。
 
 ```sh
-bin/gen-git-signing-config.sh          # 既定 owner: nkmr-jp
+bin/gen-git-signing-config.sh          # 既定 owner: ghのログインユーザー
 ```
 
 確認方法（`--show-origin` でどのファイルが効いたか分かる）:
@@ -189,7 +219,7 @@ ln -s "$(pwd)/bin/git-gtr" ~/src/bin/git-gtr
 opg
 
 # 指定したディレクトリのリポジトリを開く
-opg ~/ghq/github.com/nkmr-jp/setup
+opg "$SETUP_DIR"
 ```
 
 ## Repository Structure
@@ -219,17 +249,33 @@ setup/
 │   └── iterm2.zsh    # iTerm2 シェル統合
 ├── tools/            # Tool-specific configurations
 ├── bin/              # Local executables (symlinked into ~/bin)
-├── launchd/          # macOS LaunchAgent plists (symlinked into ~/Library/LaunchAgents)
 ├── gitconfig         # Git configuration
 └── gitconfig-signing # 公開リポジトリ用の署名ON設定（includeIf から読まれる）
 ```
+
+## Claude Code Plugins
+
+ターミナルでこのリポジトリをmarketplaceとして登録し、必要なプラグインをインストールします。
+以下はsetupリポジトリのルートで実行します。
+
+```sh
+claude plugin marketplace add . --scope user
+claude plugin install cmux@setup --scope user
+claude plugin install session-monitor@setup --scope user
+```
+
+- `cmux`: ワークスペース・ペイン・通知などの操作と、Claude Codeの状態をサイドバーへ同期するhooks。
+- `session-monitor`: Claude Codeのセッション状態を集約し、xbarに表示するhooks。
+
+`--scope user` はユーザー全体へのインストールです。必要なプラグインだけ選んでインストールできます。
+前提条件と連携設定は [cmux](plugins/cmux/README.md)・[session-monitor](plugins/session-monitor/README.md) を参照してください。
 
 ## Codex Plugins
 
 このリポジトリの marketplace を登録し、必要なプラグインをインストールする:
 
 ```sh
-codex plugin marketplace add ~/ghq/github.com/nkmr-jp/setup
+codex plugin marketplace add "$SETUP_DIR"
 codex plugin add cmux@setup
 codex plugin add session-monitor@setup
 ```
@@ -241,16 +287,11 @@ codex plugin add session-monitor@setup
 
 ## Antigravity (AGY) Plugins
 
-Google Antigravity (AGY CLI / IDE) 向けには、AGY CLI のネイティブインポーターまたは [`nkmr-jp/agy`](https://github.com/nkmr-jp/agy) リポジトリの管理スクリプトでインストールする:
+Google Antigravity (AGY CLI / IDE) 向けには、AGY CLI のネイティブインポーターでインストールする:
 
 ```sh
-# agy リポジトリ経由（推奨）
-make -C ~/ghq/github.com/nkmr-jp/agy plugin-install name=cmux
-make -C ~/ghq/github.com/nkmr-jp/agy plugin-install name=session-monitor
-
-# または AGY CLI ネイティブで直接インストール
-agy plugin install ~/ghq/github.com/nkmr-jp/setup/plugins/cmux
-agy plugin install ~/ghq/github.com/nkmr-jp/setup/plugins/session-monitor
+agy plugin install "$SETUP_DIR/plugins/cmux"
+agy plugin install "$SETUP_DIR/plugins/session-monitor"
 ```
 
 ## Zsh Configuration
@@ -262,16 +303,16 @@ ghq get -p Aloxaf/fzf-tab
 Create a symlink from this repository's `.zshrc` to your home directory:
 
 ```shell
-ln -s ~/ghq/github.com/nkmr-jp/setup/.zshrc ~/.zshrc
+ln -s "$SETUP_DIR/.zshrc" ~/.zshrc
 source ~/.zshrc
 ```
 
 ### Optional: Set greeting messages
 ```shell
 # A message that is displayed at random when the shell starts.
-echo "hello world!" >> ~/ghq/github.com/nkmr-jp/setup/.messages
-echo "shut the fuck up and write some code" >> ~/ghq/github.com/nkmr-jp/setup/.messages
-echo "stay hungry stay foolish" >> ~/ghq/github.com/nkmr-jp/setup/.messages
+echo "hello world!" >> "$SETUP_DIR/.messages"
+echo "shut the fuck up and write some code" >> "$SETUP_DIR/.messages"
+echo "stay hungry stay foolish" >> "$SETUP_DIR/.messages"
 ```
 
 ### 起動時のキャッシュ
@@ -387,7 +428,7 @@ jenv add (/usr/libexec/java_home -v "1.8")
 
 jenv global system
 jenv versions
-# * system (set by /Users/nkmr/.anyenv/envs/jenv/version)
+# * system (set by $HOME/.anyenv/envs/jenv/version)
 #   1.8
 #   1.8.0.422
 #   22
@@ -485,7 +526,7 @@ curl -sS https://starship.rs/install.sh | sh
 
 ```sh
 mkdir -p ~/.config/yazi
-ln -s ~/ghq/github.com/nkmr-jp/setup/yazi/yazi.toml ~/.config/yazi/yazi.toml
+ln -s "$SETUP_DIR/yazi/yazi.toml" ~/.config/yazi/yazi.toml
 ```
 
 ### pack
@@ -511,131 +552,7 @@ bind diff    B !git rebase -i %(commit)
 ln -s "$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/vault" "$HOME/vault"
 ```
 
-## LaunchAgents
-
-macOS 上で定期実行される launchd ジョブ。plist は `launchd/` に置き、
-`~/Library/LaunchAgents/` から symlink で参照してリポジトリ更新を即反映できるようにする。
-
-### check-claude-orphans
-
-`prompt-line-wt-*` などの worktree から起動した `claude` セッションを終了/削除したあと、
-`claude daemon` / `bg-spare` プロセスが launchd に養子化されたまま CPU 100% で
-busy-loop してしまうケースがある (v2.1.152 で実例を確認)。
-この LaunchAgent は **30 分ごとに孤児を検出し、暴走中のものだけを自動 kill** する。
-
-**判定ロジック** (`bin/check-claude-orphans.sh`):
-- 対象: `PPID=1` (launchd 養子化) かつ comm が `/Users/nkmr/.local/{share/claude,bin/claude}` のプロセス (デスクトップ `Claude.app` は除外)
-- 「暴走中」: 累積 CPU 時間 ÷ 経過時間 ≥ 20%
-
-#### Install
-
-```sh
-# 1. ~/bin と ~/Library/LaunchAgents から symlink で参照
-ln -sf ~/ghq/github.com/nkmr-jp/setup/bin/check-claude-orphans.sh ~/bin/check-claude-orphans.sh
-ln -sf ~/ghq/github.com/nkmr-jp/setup/launchd/com.nkmr.check-claude-orphans.plist ~/Library/LaunchAgents/com.nkmr.check-claude-orphans.plist
-
-# 2. launchd に登録 (30 分ごとに --kill モードで実行される)
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.check-claude-orphans.plist
-
-# 3. 動作確認 (即座に 1 回起動)
-launchctl kickstart gui/$(id -u)/com.nkmr.check-claude-orphans
-tail ~/Library/Logs/check-claude-orphans.log
-```
-
-#### Usage (手動実行)
-
-```sh
-check-claude-orphans.sh             # dry-run: 暴走中の孤児を表示するだけ
-check-claude-orphans.sh --kill      # SIGTERM → 3 秒後に残ってれば SIGKILL
-check-claude-orphans.sh --list-all  # idle 含む全孤児を表示 (棚卸し用)
-```
-
-#### Uninstall / 停止
-
-```sh
-launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.check-claude-orphans.plist
-rm ~/Library/LaunchAgents/com.nkmr.check-claude-orphans.plist
-rm ~/bin/check-claude-orphans.sh
-```
-
-#### ログ
-
-`~/Library/Logs/check-claude-orphans.log` に追記される。
-孤児が居ない場合: `no orphan claude processes (PPID=1)`。
-
-#### 注意
-
-- idle 化した孤児 (過去に焼いたが現在 0% のもの) は自動 kill 対象外。
-  気になったら `--list-all` で確認して手で `kill` する。
-- 30 分間隔なので検知最大遅延は 30 分。
-  もっと早く反応させたい場合は `launchd/com.nkmr.check-claude-orphans.plist` の `StartInterval` を縮める。
-
-### claude-stall-monitor
-
-Claude Code で `The model's tool call could not be parsed (retry also failed).` により
-ターンが異常終了すると、**Stop / Notification / StopFailure いずれのフックも発火せず、何の通知も
-来ない**。セッション JSONL にも parse 失敗の専用レコードは残らない（assistant の試行レコードだけ）。
-そのため「セッションが止まっていること」に気づけない。この LaunchAgent は **30 秒ごとに各セッションを
-監視し、parse 失敗による無通知停止を検知して macOS 通知** を出す。
-
-**仕組み（ack ハートビート方式）** (`bin/claude-stall-monitor.sh`):
-- 各フック（`PreToolUse`/`PostToolUse`/`UserPromptSubmit`/`SessionStart`/`Stop`/`StopFailure`/`Notification`）が
-  `ack` モードで `~/.claude/monitor/<session_id>.ack` に現在 epoch を書く（= 直近の JSONL 書き込みの後に
-  何らかのフックが発火した記録）。`~/.claude/settings.json` の各イベントに ack コマンドを 1 つ追記する。
-- watcher は各セッション JSONL を走査し、`idle(now - mtime) >= 45s` かつ `ack < mtime`
-  （= JSONL は進んだのにその後どのフックも発火していない）のものを「異常停止」と判定して通知する。
-- 誤検知しない: 正常完了→`Stop`、API エラー→`StopFailure`、権限待ち/idle→`Notification`、
-  長時間ツール実行中→`PreToolUse` がそれぞれ ack を書く（ack ≥ mtime）ため鳴らない。
-  parse 失敗だけがどのフックも発火しない＝唯一鳴るケース。
-- 通知は `terminal-notifier`（無ければ `osascript`）。停止 1 回につき 1 通知（活動再開で解除）。
-
-#### Install
-
-```sh
-# 1. ~/bin と ~/Library/LaunchAgents から symlink で参照
-ln -sf ~/ghq/github.com/nkmr-jp/setup/bin/claude-stall-monitor.sh ~/bin/claude-stall-monitor.sh
-ln -sf ~/ghq/github.com/nkmr-jp/setup/launchd/com.nkmr.claude-stall-monitor.plist ~/Library/LaunchAgents/com.nkmr.claude-stall-monitor.plist
-
-# 2. ~/.claude/settings.json の各イベントに ack コマンドを追記（既存フックはそのまま別グループで追加）
-#    対象: PreToolUse / PostToolUse / UserPromptSubmit / SessionStart / Stop / StopFailure / Notification
-#    例: { "hooks": [ { "type": "command", "command": "/Users/nkmr/bin/claude-stall-monitor.sh ack" } ] }
-
-# 3. launchd に登録 (30 秒ごとに --watch モードで実行される)
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.claude-stall-monitor.plist
-
-# 4. 動作確認 (即座に 1 回起動)
-launchctl kickstart gui/$(id -u)/com.nkmr.claude-stall-monitor
-tail ~/Library/Logs/claude-stall-monitor.log
-```
-
-#### Usage (手動実行)
-
-```sh
-claude-stall-monitor.sh            # watcher（既定）: 異常停止を検知して通知
-claude-stall-monitor.sh ack        # フックから: stdin JSON の session_id で ack を書く
-```
-
-#### Uninstall / 停止
-
-```sh
-launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.claude-stall-monitor.plist
-rm ~/Library/LaunchAgents/com.nkmr.claude-stall-monitor.plist
-rm ~/bin/claude-stall-monitor.sh
-# settings.json から ack コマンドの行を削除する
-```
-
-#### ログ
-
-`~/Library/Logs/claude-stall-monitor.log` に追記される（`STALL sid=... idle=...` 形式）。
-異常停止が無ければ無出力。
-
-#### 注意
-
-- 検知最大遅延は `StartInterval`(30s) + `IDLE_THRESHOLD`(45s)。早めたい場合は plist の `StartInterval` と
-  スクリプトの `IDLE_THRESHOLD` を縮める。
-- ack が無い旧セッション（導入前）は基準が無いため判定しない（誤検知防止）。
-
-### guard-agent-rm（LaunchAgent ではなく Claude Code の hook）
+## guard-agent-rm（Claude Code の hook）
 
 エージェントが実行しようとする `rm` が、**ホームの実データをゴミ箱を経由せずに**
 消そうとしていないか検査する `PreToolUse` hook。
@@ -668,7 +585,7 @@ alias は子プロセスに継承されず、非対話シェルもスクリプ�
 {
   "matcher": "Bash",
   "hooks": [
-    { "type": "command", "command": "$HOME/ghq/github.com/nkmr-jp/setup/bin/guard-agent-rm.sh" }
+    { "type": "command", "command": "$SETUP_DIR/bin/guard-agent-rm.sh" }
   ]
 }
 ```
@@ -690,135 +607,7 @@ echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /tmp/foo"}}' | bin/gua
   のが一次の対策で、この hook は二次の網。
 - `jq` が無い環境では黙って通す（hook が作業を止めない側に倒す）。
 
-### check-config-symlinks
 
-リポジトリ管理の設定ファイルの **symlink が外れていないか**を 6 時間ごとに検査する。
+`iterm-run <command>` は従来どおり `zsh/init.zsh` で定義する。
 
-設定を「リポジトリに実体を置いてホームから symlink」で管理していると、アプリが
-**atomic write（`<path>.tmp` に書いて `rename`）で書き戻したときに symlink が実体ファイルに
-置き換わる**。以後リポジトリ側の編集は無言で効かなくなり、エラーも警告も出ない。
-実例: `~/.claude/settings.json` が `claude doctor` / `/config` に置換され、
-**2026-06-25〜08-16 の約 7 週間、乖離に気づかなかった**（詳細は
-[docs/agent-knowledge.md](https://github.com/nkmr-jp/claude/blob/main/docs/agent-knowledge.md)）。
-アプリ側の書き方は変えられない＝**予防はできない**ので、代わりに検知する。
-
-**判定** (`bin/check-config-symlinks.sh`):
-
-| 状態 | 意味 | 通知 |
-| --- | --- | --- |
-| `OK` | 期待どおりのリンク | — |
-| `DETACHED` | ホーム側が symlink でなくなっている（本命の壊れ方。中身が乖離しているかも表示） | する |
-| `BROKEN` | リンク先が消えている | する |
-| `WRONG` | 別のリンク先を向いている | する |
-| `NOLINK` | ホーム側にリンクが無い。リポジトリ側には実体がある（＝管理しているつもりが効いていない） | する |
-| `PENDING` | ホーム側が実体で、リポジトリ側に実体が無い（まだ管理下に入れていない） | しない |
-| `MISSING` | どちらにも実体が無い | しない |
-
-**対象は「ghq 配下のリポジトリを指しているホーム配下の symlink 全部」**。種別で絞らない
-（`bin/` のスクリプトも launchd の plist も入れる）。「アプリが書き戻すものだけ」のように
-**判断が要る絞り方はしない——判断が入る時点で漏れる**。実際その方針では
-`~/.codex/AGENTS.md`・yazi・herdr が抜け、さらに **`~/.prompt-line` が抜けていたために
-実際の事故（別セッションの検証スクリプトが誤ってリンクを削除し、以後アプリの書き込みが
-リポジトリに届かなくなっていた）を検知できなかった**。
-
-管理対象を増やすときは手で探さず `--suggest` を使う（ホーム配下を走査して、リポジトリを
-指しているのに `ENTRIES` に無い symlink を、そのまま貼れる形で出す）。
-
-**自動復旧はしない**。ホーム側とリポジトリ側のどちらが「現行」かは状況次第で、自動で倒すと
-編集を失うため、`diff` してから手で直す。**直し方は項目ごとに出力される**（対象がディレクトリなら
-`cp -R` と `rm -rf` + `ln -s`。ディレクトリに `ln -sfn` を使うと exit 0 のまま中に入れ子リンクが
-できて直ったように見えるため、種別で出し分けている）。
-
-通知は**問題の顔ぶれが前回と変わったとき**、および**顔ぶれが同じでも前回通知から
-`RENOTIFY_DAYS`（既定 7 日）経過したとき**に出す。毎回鳴らすと無視されるようになるが、
-一度きりにすると通知を見逃したまま永久に黙る（＝7 週間気づかなかった事故の再来）ため。
-
-#### Install
-
-```sh
-# 1. ~/bin と ~/Library/LaunchAgents から symlink で参照
-ln -sf ~/ghq/github.com/nkmr-jp/setup/bin/check-config-symlinks.sh ~/bin/check-config-symlinks.sh
-ln -sf ~/ghq/github.com/nkmr-jp/setup/launchd/com.nkmr.check-config-symlinks.plist ~/Library/LaunchAgents/com.nkmr.check-config-symlinks.plist
-
-# 2. launchd に登録（6 時間ごと・ロード時にも 1 回実行）
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.check-config-symlinks.plist
-
-# 3. 動作確認
-launchctl kickstart gui/$(id -u)/com.nkmr.check-config-symlinks
-tail ~/Library/Logs/check-config-symlinks.log
-```
-
-#### Usage（手動実行）
-
-```sh
-check-config-symlinks.sh              # 壊れている項目だけ表示。あれば通知して exit 1
-check-config-symlinks.sh --list       # 全項目を表示するだけ（通知も状態更新もしない）
-check-config-symlinks.sh --suggest    # 管理対象に入っていない repo 向け symlink を探す
-check-config-symlinks.sh --no-notify  # 通知しない（状態も更新しない）
-check-config-symlinks.sh --help       # 使い方
-```
-
-`--list` / `--no-notify` は**状態ファイルを書かない**。書いてしまうと、手で 1 回眺めただけで
-定期実行が「前回と同じ＝通知済み」と誤認して黙る（実際にその不具合を踏んだ）。
-
-対象リンクはスクリプト冒頭の `ENTRIES` に宣言的に書いてある。管理するリンクを増やしたら
-ここに 1 行足す（テストは `tests/check-config-symlinks.bats`）。
-
-#### Uninstall / 停止
-
-```sh
-launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.check-config-symlinks.plist
-rm ~/Library/LaunchAgents/com.nkmr.check-config-symlinks.plist
-rm ~/bin/check-config-symlinks.sh
-```
-
-#### ログ・状態
-
-- ログ: `~/Library/Logs/check-config-symlinks.log` に追記される。
-  問題が無い場合: `OK: 管理対象 N 件に外れているリンクは無い`。
-- 状態: `~/Library/Application Support/check-config-symlinks/state`（前回通知した時刻と
-  問題の顔ぶれ）。消しても次の実行で作り直される（消すと次回必ず鳴る）。
-
-> **plist でホームのパスをベタ書きしない書き方**: launchd は plist 内の文字列を変数展開しないため、
-> `ProgramArguments` / `StandardOutPath` に `$HOME` は書けない。このジョブは
-> `/bin/sh -c 'exec "$HOME/bin/... " >> "$HOME/Library/Logs/..." 2>&1'` の形にして、
-> パスの解決とログのリダイレクトを**シェル側**でやることで plist からホームのベタ書きを無くしている
-> （`HOME` は launchd が gui ドメインのジョブに渡すので `EnvironmentVariables` で与える必要も無い）。
-> 既存の 3 ジョブはベタ書きのままなので、触る機会があれば揃える。
-
-#### 注意
-
-- **検知だけで復旧はしない**。通知が来たら `--list` で全体を見てから手で直す。
-- 6 時間間隔なので検知最大遅延は 6 時間。急ぐなら plist の `StartInterval` を縮める。
-- **`~/.orca` は `setup/orca/` をマージした直後、Setup を実行するまで `DETACHED` として鳴る**
-  （[orca/README.md](orca/README.md) の Setup を実行すれば `OK` になる）。マージしたら間を
-  空けずに移行する。
-
-### git-auto-backup
-
-リポジトリを 30 分毎に自動バックアップ（`pull --rebase → add -A → commit → push`）する汎用ジョブ。
-`bin/git-auto-backup.sh`（vault と同型）と launchd `com.nkmr.issues-autobackup.plist` で構成する。
-
-`--llm` を付けると Claude でコミットメッセージを生成するが、その Claude 固有部（`claude-auto`）は
-**ccdash リポジトリへ移設済み**（`~/ghq/github.com/nkmr-jp/ccdash/claude-auto/`）。
-`git-auto-backup.sh --llm` は生成器 `claude-commit-msg.sh` を PATH（`~/bin`）から解決して呼ぶため、
-claude-auto の置き場所に依存しない。トークン未登録・生成失敗時は `auto:<日時>` に自動降格し、コミットは必ず成功する。
-
-> 現在の `issues-autobackup` ジョブは `--llm` を付けず固定メッセージ（`auto:<日時>`）で稼働中。
-
-```sh
-# 汎用バックアップの symlink 配置（~/bin と ~/Library/LaunchAgents から参照）
-ln -sf ~/ghq/github.com/nkmr-jp/setup/bin/git-auto-backup.sh ~/bin/git-auto-backup.sh
-ln -sf ~/ghq/github.com/nkmr-jp/setup/launchd/com.nkmr.issues-autobackup.plist ~/Library/LaunchAgents/com.nkmr.issues-autobackup.plist
-
-# launchd 有効化（準備完了後に手動で）
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.nkmr.issues-autobackup.plist
-
-# 手動実行 / ログ
-git-auto-backup.sh ~/ghq/github.com/nkmr-jp/issues --llm
-tail ~/Library/Logs/issues-autobackup.log
-```
-
-> Claude 固有の自動化基盤 `claude-auto`（コミットメッセージ生成・セッション要約・keychain OAuth・
-> `~/.claude-auto` 隔離）は ccdash へ移設した。セットアップ（`claude-auto/install.sh` / `setup-token` 発行）と
-> 機能B（日次セッション要約）の詳細は ccdash の `claude-auto/README.md` を参照（移設の経緯は ccdash#33）。
+Git設定は従来の `gitconfig` を維持する。`~/.config/setup/gitconfig` は読み込まない。

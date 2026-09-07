@@ -1,6 +1,6 @@
 {
   "name": "cmux",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Control the cmux native macOS terminal from Codex or Claude Code, with workspace, pane, surface, notification, browser, and agent-status integration.",
   "author": {
     "name": "nkmr-jp"

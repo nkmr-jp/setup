@@ -48,7 +48,7 @@ claude plugin install cmux@setup
 | `SessionStart` | [`hooks/scripts/claude-status-hook.sh clear`](hooks/scripts/claude-status-hook.sh) | 前セッションが SessionEnd を逃した場合の stale state を掃除し `folder` アイコンに戻す |
 | `SessionEnd` | [`hooks/scripts/claude-status-hook.sh clear`](hooks/scripts/claude-status-hook.sh) | state file を削除し pill を `folder` アイコンに戻す |
 
-`CMUX_PANEL_ID` が無い環境（cmux 外で起動した Claude Code）では即 exit するので無害。zsh 側の pill 描画は `~/ghq/github.com/nkmr-jp/setup/cmux/sidebar-cwd.zsh` で行い、状態は `${TMPDIR}/cmux-pane-state/<panel-id>` を介して同期する。
+`CMUX_PANEL_ID` が無い環境（cmux 外で起動した Claude Code）では即 exit するので無害。zsh 側の pill 描画は `~/.config/cmux/sidebar-cwd.zsh` で行い、状態は `${TMPDIR}/cmux-pane-state/<panel-id>` を介して同期する。
 
 スキル本体（`SKILL.md`）に概要と頻出ワークフロー、詳細は以下のリファレンスに分割している：
 

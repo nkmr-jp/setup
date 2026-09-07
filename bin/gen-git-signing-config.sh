@@ -8,7 +8,7 @@
 #   public なリポジトリのパスだけを includeIf で列挙して署名を有効に戻す。
 #
 # 使い方:
-#   bin/gen-git-signing-config.sh [owner]   # 既定 owner: nkmr-jp
+#   bin/gen-git-signing-config.sh [owner]   # 既定 owner: gh のログインユーザー
 #
 # 出力:
 #   ~/.gitconfig-signing-includes （~/.gitconfig から include 済み）
@@ -16,12 +16,25 @@
 # 新しく公開リポジトリを作ったら再実行する。
 set -euo pipefail
 
-OWNER="${1:-nkmr-jp}"
+OWNER="${1:-}"
 OUT="$HOME/.gitconfig-signing-includes"
 GHQ_ROOT="${GHQ_ROOT:-$HOME/ghq}"
-SIGNING_CONF="~/ghq/github.com/nkmr-jp/setup/gitconfig-signing"
+# Resolve symlinked ~/bin entry points to this checkout, without a fixed repo path.
+script_path="${BASH_SOURCE[0]}"
+while [ -L "$script_path" ]; do
+    script_dir=$(CDPATH='' cd -- "$(dirname -- "$script_path")" && pwd -P)
+    script_path=$(readlink "$script_path")
+    [[ "$script_path" = /* ]] || script_path="$script_dir/$script_path"
+done
+setup_dir=$(CDPATH='' cd -- "$(dirname -- "$script_path")/.." && pwd -P)
+SIGNING_CONF="$setup_dir/gitconfig-signing"
+# Quote Git configuration values, including checkouts with spaces or quotes.
+SIGNING_CONF=${SIGNING_CONF//\\/\\\\}
+SIGNING_CONF=${SIGNING_CONF//\"/\\\"}
 
 command -v gh >/dev/null || { echo "gh コマンドが必要です" >&2; exit 1; }
+[ -n "$OWNER" ] || OWNER=$(gh api user --jq .login)
+[[ "$OWNER" =~ ^[A-Za-z0-9][A-Za-z0-9-]*$ ]] || { echo "invalid GitHub owner" >&2; exit 2; }
 
 # ローカルに clone していない public リポジトリも含めて列挙する。
 # 後から clone したときに署名が漏れるのを防ぐため。
@@ -44,7 +57,7 @@ trap 'rm -f "$tmp"' EXIT
     while IFS= read -r name; do
         printf '[includeIf "gitdir:%s/github.com/%s/%s/"]\n' \
             "${GHQ_ROOT/#$HOME/\~}" "$OWNER" "$name"
-        printf '    path = %s\n' "$SIGNING_CONF"
+        printf '    path = "%s"\n' "$SIGNING_CONF"
     done <<<"$repos"
 } >"$tmp"
 

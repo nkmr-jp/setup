@@ -67,6 +67,7 @@
 # 一緒に session 別 cache (2 行目) に保存して再解決コストを抑える。
 
 exec >/dev/null 2>&1
+umask 077
 
 state="$1"
 command -v cmux >/dev/null 2>&1 || exit 0
@@ -84,8 +85,8 @@ mkdir -p "$state_dir" 2>/dev/null
 
 # stdin の JSON を一時ファイルに保存して session_id / hook_event_name を抽出する。
 # CMUX_PANEL_ID fallback の cache key と SessionEnd 時の cache 掃除に使う。
-input_file="$state_dir/hook-input-$$"
-trap 'rm -f "$input_file"' EXIT INT TERM HUP
+input_file=$(mktemp "$state_dir/hook-input.XXXXXX") || exit 0
+trap 'rm -f "$input_file" "${sessions_tmp:-}"' EXIT INT TERM HUP
 cat > "$input_file" 2>/dev/null
 
 session_id=""
@@ -348,7 +349,10 @@ $(printf '%s' "$sf_json" | jq -r '.surfaces[]?.id // empty' 2>/dev/null)"
     fi
   fi
 
-  sessions_tmp="$sessions_file.tmp.$$"
+  sessions_tmp=$(mktemp "$sessions_file.tmp.XXXXXX") || {
+    rmdir "$sessions_lock" 2>/dev/null
+    return 0
+  }
   base='{"version":1,"sessions":{}}'
   [ -s "$sessions_file" ] && base=$(cat "$sessions_file" 2>/dev/null)
   if [ "$lifecycle" = ended ]; then
@@ -414,7 +418,7 @@ while ! mkdir "$lock_dir" 2>/dev/null; do
   fi
   sleep 0.02
 done
-trap 'rmdir "$lock_dir" 2>/dev/null; rm -f "$input_file"' EXIT INT TERM HUP
+trap 'rmdir "$lock_dir" 2>/dev/null; rm -f "$input_file" "${sessions_tmp:-}"' EXIT INT TERM HUP
 
 # 既に新しい event が反映済みなら自分は古いので set-status をスキップ。
 existing_time=$(cat "$time_file" 2>/dev/null)
@@ -443,7 +447,7 @@ fi
 # Lock を解放してから daemon を叩く (cmux set-status の socket I/O 待ちで
 # lock が長く握られ、後続 hook の起動が遅延するのを避ける)。
 rmdir "$lock_dir" 2>/dev/null
-trap 'rm -f "$input_file"' EXIT INT TERM HUP
+trap 'rm -f "$input_file" "${sessions_tmp:-}"' EXIT INT TERM HUP
 
 if [ "$state" = clear ]; then
   cmux set-status "$key" "$label" --workspace "$CMUX_WORKSPACE_ID" --icon "$icon"

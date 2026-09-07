@@ -58,7 +58,7 @@ rename は**シンボリックリンクそのものを通常ファイルで置�
 
 外れてもエラーは出ず、リポジトリ側のファイルが古いまま取り残される。
 `~/.claude/settings.json` の symlink が `claude doctor` / `/config` に置き換えられて
-**7 週間気づかなかった**のと同じ壊れ方（`~/ghq/github.com/nkmr-jp/claude/docs/agent-knowledge.md`）。
+**7 週間気づかなかった**のと同じ壊れ方。
 
 ディレクトリごと symlink すれば、tmp ファイルの作成も rename も**このリポジトリの中で完結する**ため、
 Settings UI から変更しても将来のマイグレーションが走っても、結果がそのまま `git diff` に出る。

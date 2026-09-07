@@ -22,17 +22,10 @@ xbar が実行する symlink は `${0:A}` で実体パスに解決されるた�
 make ln
 ```
 
-これは以下を実行する。
-
-1. `~/Library/Application Support/xbar/plugins/` 配下を **すべて削除** する
-2. `setup/xbar/*.sh` に実行権限を付与
-3. `setup/xbar/*.5s.sh` / `*.2m.sh` を `~/Library/Application Support/xbar/plugins/` にシンボリックリンク
-4. リンク結果を `ls` で確認
-
-> [!WARNING]
-> `make ln` は `~/Library/Application Support/xbar/plugins/` の中身を `rm -rf` で消す。
-> 他リポジトリ (例: `~/ghq/github.com/nkmr-jp/xbar`) からリンクされた既存プラグインも
-> 一緒に削除されるので注意。
+このrepoの3本だけを `~/Library/Application Support/xbar/plugins/` へ個別にリンクする。
+同じリンクは維持し、既存実体や異なるリンクはタイムスタンプ付きで退避する。
+他のpluginやclick-handlerの配置は変更しない。`./install.sh --dry-run` で事前確認できる。
+別の配置先は `XBAR_PLUGIN_DIR=/path/to/plugins make ln` で指定する。
 
 リンク作成後、xbar のメニューバーから **xbar → Refresh all** を実行すれば反映される。
 

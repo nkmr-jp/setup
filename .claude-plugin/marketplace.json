@@ -1,6 +1,6 @@
 {
   "name": "setup",
-  "description": "nkmr-jp のローカル開発環境セットアップに付随する Claude Code プラグイン群",
+  "description": "Claude Code plugins for nkmr-jp local development environment setup",
   "owner": {
     "name": "nkmr-jp"
   },
@@ -8,12 +8,12 @@
     {
       "name": "cmux",
       "source": "./plugins/cmux",
-      "description": "cmux (manaflow-ai/cmux) のネイティブ macOS ターミナル CLI を制御するスキル + サイドバー cwd pill を Claude Code 状態 (running/awaiting/idle/clear) に同期する hooks"
+      "description": "Skills for the cmux native macOS terminal CLI, plus hooks that synchronize the sidebar cwd pill with Claude Code status (running/awaiting/idle/clear)"
     },
     {
       "name": "session-monitor",
       "source": "./plugins/session-monitor",
-      "description": "Claude Code の進行中セッションを hooks で監視し、SwiftBar のメニューバーから ⚡running / 🔔awaiting / ⏸idle を一覧表示する"
+      "description": "Monitor active Claude Code sessions through hooks and list running, awaiting, and idle states in the SwiftBar menu bar"
     }
   ]
 }

@@ -2,13 +2,13 @@
 
 # fzf-tab plugin
 # https://github.com/Aloxaf/fzf-tab?tab=readme-ov-file
-# `ghq root` は毎回プロセスを起こす (36ms) が値は固定なのでキャッシュする
+# Cache `ghq root`: its value is fixed, but each process takes 36ms.
 _zsh_cache_var ghq-root.zsh GHQ_ROOT "${commands[ghq]}" -- ghq root
 source "${GHQ_ROOT:-$HOME/ghq}/github.com/Aloxaf/fzf-tab/fzf-tab.plugin.zsh"
 
 # Syntax highlighting
-# $HOMEBREW_PREFIX は .zprofile の `brew shellenv` が export 済みなので
-# `brew --prefix` (12ms) を起こす必要は無い
+# .zprofile already exports $HOMEBREW_PREFIX via `brew shellenv`, so
+# there is no need to run `brew --prefix` (12ms).
 source "${HOMEBREW_PREFIX:-/opt/homebrew}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # fzf

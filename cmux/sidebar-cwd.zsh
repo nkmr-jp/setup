@@ -1,34 +1,34 @@
 #!/usr/bin/env zsh
-# cmux サイドバーに pane 別の cwd pill を表示する。値はカレントディレクトリの
-# basename。アイコンは Claude Code の状態（claude-status-hook.sh が
-# ${TMPDIR}/cmux-pane-state/<panel-id> に書き込む）に応じて切り替わる。
+# Show a per-pane cwd pill in the cmux sidebar, using the basename of the current
+# directory. The icon follows the Claude Code state that claude-status-hook.sh
+# writes to ${TMPDIR}/cmux-pane-state/<panel-id>.
 #
 #   running  -> bolt.fill (#4C8DFF)  UserPromptSubmit / PreToolUse
 #   awaiting -> bell.fill (#FF9500)  Notification
-#   idle     -> pause.fill (#8E8E93) Stop (応答完了・次の入力待ち)
-#   none     -> folder               state file 不在時のデフォルト
+#   idle     -> pause.fill (#8E8E93) Stop (response complete; awaiting the next input)
+#   none     -> folder               default when the state file is absent
 #
-# precmd は &! で background 化して prompt 遅延を排除する。
-# 強制クローズで残った pill は、各 shell が spawn する独立な sweeper が
-# 数秒おきに workspace を sweep して回収する。
+# Run precmd in the background with &! to avoid delaying the prompt.
+# An independent sweeper spawned by each shell scans the workspace every few
+# seconds and removes pills left behind by forcibly closed panes.
 #
-# pill は workspace スコープで管理される (`workspace:<WS_UUID>:tag:cwd_<SURFACE>`)。
-# `cmux set-status` を `--workspace` 無しで呼ぶと daemon は CMUX_WORKSPACE_ID
-# 環境変数を見るが、cmux 0.61+ ではこれが子プロセスに継承されないため、
-# 結果として「現在 focus している workspace」に pill が紛れ込んでしまう。
-# それを避けるため、shell 起動時に一度だけ cmux top から自分のいる surface UUID
-# と workspace UUID を解決し、以降の `cmux set-status` / `clear-status` 呼び出しは
-# 必ず `--workspace $_CMUX_WORKSPACE_ID` を明示指定する。
+# Pills belong to a workspace (`workspace:<WS_UUID>:tag:cwd_<SURFACE>`).
+# Without --workspace, `cmux set-status` uses CMUX_WORKSPACE_ID, but cmux 0.61+
+# does not pass that environment variable to child processes. This can place
+# a pill in whichever workspace currently has focus.
+# Resolve this shell's surface and workspace UUIDs once at startup using cmux top,
+# then always pass --workspace $_CMUX_WORKSPACE_ID explicitly to subsequent
+# `cmux set-status` and `clear-status` calls.
 
 typeset -g _CMUX_LAST_SIG=""
 typeset -g _CMUX_PANEL_ID=""
 typeset -g _CMUX_WORKSPACE_ID=""
-typeset -gra _CMUX_PILL_PREFIXES=(cwd_ claude_ run_)  # claude_/run_: 旧版 pill の sweep 用
+typeset -gra _CMUX_PILL_PREFIXES=(cwd_ claude_ run_)  # claude_/run_: sweep legacy pills
 
-# cmux top を一度だけ呼んで自分の PID から surface_ref / pane_ref / ws_ref を確定し、
-# workspace.list / surface.list で UUID に変換する。失敗時は何もしない (default の
-# folder アイコンで動かない状態が許容される)。claude-status-hook.sh と同じ TSV walk
-# ロジックを zsh で書き直したもの。
+# Call cmux top once to resolve surface_ref / pane_ref / ws_ref from this PID,
+# then convert them to UUIDs with workspace.list / surface.list. Do nothing on
+# failure (a static default folder icon is acceptable). This is the same TSV
+# walk as claude-status-hook.sh, rewritten in zsh.
 _cmux_resolve_ids() {
   (( ${+commands[cmux]} )) || return 1
   [[ "${TERM_PROGRAM:-}" == ghostty ]] || return 1
@@ -104,9 +104,9 @@ _cmux_update_cwd_status() {
 }
 
 _cmux_equalize_splits() {
-  # 新しい pane が起動したタイミングで、その workspace 内の分割サイズを均等化する。
-  # workspace.equalize_splits は分割が無い／既に均等の場合は no-op なので、毎回呼んで
-  # も実害は無い。CMUX_EQUALIZE_SPLITS=0 で抑止可能。
+  # Equalize splits in this workspace when a new pane starts.
+  # workspace.equalize_splits is a no-op without splits or when already equal,
+  # so calling it every time is harmless. Set CMUX_EQUALIZE_SPLITS=0 to disable.
   (( ${+commands[cmux]} )) || return 0
   [[ "${CMUX_EQUALIZE_SPLITS:-1}" != 0 ]] || return 0
   [[ -n "$_CMUX_WORKSPACE_ID" ]] || return 0
@@ -115,10 +115,10 @@ _cmux_equalize_splits() {
 }
 
 _cmux_equalize_splits_after_close() {
-  # pane を閉じた直後に workspace 内の残った分割を均等化する。
-  # shell が exit してから cmux が pane を model から外すまでに時間差があるため、
-  # 短い間隔でリトライする。equalize_splits は冪等なので複数回呼んでも安全。
-  # disowned な子プロセスを spawn し、shell 終了を生き残らせて RPC を打つ。
+  # Equalize the remaining workspace splits just after closing a pane.
+  # cmux removes the pane from its model shortly after the shell exits, so retry
+  # at short intervals. equalize_splits is idempotent and safe to call repeatedly.
+  # Spawn a disowned child to survive shell exit and issue the RPC calls.
   (( ${+commands[cmux]} )) || return 0
   [[ "${CMUX_EQUALIZE_SPLITS:-1}" != 0 ]] || return 0
   [[ -n "$_CMUX_WORKSPACE_ID" ]] || return 0
@@ -138,7 +138,7 @@ _cmux_equalize_splits_after_close() {
 }
 
 _cmux_clear_pane_status() {
-  # zshexit から呼ばれるので同期実行。&! だと shell 終了時に reap されない。
+  # Run synchronously from zshexit; &! would not be reaped before shell exit.
   (( ${+commands[cmux]} )) || return 0
   [[ -n "$_CMUX_PANEL_ID" && -n "$_CMUX_WORKSPACE_ID" ]] || return 0
   local p
@@ -166,9 +166,9 @@ _cmux_spawn_gc_sweeper() {
   local my_ws="$_CMUX_WORKSPACE_ID"
   local -a prefixes=("${_CMUX_PILL_PREFIXES[@]}")
 
-  # HUP/INT/TERM を ignore して pane close を生き延びるための独立 process。
-  # sweeper は「自分の workspace に紐づく pill」だけを掃除する。全 workspace 横断で
-  # sweep すると、別 shell が管理している別 workspace の pill を誤って削除してしまう。
+  # Independent process that ignores HUP/INT/TERM to survive pane closure.
+  # Sweep only pills in this shell's workspace. Scanning every workspace could
+  # incorrectly delete pills managed by another shell in a different workspace.
   {
     trap '' HUP INT TERM PIPE QUIT
     exec </dev/null >/dev/null 2>&1
@@ -187,7 +187,7 @@ _cmux_spawn_gc_sweeper() {
       done < <("$cmux_bin" list-status --workspace "$my_ws" 2>/dev/null)
       (( ${#pane_keys} == 0 )) && { sleep "$interval"; continue }
 
-      # 自分の workspace に居る surface のみ取得 (cmux 単一 workspace の surface.list)。
+      # Get only surfaces in this workspace (cmux surface.list for one workspace).
       local sjson active_ids=$'\n'
       sjson="$("$cmux_bin" rpc surface.list \
         "{\"workspace_id\":\"$my_ws\"}" 2>/dev/null)"
@@ -195,7 +195,7 @@ _cmux_spawn_gc_sweeper() {
       active_ids+="$(/usr/bin/awk -F'"' '/"id"[[:space:]]*:/{print $4}' \
         <<<"$sjson")"$'\n'
 
-      # workspace 列挙が無に帰した場合は誤って全 pill を消さないよう skip。
+      # Skip failed workspace enumeration to avoid accidentally deleting every pill.
       [[ "$active_ids" == $'\n' ]] && { sleep "$interval"; continue }
 
       local i
@@ -211,20 +211,20 @@ _cmux_spawn_gc_sweeper() {
   _CMUX_GC_SWEEPER_PID=$!
 }
 
-# 既存の cmux 環境変数があれば優先 (将来 cmux 側が再び継承するようになった場合や
-# 子 shell が親から export を受け継いだ場合のため)。
+# Prefer existing cmux environment variables if present (for future versions that
+# restore inheritance, or child shells receiving exports from a parent).
 if [[ -n "${CMUX_PANEL_ID:-}" && -n "${CMUX_WORKSPACE_ID:-}" ]]; then
   _CMUX_PANEL_ID="$CMUX_PANEL_ID"
   _CMUX_WORKSPACE_ID="$CMUX_WORKSPACE_ID"
 fi
 
-# 非対話 zsh (Bash ツールから起動された zsh -c, スクリプト実行など) では何も登録しない。
-# 特に zshexit でサブシェル終了の度に pane の pill / state file を消してしまうのを防ぐ。
-# 強制クローズで残った pill は sweeper が数秒おきに回収するので副作用はない。
+# Register nothing in noninteractive zsh (zsh -c from the Bash tool, scripts, etc.).
+# In particular, do not let zshexit remove the pane pill/state file on every subshell exit.
+# The sweeper collects pills from forcibly closed panes every few seconds anyway.
 if [[ -n "${ZSH_VERSION:-}" ]] && [[ -o interactive ]]; then
-  # _cmux_resolve_ids (重い: top + workspace.list + surface.list) を待たず、
-  # cmux identify で workspace_ref だけ即取得して equalize を先行発火する。
-  # こうすると pane 作成からの反映が ~100ms 単位で速くなる。
+  # Start equalization immediately with the workspace_ref from cmux identify,
+  # without waiting for expensive _cmux_resolve_ids (top + workspace.list + surface.list).
+  # This saves roughly 100 ms increments after pane creation.
   if (( ${+commands[cmux]} )) && [[ "${CMUX_EQUALIZE_SPLITS:-1}" != 0 ]]; then
     {
       ws_ref=$(cmux identify --json 2>/dev/null \
@@ -234,10 +234,10 @@ if [[ -n "${ZSH_VERSION:-}" ]] && [[ -o interactive ]]; then
     } &!
   fi
 
-  # まず一度だけ cmux top で自分の panel/workspace UUID を解決する。
+  # Resolve this panel/workspace UUID once using cmux top.
   [[ -z "$_CMUX_PANEL_ID" || -z "$_CMUX_WORKSPACE_ID" ]] && _cmux_resolve_ids
 
-  # 子プロセス (claude-status-hook.sh など) からも見えるように export しておく。
+  # Export for child processes such as claude-status-hook.sh.
   if [[ -n "$_CMUX_PANEL_ID" && -n "$_CMUX_WORKSPACE_ID" ]]; then
     export CMUX_PANEL_ID="$_CMUX_PANEL_ID"
     export CMUX_WORKSPACE_ID="$_CMUX_WORKSPACE_ID"
@@ -248,7 +248,7 @@ if [[ -n "${ZSH_VERSION:-}" ]] && [[ -o interactive ]]; then
   add-zsh-hook precmd _cmux_update_cwd_status
   add-zsh-hook zshexit _cmux_clear_pane_status
   add-zsh-hook zshexit _cmux_equalize_splits_after_close
-  # 旧 run_<panel> pill が残っていたら回収する (one-time migration)。
+  # Collect any legacy run_<panel> pill (one-time migration).
   if [[ -n "$_CMUX_PANEL_ID" && -n "$_CMUX_WORKSPACE_ID" ]] \
      && (( ${+commands[cmux]} )); then
     cmux clear-status "run_${_CMUX_PANEL_ID}" \

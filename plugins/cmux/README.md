@@ -1,82 +1,82 @@
 # cmux
 
-[manaflow-ai/cmux](https://github.com/manaflow-ai/cmux) のネイティブ macOS ターミナルを Codex / Claude Code から操作するためのスキルプラグイン。
+A skill plugin for controlling the [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux) native macOS terminal from Codex / Claude Code.
 
-cmux は複数の AI コーディングエージェント CLI を縦型タブ・分割ペイン・通知パネル付きで束ねる macOS 専用ターミナルで、`cmux` CLI と UNIX ソケット API（`/tmp/cmux.sock`）で外部から制御できる。本プラグインはその使い方を Codex / Claude Code にオンボーディングする。
+cmux is a macOS-only terminal that groups multiple AI coding agent CLIs with vertical tabs, split panes, and a notification panel. It supports external control through the `cmux` CLI and UNIX socket API (`/tmp/cmux.sock`). This plugin teaches Codex / Claude Code how to use them.
 
-## 前提
+## Prerequisites
 
 - macOS
-- cmux.app がインストール・起動済みであること（`brew install --cask cmux`）
+- cmux.app must be installed and running (`brew install --cask cmux`).
 
-## Codex へのインストール
+## Install in Codex
 
-setup リポジトリの marketplace を追加して install する:
+Add the setup repository's marketplace and install the plugin:
 
 ```bash
 codex plugin marketplace add ~/ghq/github.com/nkmr-jp/setup
 codex plugin add cmux@setup
 ```
 
-インストール後は、新しいスレッドでスキルと hooks を読み込む。
+After installation, start a new thread to load the skill and hooks.
 
-## Claude Code へのインストール
+## Install in Claude Code
 
-setup リポジトリの marketplace を追加して install する:
+Add the setup repository's marketplace and install the plugin:
 
 ```bash
 claude plugin marketplace add ~/ghq/github.com/nkmr-jp/setup
 claude plugin install cmux@setup
 ```
 
-## 含まれるスキル
+## Included skills
 
-| スキル | 用途 |
+| Skill | Purpose |
 |----|----|
-| [cmux](skills/cmux/SKILL.md) | `cmux` CLI とソケット API の使い方を提供（ワークスペース・ペイン・サーフェス・通知・ステータス・agent-browser） |
+| [cmux](skills/cmux/SKILL.md) | Use the `cmux` CLI and socket API for workspaces, panes, surfaces, notifications, status, and agent-browser |
 
-## 含まれる hooks
+## Included hooks
 
-| イベント | スクリプト | 用途 |
+| Event | Script | Purpose |
 |----|----|----|
-| `UserPromptSubmit` | [`hooks/scripts/claude-status-hook.sh running`](hooks/scripts/claude-status-hook.sh) | サイドバー pill を `bolt.fill` (#4C8DFF) に |
-| `PreToolUse` | [`hooks/scripts/claude-status-hook.sh running`](hooks/scripts/claude-status-hook.sh) | 通知後にツール実行が再開した場合も pill を `bolt.fill` (#4C8DFF) に戻す |
-| `PostToolUse` | [`hooks/scripts/claude-status-hook.sh running`](hooks/scripts/claude-status-hook.sh) | AskUserQuestion 回答や permission 承認後に `awaiting` から `bolt.fill` (#4C8DFF) に戻す |
-| `Notification` | [`hooks/scripts/claude-status-hook.sh awaiting`](hooks/scripts/claude-status-hook.sh) | サイドバー pill を `bell.fill` (#FF9500) に |
-| `PermissionRequest` | [`hooks/scripts/claude-status-hook.sh awaiting`](hooks/scripts/claude-status-hook.sh) | Codex の承認待ちで pill を `bell.fill` (#FF9500) に |
-| `Stop` | [`hooks/scripts/claude-status-hook.sh idle`](hooks/scripts/claude-status-hook.sh) | 応答完了時に pill を `pause.fill` (#8E8E93) に |
-| `SessionStart` | [`hooks/scripts/claude-status-hook.sh clear`](hooks/scripts/claude-status-hook.sh) | 前セッションが SessionEnd を逃した場合の stale state を掃除し `folder` アイコンに戻す |
-| `SessionEnd` | [`hooks/scripts/claude-status-hook.sh clear`](hooks/scripts/claude-status-hook.sh) | state file を削除し pill を `folder` アイコンに戻す |
+| `UserPromptSubmit` | [`hooks/scripts/claude-status-hook.sh running`](hooks/scripts/claude-status-hook.sh) | Set the sidebar pill to `bolt.fill` (#4C8DFF) |
+| `PreToolUse` | [`hooks/scripts/claude-status-hook.sh running`](hooks/scripts/claude-status-hook.sh) | Restore `bolt.fill` (#4C8DFF) when tool execution resumes after a notification |
+| `PostToolUse` | [`hooks/scripts/claude-status-hook.sh running`](hooks/scripts/claude-status-hook.sh) | Switch from `awaiting` to `bolt.fill` (#4C8DFF) after an AskUserQuestion answer or permission approval |
+| `Notification` | [`hooks/scripts/claude-status-hook.sh awaiting`](hooks/scripts/claude-status-hook.sh) | Set the sidebar pill to `bell.fill` (#FF9500) |
+| `PermissionRequest` | [`hooks/scripts/claude-status-hook.sh awaiting`](hooks/scripts/claude-status-hook.sh) | Set the pill to `bell.fill` (#FF9500) while Codex awaits approval |
+| `Stop` | [`hooks/scripts/claude-status-hook.sh idle`](hooks/scripts/claude-status-hook.sh) | Set the pill to `pause.fill` (#8E8E93) when a response finishes |
+| `SessionStart` | [`hooks/scripts/claude-status-hook.sh clear`](hooks/scripts/claude-status-hook.sh) | Clear stale state left by a missed SessionEnd and restore the `folder` icon |
+| `SessionEnd` | [`hooks/scripts/claude-status-hook.sh clear`](hooks/scripts/claude-status-hook.sh) | Delete the state file and restore the `folder` icon |
 
-`CMUX_PANEL_ID` が無い環境（cmux 外で起動した Claude Code）では即 exit するので無害。zsh 側の pill 描画は `~/.config/cmux/sidebar-cwd.zsh` で行い、状態は `${TMPDIR}/cmux-pane-state/<panel-id>` を介して同期する。
+Without `CMUX_PANEL_ID` (for Claude Code started outside cmux), the hook exits immediately without effects. zsh renders the pill through `~/.config/cmux/sidebar-cwd.zsh`, sharing state through `${TMPDIR}/cmux-pane-state/<panel-id>`.
 
-スキル本体（`SKILL.md`）に概要と頻出ワークフロー、詳細は以下のリファレンスに分割している：
+The skill (`SKILL.md`) covers the overview and common workflows. Detailed references are split into these files:
 
-| リファレンス | 内容 |
+| Reference | Contents |
 |----|----|
-| [cli-commands.md](skills/cmux/references/cli-commands.md) | 全 CLI サブコマンドのオプションと出力形式 |
-| [socket-api.md](skills/cmux/references/socket-api.md) | JSON-RPC ソケット API のメソッド一覧と呼び出し方 |
-| [notifications.md](skills/cmux/references/notifications.md) | 通知・ステータス機能と他エージェントとの hooks 連携 |
-| [agent-browser.md](skills/cmux/references/agent-browser.md) | `cmux browser` サブコマンド（ナビゲーション、スナップショット、フォーム操作、JS 評価） |
+| [cli-commands.md](skills/cmux/references/cli-commands.md) | CLI subcommand options and output formats |
+| [socket-api.md](skills/cmux/references/socket-api.md) | JSON-RPC socket methods and invocation examples |
+| [notifications.md](skills/cmux/references/notifications.md) | Notifications, status, and hook integration with other agents |
+| [agent-browser.md](skills/cmux/references/agent-browser.md) | `cmux browser` subcommands for navigation, snapshots, forms, and JavaScript evaluation |
 
-## 想定用途
+## Intended uses
 
-- **cmux 内で動作する Claude Code が cmux 自身を制御**（ペイン分割、通知発火、ステータス更新）
-- **通常の Claude Code セッションから cmux に関する質問に回答**（コマンド使い方、トラブルシューティング）
+- **Let Claude Code running inside cmux control cmux itself**: split panes, send notifications, and update status.
+- **Answer cmux questions from a regular Claude Code session**: command usage and troubleshooting.
 
-## トリガー例
+## Example triggers
 
-以下のような発話でスキルが自動アクティブ化する：
+The skill activates automatically for requests such as:
 
-- 「cmux で通知を送りたい」
-- 「cmux のワークスペースを新しく作って」
-- 「cmux のペインを右に分割」
-- 「cmux のサーフェス一覧」
-- 「cmux ブラウザで example.com を開く」
-- 「Claude Code が終わったら cmux に通知させる hook を書いて」
+- "Send a notification in cmux."
+- "Create a cmux workspace."
+- "Split the cmux pane to the right."
+- "List cmux surfaces."
+- "Open example.com in the cmux browser."
+- "Write a hook that notifies cmux when Claude Code finishes."
 
-## 公式リソース
+## Official resources
 
-- リポジトリ: https://github.com/manaflow-ai/cmux
-- 通知 docs: https://github.com/manaflow-ai/cmux/blob/main/docs/notifications.md
-- agent-browser 仕様: https://github.com/manaflow-ai/cmux/blob/main/docs/agent-browser-port-spec.md
+- Repository: https://github.com/manaflow-ai/cmux
+- Notification documentation: https://github.com/manaflow-ai/cmux/blob/main/docs/notifications.md
+- agent-browser specification: https://github.com/manaflow-ai/cmux/blob/main/docs/agent-browser-port-spec.md

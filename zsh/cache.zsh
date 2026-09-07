@@ -1,14 +1,14 @@
-# シェル起動時に走る「外部コマンドの出力を eval する」初期化のキャッシュ
+# Cache initialization that evaluates external command output at shell startup.
 #
-# anyenv init / uv の補完 / ghq root などは、起動のたびに別プロセスを起こしているが
-# 出力は決定的で、ツールを更新しない限り変わらない。生成結果をファイルに残し、
-# 依存パスのどれかが新しくなったときだけ作り直す。
+# anyenv init, uv completion, ghq root, and similar commands start processes on every startup,
+# but their output is deterministic and stays unchanged until tools are updated. Save the output
+# to files and regenerate it only when a dependency path is newer.
 #
-# キャッシュを捨てて作り直したいときは `zsh-cache-clear`。
+# Run `zsh-cache-clear` to discard and rebuild the cache.
 
 ZSH_CACHE_DIR="${ZSH_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/zsh-init}"
 
-# 依存パスのいずれかがキャッシュより新しい（またはキャッシュが無い・空）なら真
+# True if a dependency is newer than the cache, or the cache is missing or empty.
 _zsh_cache_stale() {
     local cache=$1; shift
     [[ -s $cache ]] || return 0
@@ -19,10 +19,10 @@ _zsh_cache_stale() {
     return 1
 }
 
-# _zsh_cache_gen <出力パス> <依存パス...> -- <生成コマンド...>
+# _zsh_cache_gen <output-path> <dependency-paths...> -- <generator-command...>
 #
-# 生成コマンドの stdout でキャッシュを作り直す。生成に失敗しても既存のキャッシュは壊さない。
-# 使えるキャッシュがあれば 0 を返す。
+# Rebuild the cache from the generator's stdout. Preserve the existing cache if generation fails.
+# Return 0 if a usable cache exists.
 _zsh_cache_gen() {
     local cache=$1; shift
     local -a deps
@@ -30,10 +30,10 @@ _zsh_cache_gen() {
         deps+=("$1")
         shift
     done
-    shift  # -- を捨てる
+    shift  # Discard --.
 
     if _zsh_cache_stale "$cache" "${deps[@]}"; then
-        # 生成コマンドが見つからない場合 ($1 が空) は既存キャッシュの有無で判断する
+        # If the generator is missing ($1 is empty), check whether an existing cache is usable.
         (( $# )) || { [[ -s $cache ]]; return }
         mkdir -p "${cache:h}" || return 1
         local tmp="$cache.$$.tmp"
@@ -46,21 +46,21 @@ _zsh_cache_gen() {
     [[ -s $cache ]]
 }
 
-# _zsh_cache_source <キャッシュ名> <依存パス...> -- <生成コマンド...>
+# _zsh_cache_source <cache-name> <dependency-paths...> -- <generator-command...>
 #
-# 生成結果を source する。生成もキャッシュ利用もできなければ 1 を返すので、
-# 呼び出し側でフォールバックできる。
+# Source the generated output. Return 1 if neither generation nor the cache is available,
+# so the caller can fall back.
 _zsh_cache_source() {
     local cache="$ZSH_CACHE_DIR/$1"; shift
     _zsh_cache_gen "$cache" "$@" || return 1
     source "$cache"
 }
 
-# _zsh_cache_var <キャッシュ名> <変数名> <依存パス...> -- <値を出力するコマンド...>
+# _zsh_cache_var <cache-name> <variable-name> <dependency-paths...> -- <value-command...>
 #
-# `ghq root` のように「毎回プロセスを起こすが値は固定」なものを変数に取り込む。
-# コマンドの出力そのものではなく代入文をキャッシュするので、source した時点で
-# 変数に入っている（キャッシュ利用時はプロセスを起こさない）。
+# Load values from commands such as `ghq root` that start a process but return a fixed value.
+# Cache an assignment rather than raw command output, so sourcing it sets the variable
+# without starting another process when using the cache.
 _zsh_cache_var() {
     local cache="$ZSH_CACHE_DIR/$1" var=$2; shift 2
     local -a deps
@@ -68,14 +68,14 @@ _zsh_cache_var() {
         deps+=("$1")
         shift
     done
-    shift  # -- を捨てる
+    shift  # Discard --.
 
     if _zsh_cache_stale "$cache" "${deps[@]}"; then
         local value
         if (( $# )) && value=$("$@" 2>/dev/null) && [[ -n $value ]]; then
             mkdir -p "${cache:h}" || return 1
-            # 端末を同時に何枚も開いたとき、書きかけのファイルを別のシェルが
-            # source しないように一時ファイル経由で差し替える
+            # Replace the cache through a temporary file so simultaneous shell startups
+            # cannot source a partially written file.
             local tmp="$cache.$$.tmp"
             print -r -- "typeset -g $var=${(q)value}" > "$tmp" \
                 && mv -f "$tmp" "$cache" \
@@ -86,16 +86,16 @@ _zsh_cache_var() {
     source "$cache"
 }
 
-# _zsh_cache_completion <補完関数名> <依存パス...> -- <生成コマンド...>
+# _zsh_cache_completion <completion-function-name> <dependency-paths...> -- <generator-command...>
 #
-# `#compdef` 形式の補完スクリプトを fpath 上のキャッシュディレクトリへ書き出す。
-# eval せず compinit の遅延ロードに任せるので、起動時のコストがゼロになる。
-# fpath への追加は init.zsh が compinit の前に行う。
+# Write a `#compdef` completion script into the cache directory on fpath.
+# Let compinit load it lazily instead of evaluating it, avoiding startup cost.
+# init.zsh adds the directory to fpath before compinit.
 _zsh_cache_completion() {
     _zsh_cache_gen "$ZSH_CACHE_DIR/completions/$1" "${@:2}"
 }
 
-# キャッシュを全部捨てる（ツールを更新して古い内容が残ったとき用）
+# Discard all caches when old content remains after updating tools.
 zsh-cache-clear() {
     rm -rf "$ZSH_CACHE_DIR"
     print -r -- "削除しました: $ZSH_CACHE_DIR（次のシェル起動で作り直されます）"

@@ -9,7 +9,7 @@ import iterm2
 REFRESH_INTERVAL = 2.0
 RETRY_INTERVAL = 1.0
 
-# session_id -> (paneCount, tabDirs): iTerm2への冗長な書き込みとUI再描画を避ける
+# session_id -> (paneCount, tabDirs): avoid redundant iTerm2 writes and UI redraws
 _last_set: dict = {}
 
 
@@ -18,7 +18,7 @@ async def update_tab_info(connection):
     live_ids = set()
     for window in app.terminal_windows:
         for tab in window.tabs:
-            # all_sessionsは最大化時の非表示ペイン(minimized_sessions)も含む
+            # all_sessions also includes hidden panes (minimized_sessions) when maximized
             all_sessions = tab.all_sessions
             count = len(all_sessions)
             active_id = tab.active_session_id

@@ -1,5 +1,5 @@
 {
-  "description": "cmux サイドバーの cwd pill アイコンを Claude Code の状態 (running/awaiting/idle/clear) に同期し、sessionId -> cmux surface/workspace UUID マッピングを ~/.claude/cmux/hook-sessions.json に自前生成 (setup#3)",
+  "description": "Synchronize the cmux sidebar cwd pill icon with Claude Code state (running/awaiting/idle/clear), and maintain sessionId -> cmux surface/workspace UUID mappings in ~/.claude/cmux/hook-sessions.json (setup#3)",
   "hooks": {
     "UserPromptSubmit": [
       {

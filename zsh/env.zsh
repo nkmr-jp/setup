@@ -1,16 +1,16 @@
 # Environment variables and PATH settings
 
 # Setup directory
-# .zshrc が既に設定していればそれを尊重する (worktree から検証するときに要る)
+# Respect an existing value from .zshrc (needed for verification from a worktree).
 export SETUP_DIR="${SETUP_DIR:-$HOME/ghq/github.com/nkmr-jp/setup}"
 
-# PATH の重複を自動で取り除く (先に出てきた方＝優先度の高い方が残る)。
-# .zprofile・各種インストーラ・env.zsh が同じディレクトリを何度も足すため、
-# これが無いと 82 エントリ中 24 個が重複したままになり、コマンド解決のたびに走査される。
+# Remove duplicate PATH entries automatically, keeping the first, highest-priority entry.
+# .zprofile, installers, and env.zsh repeatedly add the same directories;
+# without this, 24 of 82 entries were duplicates scanned on every command lookup.
 #
-# 配列 (path) だけでなくスカラー (PATH) にも -U を付けること。
-# `typeset -U path` だけだと `path=(...)` の代入しか重複除去されず、
-# この設定でほぼ全ての追加に使っている `export PATH="X:$PATH"` には効かない (実測)。
+# Apply -U to both the array (path) and scalar (PATH).
+# `typeset -U path` alone only deduplicates assignments to `path=(...)`,
+# not the `export PATH="X:$PATH"` form used for most additions here (verified experimentally).
 typeset -U PATH path FPATH fpath
 
 # Golang
@@ -35,7 +35,7 @@ fi
 
 # Additional paths
 export PATH="$HOME/.cargo/bin:$PATH"
-export PATH="$HOME/.local/bin:$PATH"   # Antigravity CLI もここに入る
+export PATH="$HOME/.local/bin:$PATH"   # Antigravity CLI is also installed here.
 export PATH="$HOME/.grok/bin:$PATH"
 export PATH="/usr/local/Caskroom/miniconda/base/bin:$PATH"
 
@@ -52,7 +52,7 @@ export PATH="$HOME/.codeium/windsurf/bin:$PATH"
 export PATH="$PATH:$HOME/.lmstudio/bin"
 
 # aqua https://aquaproj.github.io/docs/install
-# `aqua root-dir` は毎回プロセスを起こすが値は固定なのでキャッシュする
+# Cache `aqua root-dir`: it starts a process each time but returns a fixed value.
 _zsh_cache_var aqua-root-dir.zsh AQUA_ROOT_DIR "${commands[aqua]}" -- aqua root-dir
 export PATH="${AQUA_ROOT_DIR:-$HOME/.local/share/aquaproj-aqua}/bin:$PATH"
 
@@ -66,8 +66,8 @@ export EDITOR="code --wait"
 # See: https://codeclaude.com/docs/en/fullscreen
 export CLAUDE_CODE_NO_FLICKER=1
 
-# gwt: worktree 作成時に .agentsws/issues を張る先の issues リポジトリ
-# 未設定だと _gwt_setup_agentsws_issues_link が黙ってスキップし、symlink が作られない。
-# projects/ レイアウト（実体が <repo>/projects/<project>/）は gwt.zsh 側で解決するので
-# ここではリポジトリのルートを指す。
+# gwt: issues repository targeted by .agentsws/issues when creating a worktree.
+# If unset, _gwt_setup_agentsws_issues_link silently skips symlink creation.
+# gwt.zsh resolves the projects/ layout (<repo>/projects/<project>/),
+# so this value points to the repository root.
 export GWT_ISSUES_REPO_DIR="$HOME/ghq/github.com/nkmr-jp/issues"

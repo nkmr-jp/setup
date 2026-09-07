@@ -1,33 +1,33 @@
 #!/usr/bin/env sh
-# Codex / Claude Code の各 hook イベントから session_id / transcript_path / cwd を受け取り、
-# 全セッション横断の sessions.jsonl を upsert する。xbar はこの jsonl を読んで
-# メニューバーに表示する。
+# Receive session_id / transcript_path / cwd from Codex / Claude Code hook events
+# and upsert sessions.jsonl across all sessions. xbar reads this JSONL file
+# to display sessions in the menu bar.
 #
-# 設計:
-# - stdin に JSON が流れてくるので jq で session_id / transcript_path / cwd /
-#   hook_event_name を抽出する。jq が無ければ無音で抜ける。
-# - hook event から status を導出 (cmux pill と同じ写像):
+# Design:
+# - Parse JSON on stdin with jq to extract session_id / transcript_path / cwd /
+#   hook_event_name. Exit silently if jq is unavailable.
+# - Derive status from the hook event (the same mapping as the cmux pill):
 #     SessionStart                                    -> idle
 #     UserPromptSubmit / PreToolUse / PostToolUse     -> running
 #     Notification / PermissionRequest                -> awaiting
 #     Stop                                            -> idle
-#     SessionEnd                                      -> ended (= sessions.jsonl から削除)
-# - transcript jsonl から付加情報 (model, gitBranch, 直近ユーザープロンプト, usage)
-#   をベストエフォートで抽出。tail -r で末尾から逆順走査して最初に見つかったものを採用。
-# - 同時並走する複数セッションが sessions.jsonl を破壊しないよう mkdir lock で排他。
-#   - PostToolUse は高頻度発火するため、lock 競合中も lock 内処理を最小限に保つ。
-# - xbar 側が CLAUDE_PLUGIN_DATA の実パスを発見できるよう、
-#   ~/.claude/session-monitor/data-dir にデータディレクトリの絶対パスを記録する
-#   (anchor file)。xbar はそれを読んで sessions.jsonl の場所を解決する。
-# - SessionEnd は Claude Code 側の hook タイムアウトが厳しいため、即座に親へ復帰し
-#   実処理は detach 子プロセスで行う (cmux pill と同様)。
+#     SessionEnd                                      -> ended (remove from sessions.jsonl)
+# - Extract extra transcript information (model, gitBranch, latest user prompt, usage)
+#   on a best-effort basis. Scan backward with tail -r and use the first match.
+# - Use a mkdir lock to prevent concurrent sessions from corrupting sessions.jsonl.
+#   - Keep the locked section short because PostToolUse fires frequently.
+# - Record the absolute data directory path so xbar can discover CLAUDE_PLUGIN_DATA
+#   through the anchor file ~/.claude/session-monitor/data-dir.
+#   xbar reads that file to locate sessions.jsonl.
+# - SessionEnd must return immediately because Claude Code has a short hook timeout;
+#   do its work in a detached child, as with the cmux pill.
 
 exec 2>/dev/null
 umask 077
 
 command -v jq >/dev/null 2>&1 || exit 0
 
-# stdin の JSON を一度だけ読む (jq に何度もパイプしないようファイルに保存)。
+# Read stdin JSON once and save it to a file instead of repeatedly piping it to jq.
 input_file=$(mktemp "${TMPDIR:-/tmp}/session-monitor-input.XXXXXX") || exit 0
 trap 'rm -f "$input_file"' EXIT INT TERM HUP
 cat > "$input_file"
@@ -49,21 +49,21 @@ case "$hook_event" in
   *) exit 0 ;;
 esac
 
-# データディレクトリ。CLAUDE_PLUGIN_DATA があればそれを優先、無ければ
-# ~/.claude/session-monitor をフォールバックにする。
+# Prefer CLAUDE_PLUGIN_DATA for the data directory, falling back to
+# ~/.claude/session-monitor when it is unset.
 data_dir="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/session-monitor}"
 mkdir -p "$data_dir" 2>/dev/null
 sessions_file="$data_dir/sessions.jsonl"
 lock_dir="$sessions_file.lock"
 
-# anchor file: xbar が $CLAUDE_PLUGIN_DATA の実体を知る手段が無いため、
-# 固定パスから data_dir を逆引きできるようにしておく。
+# Anchor file: xbar cannot discover CLAUDE_PLUGIN_DATA directly, so expose
+# data_dir through a fixed path.
 anchor_dir="$HOME/.claude/session-monitor"
 mkdir -p "$anchor_dir" 2>/dev/null
 printf '%s\n' "$data_dir" > "$anchor_dir/data-dir" 2>/dev/null
 
-# SessionEnd は短時間制約があるので detach して子プロセスに処理を任せる。
-# 親はすぐに 0 で抜けて Claude Code 側の hook タイムアウトを救済する。
+# Detach SessionEnd processing to a child to meet its short time limit.
+# The parent exits with 0 immediately to avoid the Claude Code hook timeout.
 if [ "$hook_event" = SessionEnd ] && [ -z "$SESSION_MONITOR_BG" ]; then
   # Open before spawning: parent cleanup may unlink the path before the child starts.
   exec 3< "$input_file" || exit 0
@@ -72,8 +72,8 @@ if [ "$hook_event" = SessionEnd ] && [ -z "$SESSION_MONITOR_BG" ]; then
   exit 0
 fi
 
-# transcript jsonl から付加情報をベストエフォートで抽出。tail -r が macOS の
-# BSD 実装にあるので末尾から逆順に読む。Linux の tac とは流儀が違うので両方試す。
+# Extract extra transcript fields on a best-effort basis. macOS BSD tail supports
+# reverse reading with -r; try Linux tac as an alternative.
 reverse() {
   if command -v tail >/dev/null && tail -r /dev/null >/dev/null 2>&1; then
     tail -r "$1"
@@ -92,19 +92,19 @@ out_tokens=0
 cache_read=0
 last_assistant_ts=""
 
-# cmux 内では TERM_PROGRAM=ghostty になるので CMUX_* を別途記録し、
-# xbar 側で cmux select-workspace + focus-panel を組み合わせて
-# 該当ワークスペース/ペインへ正確にジャンプできるようにする。
+# Inside cmux, TERM_PROGRAM is ghostty. Record CMUX_* separately so xbar can
+# combine cmux select-workspace and focus-panel to jump to the exact
+# workspace and pane.
 term_program="${TERM_PROGRAM:-}"
 cmux_panel_id="${CMUX_PANEL_ID:-}"
 cmux_workspace_id="${CMUX_WORKSPACE_ID:-}"
 
-# cmux アプリは子プロセスに CMUX_PANEL_ID 等を継承しないため、cmux 配下と判定できる
-# 場合 (TERM_PROGRAM=ghostty かつ親が cmux.app) は cmux identify CLI を呼んで
-# focused のペイン/ワークスペースを取得する。focused は cmux 全体での前面ペインを
-# 指すので、ユーザー操作直後 (SessionStart / UserPromptSubmit) のときだけ取得する。
-# PostToolUse 等は連続発火する上、focused が別ペインに移っている可能性があるので、
-# 後段の既存値引き継ぎロジックに任せる。
+# cmux does not pass CMUX_PANEL_ID and related variables to child processes. When
+# running under cmux (TERM_PROGRAM=ghostty and a cmux.app ancestor), use cmux identify
+# to obtain the focused pane and workspace. Because focused refers to the pane
+# currently in front across cmux, query it only immediately after user interaction
+# (SessionStart / UserPromptSubmit). Frequent events such as PostToolUse may occur
+# after focus has moved; let the later logic inherit the existing values instead.
 if [ -z "$cmux_panel_id" ] && [ "$term_program" = "ghostty" ] \
    && [ "${__CFBundleIdentifier:-}" = "com.cmuxterm.app" ] \
    && { [ "$hook_event" = "SessionStart" ] || [ "$hook_event" = "UserPromptSubmit" ]; }; then
@@ -112,16 +112,16 @@ if [ -z "$cmux_panel_id" ] && [ "$term_program" = "ghostty" ] \
   if [ -x "$cmux_cli" ]; then
     identify_json=$("$cmux_cli" identify --no-caller 2>/dev/null)
     if [ -n "$identify_json" ]; then
-      # focus-panel CLI は surface_ref (surface:N) を期待する。pane_ref を渡すと
-      # `not_found: Workspace not found` で失敗するので、必ず surface_ref を保存する。
+      # focus-panel expects a surface_ref (surface:N). Passing a pane_ref fails
+      # with `not_found: Workspace not found`, so always store surface_ref.
       cmux_panel_id=$(printf '%s' "$identify_json" | jq -r '.focused.surface_ref // ""' 2>/dev/null)
       cmux_workspace_id=$(printf '%s' "$identify_json" | jq -r '.focused.workspace_ref // ""' 2>/dev/null)
     fi
   fi
 fi
 
-# 取得できなかったときは jsonl の既存レコードから引き継ぐ。一度取得した値は
-# セッション中保持される (ユーザーがペインを移動しない限り正しい)。
+# If lookup fails, inherit values from the existing JSONL record. Once discovered,
+# they remain valid throughout the session unless the user moves the pane.
 if [ -z "$cmux_panel_id" ] && [ -f "$sessions_file" ]; then
   existing=$(jq -r --arg sid "$session_id" \
     'select(.session_id == $sid)
@@ -133,10 +133,10 @@ if [ -z "$cmux_panel_id" ] && [ -f "$sessions_file" ]; then
   fi
 fi
 
-# UserPromptSubmit のときは hook stdin に .prompt が直接入る。これは「ユーザーが
-# 今しがた入力したテキスト」そのもので、transcript に書き込まれる前に hook が
-# 呼ばれることがあるため、即時反映するためここで取り出して transcript 解析より
-# 優先採用する (後述の last_prompt 上書き)。
+# UserPromptSubmit includes .prompt directly in hook stdin. This is the text the
+# user just entered; the hook may run before it is written to the transcript.
+# Extract it here for immediate display and prefer it over transcript parsing
+# when overriding last_prompt below.
 hook_prompt=""
 if [ "$hook_event" = "UserPromptSubmit" ]; then
   hook_prompt=$(jq -r '(.prompt // "") | gsub("[\\n\\r\\t]"; " ")' \
@@ -144,10 +144,10 @@ if [ "$hook_event" = "UserPromptSubmit" ]; then
 fi
 
 if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
-  # 末尾 400 行に絞ることで巨大セッションでも一定時間で完了する。
+  # Limit the scan to the last 400 lines to bound work even for large sessions.
   tail_buf=$(tail -n 400 "$transcript_path" 2>/dev/null)
 
-  # 最新 assistant メッセージの usage / model
+  # Usage and model from the latest assistant message
   last_assistant=$(printf '%s\n' "$tail_buf" | jq -c 'select(.type=="assistant" and (.message.usage // null)!=null)' 2>/dev/null | tail -n 1)
   if [ -n "$last_assistant" ]; then
     transcript_model=$(printf '%s' "$last_assistant" | jq -r '.message.model // ""')
@@ -158,12 +158,12 @@ if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
     last_assistant_ts=$(printf '%s' "$last_assistant" | jq -r '.timestamp // ""')
   fi
 
-  # 最新ユーザープロンプト。Claude Code transcript 上で「ユーザーが入力欄から
-  # タイプしたメッセージ」だけを残すには、以下を全部除外する必要がある:
-  #   - sidechain (subagent 内の user role メッセージ)
-  #   - isMeta=true (Stop hook 注入 / Skill 起動 / "Continue from where..." 等)
-  #   - toolUseResult あり (Bash 等のツール結果として後付けされた user role)
-  # xbar 側で全文表示するため上限は緩めに (極端に長い貼り付けを抑える程度)。
+  # Latest user prompt. To retain only messages typed by the user in Claude Code,
+  # exclude all of the following transcript entries:
+  #   - sidechain (user-role messages within subagents)
+  #   - isMeta=true (Stop hook injections, skill invocations, "Continue from where...", etc.)
+  #   - toolUseResult present (user-role entries appended as Bash or other tool results)
+  # Use a generous limit for xbar's full-text display, only restricting extreme pastes.
   last_prompt=$(printf '%s\n' "$tail_buf" | jq -r '
     select(.type=="user"
            and (.isSidechain // false)==false
@@ -176,12 +176,12 @@ if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
     | gsub("[\\n\\r\\t]"; " ")
   ' 2>/dev/null | tail -n 1 | head -c 4000)
 
-  # 最新の gitBranch (空文字も来るので非空のみ拾う)
+  # Latest nonempty gitBranch (empty strings can also occur)
   git_branch=$(printf '%s\n' "$tail_buf" | jq -r 'select((.gitBranch // "") != "") | .gitBranch' 2>/dev/null | tail -n 1)
 fi
 
-# UserPromptSubmit の hook 入力にプロンプトがあれば、transcript からの抽出より
-# 優先する (transcript への書き込みより先に hook が来るので、こちらが最新)。
+# Prefer a prompt supplied by the UserPromptSubmit hook over transcript extraction:
+# the hook can arrive before the transcript write, making this value newer.
 [ -n "$hook_prompt" ] && last_prompt="$hook_prompt"
 
 now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -210,7 +210,7 @@ new_record=$(jq -nc \
     cmux_workspace_id:$cmux_workspace_id,
     input_tokens:$it, output_tokens:$ot, cache_read_input_tokens:$cr}')
 
-# Per-file mutex (mkdir は POSIX で atomic)。1 秒以上経過したロックは stale。
+# Per-file mutex (mkdir is atomic on POSIX). Locks older than one second are stale.
 attempts=0
 while ! mkdir "$lock_dir" 2>/dev/null; do
   attempts=$((attempts + 1))
@@ -225,24 +225,24 @@ trap 'rm -rf "$lock_dir" 2>/dev/null; rm -f "$input_file"' EXIT INT TERM HUP
 tmp_file=$(mktemp "$sessions_file.tmp.XXXXXX") || exit 0
 trap 'rm -rf "$lock_dir" 2>/dev/null; rm -f "$input_file" "$tmp_file"' EXIT INT TERM HUP
 if [ -f "$sessions_file" ]; then
-  # 当該 session_id の既存行を除いた jsonl を書き出す
+  # Write JSONL without the existing entry for this session_id.
   jq -c --arg sid "$session_id" 'select(.session_id != $sid)' "$sessions_file" > "$tmp_file" 2>/dev/null || : > "$tmp_file"
 else
   : > "$tmp_file"
 fi
 
-# ended なら追記しない (= 削除)
+# Do not append ended sessions; removing their existing entry deletes them.
 if [ "$status" != "ended" ]; then
   printf '%s\n' "$new_record" >> "$tmp_file"
 fi
 
 mv "$tmp_file" "$sessions_file"
 
-# xbar に即時再描画を要求する。`open -g` は URL ハンドラへ投げるだけで
-# アプリをフォアグラウンドに上げないので、ターミナル等の現在のフォアグラウンド
-# アプリから入力フォーカスを奪わない。`-g` 無しだと xbar がアクティブ化
-# されて、hook 発火のたびに入力フォーカスが奪われてしまう。
-# (xbar が動いていない / 未インストールでもエラーは無視される)
+# Request an immediate xbar refresh. `open -g` dispatches to the URL handler without
+# bringing the application to the foreground, preserving input focus in the current
+# foreground application, such as the terminal. Without `-g`, xbar becomes active
+# and steals input focus every time a hook fires.
+# Ignore errors if xbar is not running or is not installed.
 /usr/bin/open -g "xbar://app.xbarapp.com/refreshPlugin?path=claude-sessions.5s.sh" >/dev/null 2>&1 &
 
 exit 0

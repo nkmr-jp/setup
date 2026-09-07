@@ -1,9 +1,9 @@
 # cmux
 
-cmux のユーザー設定・sidebar 連携は setup のこのディレクトリで管理する。
-エージェント自身の設定は agent-settings で管理する。
+This setup directory manages cmux user settings and sidebar integration.
+Agent settings are managed in agent-settings.
 
-リポジトリのルートで実行する:
+Run from the repository root:
 
 ```sh
 ./cmux/link.sh --dry-run
@@ -11,18 +11,19 @@ cmux のユーザー設定・sidebar 連携は setup のこのディレクトリ
 ./cmux/link.sh --check
 ```
 
-`cmux.json` と `sidebar-cwd.zsh` をそれぞれ `~/.config/cmux/` へリンクする。
-設定ディレクトリ全体はリンクしない。既存の実体や異なるリンクは同じディレクトリに
-`<filename>.backup.<日時>.<pid>` として退避し、正しいリンクは変更しない。
-`--dry-run` と `--check` はファイル・ディレクトリを作成しない。
-検証用の配置先は `CMUX_CONFIG_HOME`（絶対パス）で変更できる。
+Link `cmux.json` and `sidebar-cwd.zsh` individually into `~/.config/cmux/`.
+The configuration directory itself is not linked. Existing files and different
+links are backed up beside the destination as `<filename>.backup.<timestamp>.<pid>`;
+correct links are left unchanged. `--dry-run` and `--check` create no files or
+directories. Override the destination for testing with `CMUX_CONFIG_HOME` (an absolute path).
 
-agent-settings から戻す場合も上記 `--install` を使う。変更した旧正本がある場合は先に差分を確認して取り込む。
-戻す必要があれば対象の新リンクだけを外し、該当 backup を元のファイル名へ戻す。
+Use the same `--install` command when moving back from agent-settings. Review and
+incorporate any changes to the old source files first. To roll back, remove only
+the new links concerned and restore the corresponding backups to their original names.
 
-zsh はインストール済みの `~/.config/cmux/sidebar-cwd.zsh` を source する。
-`cmux.json` は JSONC 形式。反映は `cmux reload-config` または新しい cmux セッションで行う。
-この installer はアプリ操作やサービス起動を行わない。
+zsh sources the installed `~/.config/cmux/sidebar-cwd.zsh`.
+`cmux.json` uses JSONC. Apply changes with `cmux reload-config` or a new cmux session.
+The installer does not control apps or start services.
 
-プラグイン本体と hooks は [plugins/cmux](../plugins/cmux/README.md) で管理する。
-回帰テスト: `bats tests/cmux-link.bats`。
+The plugin and hooks live in [plugins/cmux](../plugins/cmux/README.md).
+Regression tests: `bats tests/cmux-link.bats`.

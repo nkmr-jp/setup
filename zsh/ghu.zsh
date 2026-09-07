@@ -38,13 +38,13 @@ __ghu_create_workspace() {
   git clone git@github.com:${repo_path}.git $ws_dir
   cd $(ghq root)/github.com/$ws_dir
 
-  # ブランチ自動生成機能
-  # developブランチがあればそこから、なければmain、さらになければmasterから作成
+  # Automatically create a branch.
+  # Use develop if available, otherwise main, then master.
   local branch_prefix="ws/"
   local timestamp=$(date +"%Y%m%d_%H%M%S")
   local new_branch="${branch_prefix}${timestamp}"
 
-  # 優先順位の高い順にブランチを確認
+  # Check branches in priority order.
   local base_branches=("develop" "main" "master")
   local base_branch=""
 
@@ -58,7 +58,7 @@ __ghu_create_workspace() {
   done
 
   if [[ -n "$base_branch" ]]; then
-    # リモートブランチが存在するか確認
+    # Check whether the remote branch exists.
     if git rev-parse --verify origin/$base_branch >/dev/null 2>&1; then
       git checkout -b $new_branch origin/$base_branch
     else
@@ -174,14 +174,14 @@ ghu() {
         echo "Checking $dir..."
         cd "$dir"
 
-        # リポジトリかどうか確認
+        # Check whether this is a repository.
         if [[ ! -d ".git" ]]; then
           echo "  Not a git repository, skipping."
           cd $(ghq root)/github.com/
           continue
         fi
 
-        # 現在のブランチを取得
+        # Get the current branch.
         local current_branch=$(git rev-parse --abbrev-ref HEAD)
         if [[ "$current_branch" == "main" || "$current_branch" == "master" || "$current_branch" == "develop" ]]; then
           echo "  On base branch ($current_branch), skipping."
@@ -189,10 +189,10 @@ ghu() {
           continue
         fi
 
-        # リモートの最新情報を取得
+        # Fetch the latest remote information.
         git fetch origin --quiet
 
-        # マージ済みかどうかを確認
+        # Check whether the branch has been merged.
         local is_merged=false
         for base in "develop" "main" "master"; do
           if git rev-parse --verify origin/$base >/dev/null 2>&1; then

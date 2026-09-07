@@ -3,16 +3,16 @@
 # <xbar.version>v0.2.0</xbar.version>
 # <xbar.author>nkmr-jp</xbar.author>
 # <xbar.author.github>nkmr-jp</xbar.author.github>
-# <xbar.desc>Horo の進行中タスクをメニューバーに表示する</xbar.desc>
+# <xbar.desc>Show the current Horo task in the menu bar</xbar.desc>
 # <xbar.dependencies>sqlite3, Horo.app</xbar.dependencies>
 #
-# Horo (https://horo.app) の SQLite を読み、現在動いている timer があれば
-# そのタスク名をメニューバーに表示する。動いていなければ ☕️ を出す。
+# Read the Horo (https://horo.app) SQLite database and show the task name for
+# the active timer in the menu bar. Show a coffee icon when no timer is running.
 
 set -u
 PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
-# xbar 経由起動だと LANG が空になり、zsh の ${var:0:N} 等が
-# バイト単位になって日本語が壊れるので UTF-8 を明示する。
+# xbar may launch with LANG unset, making zsh slices such as ${var:0:N} operate
+# on bytes and corrupt Japanese text. Explicitly select UTF-8.
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
@@ -26,8 +26,8 @@ if [[ ! -f "$DB" ]]; then
   exit 0
 fi
 
-# 最新タスクの id / text / 未完了フラグを 1 クエリで取得。
-# 未完了 = started_at はあるが completed_at / saved_at / trashed_at がいずれも null。
+# Fetch the latest task id, text, and incomplete flag in one query.
+# Incomplete means started_at is set and completed_at / saved_at / trashed_at are all null.
 ROW=$(sqlite3 -separator $'\t' "$DB" "
   select
     timer_id,
@@ -49,7 +49,7 @@ if [[ -n "$LATEST" && "$UNFINISHED" == "1" ]]; then
     HASH=""
     MSG="$DOING"
   fi
-  # xbar の menu item は `|` を param 区切りとして扱うので潰す。
+  # Replace pipes because xbar treats `|` as the menu-item parameter separator.
   MSG="${MSG//|/ }"
   print -- "🧑‍💻${MSG} | size=16"
   print -- "---"

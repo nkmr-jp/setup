@@ -1,84 +1,83 @@
 # herdr
 
-[herdr](https://herdr.dev)（terminal workspace manager for AI coding agents）のカスタム設定。
+Custom configuration for [herdr](https://herdr.dev), a terminal workspace manager for AI coding agents.
 
 ## Setup
 
 ```sh
 brew install herdr
 ln -sf ~/ghq/github.com/nkmr-jp/setup/herdr/config.toml ~/.config/herdr/config.toml
-herdr server reload-config   # サーバー起動中に設定を反映
+herdr server reload-config   # Apply configuration while the server is running
 ```
 
-スキーマ全体は `herdr --default-config` で確認できる。
+Inspect the complete schema with `herdr --default-config`.
 
-## キーバインド
+## Keybindings
 
-デフォルトの `ctrl+b` プレフィックス操作は維持しつつ、`ctrl+alt` の直接チョードを併記して
-プレフィックスなしで操作できるようにしている（issues#4）。
+Keep the default `ctrl+b` prefix bindings and add direct `ctrl+alt` chords
+for operation without a prefix (issues#4).
 
 ### Pane
 
-| 操作 | 直接 | prefix 版 |
+| Operation | Direct | With prefix |
 | --- | --- | --- |
-| フォーカス移動（左/下/上/右） | `ctrl+alt+h/j/k/l` | `prefix+h/j/k/l` |
-| 縦分割 | `ctrl+alt+v` | `prefix+v` |
-| 横分割 | `ctrl+alt+s` | `prefix+-` |
-| ペインを閉じる | `ctrl+alt+x` | `prefix+x` |
-| ズーム | `ctrl+alt+z` | `prefix+z` |
-| リサイズモード | `ctrl+alt+r` | `prefix+r` |
+| Move focus (left/down/up/right) | `ctrl+alt+h/j/k/l` | `prefix+h/j/k/l` |
+| Vertical split | `ctrl+alt+v` | `prefix+v` |
+| Horizontal split | `ctrl+alt+s` | `prefix+-` |
+| Close pane | `ctrl+alt+x` | `prefix+x` |
+| Zoom | `ctrl+alt+z` | `prefix+z` |
+| Resize mode | `ctrl+alt+r` | `prefix+r` |
 
 ### Tab
 
-| 操作 | 直接 | prefix 版 |
+| Operation | Direct | With prefix |
 | --- | --- | --- |
-| 新規タブ | `ctrl+alt+t` | `prefix+c` |
-| 前/次のタブ | `ctrl+alt+←/→` | `prefix+p/n` |
-| タブ番号切替 | `ctrl+alt+1..9` | `prefix+1..9` |
+| New tab | `ctrl+alt+t` | `prefix+c` |
+| Previous/next tab | `ctrl+alt+←/→` | `prefix+p/n` |
+| Select tab by number | `ctrl+alt+1..9` | `prefix+1..9` |
 
 ### Workspace
 
-| 操作 | 直接 | prefix 版 |
+| Operation | Direct | With prefix |
 | --- | --- | --- |
-| ワークスペース一覧 | `ctrl+alt+w` | `prefix+w` |
-| 前/次のワークスペース | `ctrl+alt+↑/↓` | （デフォルト未設定） |
+| List workspaces | `ctrl+alt+w` | `prefix+w` |
+| Previous/next workspace | `ctrl+alt+↑/↓` | Unassigned by default |
 
 ### Misc
 
-| 操作 | 直接 | prefix 版 |
+| Operation | Direct | With prefix |
 | --- | --- | --- |
-| goto（navigate mode） | `ctrl+alt+g` | `prefix+g` |
-| スクロールバック編集 | `ctrl+alt+e` | `prefix+e` |
-| サイドバー表示切替 | `ctrl+alt+b` | `prefix+b` |
+| goto (navigate mode) | `ctrl+alt+g` | `prefix+g` |
+| Edit scrollback | `ctrl+alt+e` | `prefix+e` |
+| Toggle sidebar | `ctrl+alt+b` | `prefix+b` |
 
-## モディファイア選定の理由
+## Modifier rationale
 
-- `cmd` 系は ghostty がターミナル層で消費して herdr に届かない
-- 素の `ctrl+英字` は zsh ウィジェット（`ctrl+g/f/]`）や readline 操作と衝突する
-- herdr 公式も「explicit modified chords」を信頼できる直接バインドとして推奨
-- herdr は cmux 内では使わない想定のため、cmux のショートカットとの衝突は考慮しない
+- Ghostty consumes `cmd` chords at the terminal layer before they reach herdr.
+- Bare `ctrl+letter` conflicts with zsh widgets (`ctrl+g/f/]`, etc.) and readline.
+- herdr also recommends explicit modified chords for reliable direct bindings.
+- herdr is not intended to run inside cmux, so cmux shortcut conflicts are not considered.
 
-## ターミナル互換性の注意
+## Terminal compatibility
 
-- `ctrl+alt+英字` は **CSI-u（kitty keyboard protocol）対応ターミナルが必要**。
-  legacy な ESC プレフィックスエンコーディングでは herdr に `ctrl+alt` として届かない
-  （隔離セッション + PTY での実測により確認）。
-- `ctrl+alt+矢印` は xterm 標準の modified arrow エンコーディング（`CSI 1;7A` 等）なので
-  legacy ターミナルでも動く。
-- **iTerm2（普段使いの環境）**: プロファイルの Option キーがデフォルト（Normal）だと
-  option が alt として送信されず、`ctrl+alt` チョードが herdr に届かない。
-  Settings → Profiles → 対象プロファイル → Keys → General →
-  **Left Option key を「Esc+」に変更**する。
-  ※ JIS キーボードで `option+¥` によるバックスラッシュ入力を使っている場合、
-  Esc+ にした側の option では打てなくなるので、片側（Left）だけ Esc+ にして
-  もう片側は Normal のまま残すとよい。
-- **ghostty**: kitty keyboard protocol 対応。`ctrl+alt+英字` が効かない場合は
-  config に `macos-option-as-alt = true` を追加する。
+- `ctrl+alt+letter` requires a terminal supporting **CSI-u (kitty keyboard protocol)**.
+  Legacy ESC-prefix encoding does not reach herdr as `ctrl+alt`, as confirmed in
+  an isolated session with a PTY.
+- `ctrl+alt+arrow` uses standard xterm modified-arrow encoding (`CSI 1;7A`, etc.),
+  so it also works in legacy terminals.
+- **iTerm2 (the usual environment)**: with the default Option setting (Normal),
+  Option is not sent as Alt and `ctrl+alt` chords do not reach herdr.
+  In Settings → Profiles → your profile → Keys → General,
+  **set Left Option key to "Esc+"**.
+  If you enter backslashes using `option+¥` on a JIS keyboard, this stops working
+  on the Esc+ side. Set only Left to Esc+ and leave the other side Normal.
+- **Ghostty** supports the kitty keyboard protocol. If `ctrl+alt+letter` does not
+  work, add `macos-option-as-alt = true` to the configuration.
 
-## 運用メモ
+## Operational notes
 
-- herdr の設定画面（`prefix+s`）は config.toml を直接書き換える。symlink が実ファイルに
-  置き換わってしまった場合は、差分をリポジトリ側に取り込んでから上記 `ln -sf` を張り直す。
-- キーバインドが無効値だと herdr はそのバインドだけ無効化してログに
-  `disabling binding` を出す（フェイルセーフ）。反映確認は
-  `~/.config/herdr/herdr-server.log` を見る。
+- herdr's settings screen (`prefix+s`) rewrites config.toml directly. If it replaces
+  the symlink with a regular file, incorporate the diff into the repository before
+  restoring the link with the `ln -sf` command above.
+- Invalid bindings are disabled individually, with `disabling binding` logged
+  as a fail-safe. Check `~/.config/herdr/herdr-server.log` after applying changes.

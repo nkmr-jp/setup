@@ -1,14 +1,14 @@
 #!/bin/zsh
 
-# zsh環境でのみ補完機能を有効化
+# Enable completion only in zsh.
 if [[ -n "$ZSH_VERSION" ]]; then
     autoload -Uz compinit && compinit
 fi
 
-# Git Worktree Manager - 統合コマンド
-# 複数のworktreeでの並行作業を効率化するユーティリティ
+# Git Worktree Manager - unified command.
+# Utilities for efficient parallel work across multiple worktrees.
 
-# カラー定義 (ANSI escape codes)
+# Color definitions (ANSI escape codes).
 if [[ -t 1 ]]; then
     if command -v tput > /dev/null 2>&1 && tput colors > /dev/null 2>&1; then
         RED=$(tput setaf 1)
@@ -35,14 +35,14 @@ else
 fi
 
 # ========================================
-# ブロッキングコマンドの遅延実行（zle-line-init経由）
+# Defer blocking commands through zle-line-init.
 # ========================================
-# iTerm2の "Reuse previous session's directory" はプロンプトが実際に表示され、
-# シェルが入力待ち状態になって初めてCWDを更新する。
-# precmd内やエスケープシーケンスだけではCWDが更新されない。
+# iTerm2's "Reuse previous session's directory" updates CWD only after the prompt
+# is displayed and the shell starts waiting for input.
+# precmd or escape sequences alone do not update CWD.
 #
-# 解決策: 関数からリターン → precmd発火 → プロンプト表示 → zle-line-init発火
-# → この時点でiTerm2のCWDが更新済み → コマンドを自動実行
+# Sequence: return from function -> precmd -> display prompt -> zle-line-init
+# -> iTerm2 has now updated CWD -> execute the command automatically.
 _GWT_DEFERRED_CMD=""
 _GWT_DEFERRED_RETURN=""
 _GWT_RETURN_AFTER=""
@@ -54,12 +54,12 @@ _gwt_zle_auto_execute() {
         _GWT_DEFERRED_CMD=""
         _GWT_DEFERRED_RETURN=""
 
-        # 復帰先をprecmdで処理するため変数に退避（BUFFERに旧パスを含めない）
+        # Save the return directory for precmd without putting the old path into BUFFER.
         if [[ -n "$return_dir" ]]; then
             _GWT_RETURN_AFTER="$return_dir"
         fi
 
-        # accept-line直前にOSC 1337を送出してiTerm2のCWDを確実に更新
+        # Emit OSC 1337 immediately before accept-line to ensure iTerm2 updates CWD.
         _iterm2_send_current_dir 2>/dev/null
 
         BUFFER="$cmd"
@@ -69,7 +69,7 @@ _gwt_zle_auto_execute() {
 zle -N _gwt_zle_auto_execute
 zle -N zle-line-init _gwt_zle_auto_execute
 
-# コマンド完了後にprecmdで元ディレクトリに復帰
+# Return to the original directory in precmd after the command completes.
 _gwt_return_after_precmd() {
     if [[ -n "$_GWT_RETURN_AFTER" ]]; then
         local dir="$_GWT_RETURN_AFTER"
@@ -80,16 +80,16 @@ _gwt_return_after_precmd() {
 precmd_functions=($precmd_functions _gwt_return_after_precmd)
 
 # ========================================
-# Post-create hook 実行
+# Run the post-create hook.
 # ========================================
 _gwt_run_post_create_hook() {
     local hook_executed=false
 
-    # 2. リポジトリルートのスクリプトを実行
+    # 2. Run the script at the repository root.
     local repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
     local repo_hook="${repo_root}/.gwt-post-create.sh"
     if [[ -f "$repo_hook" && -x "$repo_hook" ]]; then
-        # 環境変数を設定
+        # Set environment variables.
         export GWT_WORKTREE_PATH="$1"
         export GWT_BRANCH_NAME="$2"
         export GWT_BASE_BRANCH="$3"
@@ -102,42 +102,42 @@ _gwt_run_post_create_hook() {
         fi
         hook_executed=true
 
-        # 環境変数をクリア
+        # Clear environment variables.
         unset GWT_WORKTREE_PATH GWT_BRANCH_NAME GWT_BASE_BRANCH GWT_BASE_PATH
     fi
 
     if [[ "$hook_executed" == false ]]; then
-        # hookが見つからなかった場合は何も表示しない（通常動作）
+        # Remain silent if no hook is found (normal behavior).
         :
     fi
 }
 
 # ========================================
-# .agentsws/issues シンボリックリンクの作成
+# Create the .agentsws/issues symlink.
 # ========================================
-# worktree内に .agentsws/issues シンボリックリンクを作成し、
-# issues リポジトリ ($GWT_ISSUES_REPO_DIR) の該当プロジェクトフォルダへ
-# リンクする。プロジェクト名はベースリポジトリ名（-wt-除去後）。
-# - 環境変数 GWT_ISSUES_REPO_DIR が未設定なら何もしない
-# - issues リポジトリが存在しなくてもエラーにせずスキップする
-# - issues リポジトリに projects/ があればその配下をプロジェクトフォルダの親とする
-# - リンク先プロジェクトフォルダが未作成なら先に作成する
+# Create .agentsws/issues in the worktree and link it to
+# the matching project directory in the issues repository ($GWT_ISSUES_REPO_DIR).
+# The project name is the base repository name with the -wt- suffix removed.
+# - Do nothing if GWT_ISSUES_REPO_DIR is unset.
+# - Skip without an error if the issues repository does not exist.
+# - If the issues repository has projects/, use it as the parent of project directories.
+# - Create the target project directory first if it does not exist.
 _gwt_setup_agentsws_issues_link() {
     local worktree_path="$1"
     local project_name="$2"
     local issues_repo_dir="$GWT_ISSUES_REPO_DIR"
 
-    # 環境変数 GWT_ISSUES_REPO_DIR が未設定（空）ならスキップ
+    # Skip if GWT_ISSUES_REPO_DIR is unset or empty.
     [[ -n "$issues_repo_dir" ]] || return 0
 
-    # issues リポジトリ本体が存在しない場合もエラーにせずスキップ
+    # Also skip without an error if the issues repository does not exist.
     [[ -d "$issues_repo_dir" ]] || return 0
 
-    # issues リポジトリが projects/ レイアウトなら、その配下をプロジェクトフォルダの親にする。
-    # このレイアウトでは実体が <repo>/projects/<project>/ に置かれるため、リポジトリ直下に
-    # 張ると空のフォルダを新規作成して既存の issue が一切見えないリンクになる。
-    # GWT_ISSUES_REPO_DIR が既に projects/ を指している場合は projects/projects が無いので
-    # そのまま使われる（冪等）。
+    # For the projects/ layout, use that directory as the parent of project directories.
+    # Actual content lives in <repo>/projects/<project>/; linking to the repository root
+    # would create an empty directory and hide all existing issues from the link.
+    # If GWT_ISSUES_REPO_DIR already points to projects/, projects/projects does not exist,
+    # so the path is used unchanged (idempotent).
     local projects_parent="$issues_repo_dir"
     [[ -d "${issues_repo_dir}/projects" ]] && projects_parent="${issues_repo_dir}/projects"
 
@@ -145,23 +145,23 @@ _gwt_setup_agentsws_issues_link() {
     local agentsws_dir="${worktree_path}/.agentsws"
     local link_path="${agentsws_dir}/issues"
 
-    # 既にリンク/ファイルが存在する場合はスキップ
+    # Skip if a link or file already exists.
     [[ -e "$link_path" || -L "$link_path" ]] && return 0
 
-    # issues リポジトリ側にプロジェクトフォルダを作成
+    # Create the project directory in the issues repository.
     if [[ ! -d "$issues_project_dir" ]]; then
         mkdir -p "$issues_project_dir"
         echo -e "${CYAN}→ issues プロジェクトフォルダを作成: ${issues_project_dir}${RESET}"
     fi
 
-    # .agentsws ディレクトリとシンボリックリンクを作成
+    # Create the .agentsws directory and symlink.
     mkdir -p "$agentsws_dir"
     ln -s "$issues_project_dir" "$link_path"
     echo -e "${GREEN}✓ .agentsws/issues -> ${issues_project_dir}${RESET}"
 }
 
 # ========================================
-# JetBrains Recent Projectsから削除
+# Remove from JetBrains Recent Projects.
 # ========================================
 _gwt_jetbrains_dir="$HOME/Library/Application Support/JetBrains"
 _gwt_jetbrains_pending_file="$HOME/.cache/gwt/jetbrains_pending_cleanup.txt"
@@ -174,7 +174,7 @@ _gwt_remove_from_jetbrains_recent() {
     local wt_path="$1"
     [[ ! -d "$_gwt_jetbrains_dir" ]] && return 0
 
-    # JetBrains IDEが起動中の場合はペンディングファイルに記録
+    # Record pending removal if a JetBrains IDE is running.
     if _gwt_is_jetbrains_running; then
         mkdir -p "$HOME/.cache/gwt"
         echo "$wt_path" >> "$_gwt_jetbrains_pending_file"
@@ -194,12 +194,12 @@ _gwt_do_remove_from_jetbrains_recent() {
     local escaped_for_sed="${escaped_path//\//\\/}"
     escaped_for_sed="${escaped_for_sed//&/\\&}"
 
-    # 全てのJetBrains IDEのrecentProjects.xmlを処理
+    # Process recentProjects.xml for every JetBrains IDE.
     find "$_gwt_jetbrains_dir" -name "recentProjects.xml" -type f 2>/dev/null | while read -r xml_file; do
         [[ "$xml_file" == *"-backup"* ]] && continue
 
         if grep -q "\"${escaped_path}\"" "$xml_file" 2>/dev/null; then
-            # <entry key="$USER_HOME$/path">...</entry> ブロック全体を削除
+            # Remove the entire <entry key="$USER_HOME$/path">...</entry> block.
             if sed -i '' "/<entry key=\"${escaped_for_sed}\">/,/<\/entry>/d" "$xml_file" 2>/dev/null; then
                 local ide_name="${xml_file#*JetBrains/}"
                 ide_name="${ide_name%%/*}"
@@ -228,7 +228,7 @@ _gwt_process_jetbrains_pending() {
 }
 
 # ========================================
-# メインコマンド
+# Main command.
 # ========================================
 gwt() {
     local cmd="$1"
@@ -280,20 +280,20 @@ gwt() {
 }
 
 # ========================================
-# ベースブランチの自動解決
+# Automatically resolve the base branch.
 # ========================================
-# ワークツリーにいる場合、wtなしのメインディレクトリのブランチを
-# 最新化してベースブランチとして返す
+# When inside a worktree, update the branch in the main directory without -wt-
+# and return it as the base branch.
 _gwt_resolve_base_branch() {
     local current_repo_name=$(basename $(git rev-parse --show-toplevel))
 
-    # 現在のディレクトリがワークツリー（-wt-を含む）でなければ現在のブランチを返す
+    # Return the current branch if the directory is not a worktree (does not contain -wt-).
     if [[ "$current_repo_name" != *"-wt-"* ]]; then
         git branch --show-current
         return 0
     fi
 
-    # ワークツリー一覧からwtなしのディレクトリを探す
+    # Find the directory without -wt- in the worktree list.
     local -a main_entries
     while IFS= read -r line; do
         local wt_path=$(echo "$line" | awk '{print $1}')
@@ -303,7 +303,7 @@ _gwt_resolve_base_branch() {
         fi
     done < <(git worktree list)
 
-    # wtなしのディレクトリが複数ある場合は警告して終了
+    # Warn and exit if multiple directories without -wt- exist.
     if [[ ${#main_entries[@]} -gt 1 ]]; then
         echo -e "${RED}Error: wtなしのディレクトリが複数見つかりました:${RESET}" >&2
         for entry in "${main_entries[@]}"; do
@@ -317,7 +317,7 @@ _gwt_resolve_base_branch() {
         return 1
     fi
 
-    # メインディレクトリのブランチを取得
+    # Get the main directory's branch.
     local main_branch=$(echo "${main_entries[1]}" | grep -o '\[.*\]' | tr -d '[]')
 
     if [[ -z "$main_branch" ]]; then
@@ -325,14 +325,14 @@ _gwt_resolve_base_branch() {
         return 1
     fi
 
-    # ブランチを最新化
+    # Update the branch.
     echo -e "${BLUE}ベースブランチ '${main_branch}' を最新化中...${RESET}" >&2
     if git fetch origin "$main_branch:$main_branch" 2>/dev/null; then
         echo -e "${GREEN}✓ ${main_branch} を最新化しました${RESET}" >&2
     else
-        # チェックアウト中の場合はmerge --ff-onlyで試行
-        # （merge の標準出力 "Already up to date." が stdout のブランチ名に
-        #   混入しないよう >/dev/null で抑制する）
+        # If checked out, try merge --ff-only.
+        # (Suppress merge stdout such as "Already up to date." with >/dev/null
+        # so it does not contaminate the branch name returned on stdout.)
         local main_path=$(echo "${main_entries[1]}" | awk '{print $1}')
         if (cd "$main_path" && git merge --ff-only "origin/$main_branch" >/dev/null 2>&1); then
             echo -e "${GREEN}✓ ${main_branch} を最新化しました${RESET}" >&2
@@ -346,7 +346,7 @@ _gwt_resolve_base_branch() {
 }
 
 # ========================================
-# 1. 新しいworktreeを作成してそこに移動
+# 1. Create and enter a new worktree.
 # ========================================
 _gwt_new() {
     local branch_name="$1"
@@ -357,7 +357,7 @@ _gwt_new() {
         return 1
     fi
 
-    # ベースブランチの決定: 明示指定 > 自動解決 > 現在のブランチ
+    # Choose the base branch: explicit value > automatic resolution > current branch.
     local base_branch
     if [[ -n "$2" ]]; then
         base_branch="$2"
@@ -368,23 +368,23 @@ _gwt_new() {
         fi
     fi
 
-    # Gitリポジトリかチェック
+    # Check whether this is a Git repository.
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
         echo -e "${RED}Error: Gitリポジトリではありません${RESET}"
         return 1
     fi
 
-    # 元リポジトリと同じディレクトリにworktreeを作成
+    # Create a worktree alongside the original repository.
     local current_repo_name=$(basename $(git rev-parse --show-toplevel))
     local repo_parent_dir=$(dirname $(git rev-parse --show-toplevel))
     
-    # 既存の-wt-サフィックスを除去してベースリポジトリ名を取得
+    # Remove any existing -wt- suffix to get the base repository name.
     local repo_name=$(echo "$current_repo_name" | sed 's/-wt-.*$//')
 
-    # worktreeパスを生成（元リポジトリと同じディレクトリに作成）
+    # Build the worktree path alongside the original repository.
     local worktree_path="${repo_parent_dir}/${repo_name}-wt-${branch_name}"
 
-    # ブランチが既に存在するかチェック
+    # Check whether the branch already exists.
     if git show-ref --verify --quiet "refs/heads/${branch_name}"; then
         echo -e "${YELLOW}ブランチ '${branch_name}' は既に存在します。worktreeを作成します...${RESET}"
         git worktree add "$worktree_path" "$branch_name"
@@ -396,25 +396,25 @@ _gwt_new() {
     if [[ $? -eq 0 ]]; then
         echo -e "${GREEN}✓ Worktreeを作成しました: ${worktree_path}${RESET}"
 
-        # ベースパス（メインworktree）を取得
+        # Get the base path (main worktree).
         local base_path=$(git worktree list | head -1 | awk '{print $1}')
 
-        # 作成されたworktreeパスを共有変数に保存
+        # Save the created worktree path in a shared variable.
         _GWT_LAST_WORKTREE_PATH="$worktree_path"
 
         cd "$worktree_path"
-        # iTerm2のCWD追跡を即座に更新
+        # Immediately update iTerm2 CWD tracking.
         _iterm2_send_current_dir 2>/dev/null
-        # iTerm2ユーザー変数にworktreeパスを設定（path変数はCWDポーリングで汚染されるため）
+        # Store the worktree path in an iTerm2 user variable because CWD polling overwrites path.
         _iterm2_set_user_var gwtCwd "$worktree_path" 2>/dev/null
         echo -e "${BLUE}→ 移動しました: $(pwd)${RESET}"
 
-        # .agentsws/issues シンボリックリンクを作成
+        # Create the .agentsws/issues symlink.
         _gwt_setup_agentsws_issues_link "$worktree_path" "$repo_name"
 
-        # Post-create hook を実行
+        # Run the post-create hook.
         _gwt_run_post_create_hook "$worktree_path" "$branch_name" "$base_branch" "$base_path"
-        # hook実行後に再度CWDを通知
+        # Notify CWD again after the hook runs.
         _iterm2_send_current_dir 2>/dev/null
         _iterm2_set_user_var gwtCwd "$worktree_path" 2>/dev/null
     else
@@ -424,17 +424,17 @@ _gwt_new() {
 }
 
 # ========================================
-# 2. fzfを使用してworktreeを切り替え
+# 2. Switch worktrees with fzf.
 # ========================================
 _gwt_switch() {
-    # fzfがインストールされているかチェック
+    # Check whether fzf is installed.
     if ! command -v fzf > /dev/null 2>&1; then
         echo -e "${RED}Error: fzfがインストールされていません${RESET}"
         echo "brew install fzf または apt install fzf でインストールしてください"
         return 1
     fi
 
-    # worktree一覧を取得
+    # Get the worktree list.
     local worktree=$(git worktree list | fzf \
         --height=40% \
         --reverse \
@@ -449,13 +449,13 @@ _gwt_switch() {
 }
 
 # ========================================
-# 3. 不要なworktreeを削除
+# 3. Remove unwanted worktrees.
 # ========================================
 _gwt_remove() {
-    # 保護対象のブランチ
+    # Protected branches.
     local -a protected_branches=("main" "master" "develop" "development")
 
-    # 削除対象を選択
+    # Select worktrees to remove.
     local worktree=$(git worktree list | grep -v "bare" | fzf \
         --height=40% \
         --reverse \
@@ -463,7 +463,7 @@ _gwt_remove() {
         --multi)
 
     if [[ -n "$worktree" ]]; then
-        # パイプラインを避けて配列に格納
+        # Store results in an array to avoid a pipeline.
         local -a worktree_lines
         while IFS= read -r line; do
             worktree_lines+=("$line")
@@ -473,7 +473,7 @@ _gwt_remove() {
             local wt_path=$(echo "$line" | awk '{print $1}')
             local branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
 
-            # 保護対象ブランチのチェック
+            # Check for protected branches.
             local is_protected=false
             for protected in "${protected_branches[@]}"; do
                 [[ "$branch" == "$protected" ]] && is_protected=true && break
@@ -490,7 +490,7 @@ _gwt_remove() {
             read -r confirm < /dev/tty
 
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
-                # 現在のディレクトリがworktree内の場合、メインに移動
+                # Move to the main directory if currently inside the worktree.
                 if [[ "$(pwd)" == "$wt_path"* ]]; then
                     cd $(git worktree list | head -1 | awk '{print $1}')
                 fi
@@ -498,10 +498,10 @@ _gwt_remove() {
                 git worktree remove "$wt_path" --force
                 echo -e "${GREEN}✓ Worktreeを削除しました: $wt_path${RESET}"
 
-                # JetBrains Recent Projectsから削除
+                # Remove from JetBrains Recent Projects.
                 _gwt_remove_from_jetbrains_recent "$wt_path"
 
-                # ブランチも削除するか確認
+                # Ask whether to remove the branch too.
                 echo -ne "${YELLOW}ブランチ '${branch}' も削除しますか？ [y/N]: ${RESET}"
                 read -r confirm_branch < /dev/tty
                 if [[ "$confirm_branch" =~ ^[Yy]$ ]]; then
@@ -514,7 +514,7 @@ _gwt_remove() {
 }
 
 # ========================================
-# 4. worktree一覧を見やすく表示
+# 4. Display a readable worktree list.
 # ========================================
 _gwt_list() {
     echo -e "${CYAN}=== Git Worktrees ===${RESET}"
@@ -523,14 +523,14 @@ _gwt_list() {
         local commit=$(echo "$line" | awk '{print $2}')
         local branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
 
-        # 現在のディレクトリかチェック
+        # Check whether this is the current directory.
         if [[ "$(pwd)" == "$wt_path"* ]]; then
             echo -e "${GREEN}→ ${wt_path} ${YELLOW}[${branch}]${RESET} ${commit}"
         else
             echo -e "  ${wt_path} ${BLUE}[${branch}]${RESET} ${commit}"
         fi
 
-        # ステータスを表示
+        # Display status.
         if [[ -d "$wt_path" ]]; then
             local changed_files=$(cd "$wt_path" && git status --porcelain | wc -l | tr -d ' ')
             if [[ "$changed_files" -gt 0 ]]; then
@@ -541,7 +541,7 @@ _gwt_list() {
 }
 
 # ========================================
-# 5. worktreeのステータスを一括確認
+# 5. Check the status of all worktrees.
 # ========================================
 _gwt_status() {
     echo -e "${CYAN}=== Worktree Status ===${RESET}"
@@ -557,7 +557,7 @@ _gwt_status() {
 }
 
 # ========================================
-# 6. worktreeごとのメモ機能
+# 6. Per-worktree notes.
 # ========================================
 _gwt_memo() {
     local action="$1"
@@ -586,7 +586,7 @@ _gwt_memo() {
 }
 
 # ========================================
-# 7. 現在のworktree情報を表示
+# 7. Display information about the current worktree.
 # ========================================
 _gwt_info() {
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
@@ -610,7 +610,7 @@ _gwt_info() {
 }
 
 # ========================================
-# 8. worktreeを素早く作成（日付付き）
+# 8. Quickly create a worktree with a date suffix.
 # ========================================
 _gwt_quick() {
     local prefix="$1"
@@ -622,7 +622,7 @@ _gwt_quick() {
         return 1
     fi
 
-    # ベースブランチの決定: 明示指定 > 自動解決 > 現在のブランチ
+    # Choose the base branch: explicit value > automatic resolution > current branch.
     local base_branch
     if [[ -n "$2" ]]; then
         base_branch="$2"
@@ -633,7 +633,7 @@ _gwt_quick() {
         fi
     fi
 
-    # 日付時刻サフィックス (MMDDHHmm形式)
+    # Date and time suffix (MMDDHHmm).
     local timestamp=$(date +"%m%d%H%M")
     local branch_name="${prefix}-${timestamp}"
 
@@ -641,10 +641,10 @@ _gwt_quick() {
 }
 
 # ========================================
-# 9. pruneとclean up
+# 9. Prune and clean up.
 # ========================================
 _gwt_prune() {
-    # --force / -f オプションで確認プロンプトをスキップ
+    # Skip confirmation prompts with --force / -f.
     local force_mode=false
     for arg in "$@"; do
         [[ "$arg" == "--force" || "$arg" == "-f" ]] && force_mode=true
@@ -652,7 +652,7 @@ _gwt_prune() {
 
     echo -e "${CYAN}=== Pruning Worktrees ===${RESET}"
 
-    # ワークツリー内にいる場合はメインディレクトリに移動
+    # Move to the main directory if currently inside a worktree.
     local current_repo_name=$(basename $(git rev-parse --show-toplevel))
     if [[ "$current_repo_name" == *"-wt-"* ]]; then
         local -a _main_entries
@@ -678,11 +678,11 @@ _gwt_prune() {
 
     _gwt_process_jetbrains_pending
 
-    # リモートから最新の情報を取得（--pruneで削除済みリモートブランチも反映）
+    # Fetch the latest remote information (--prune also removes deleted remote-tracking branches).
     echo -e "${BLUE}リモートから最新の情報を取得中...${RESET}"
     git fetch --prune
 
-    # main/developブランチのローカルコピーを最新に更新
+    # Update local copies of the main/develop branches.
     local _current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
     local -a _fetch_refspecs
     local -a _updated_branches
@@ -690,7 +690,7 @@ _gwt_prune() {
         if git show-ref --verify --quiet "refs/remotes/origin/$_branch" 2>/dev/null && \
            git show-ref --verify --quiet "refs/heads/$_branch" 2>/dev/null; then
             if [[ "$_branch" == "$_current_branch" ]]; then
-                # チェックアウト中のブランチはfetchで更新できないためmergeで更新
+                # Use merge for checked-out branches because fetch cannot update them.
                 if git merge --ff-only "origin/$_branch" 2>/dev/null; then
                     _updated_branches+=("$_branch")
                 else
@@ -710,13 +710,13 @@ _gwt_prune() {
         echo -e "${GREEN}✓ ブランチ更新完了: ${_updated_branches[*]}${RESET}"
     fi
 
-    # 削除されたworktreeをクリーンアップ
+    # Clean up deleted worktrees.
     git worktree prune -v
 
-    # メインブランチを特定
+    # Identify the main branch.
     local main_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
     if [[ -z "$main_branch" ]]; then
-        # mainブランチが存在するかチェック
+        # Check whether the main branch exists.
         if git show-ref --verify --quiet "refs/heads/main" || git show-ref --verify --quiet "refs/remotes/origin/main"; then
             main_branch="main"
         else
@@ -727,10 +727,10 @@ _gwt_prune() {
     echo -e "\n${YELLOW}=== マージ済みのworktreeとブランチを削除 ===${RESET}"
     echo -e "${CYAN}メインブランチ: ${main_branch}${RESET}"
 
-    # 保護対象のブランチ
+    # Protected branches.
     local -a protected_branches=("main" "master" "develop" "development" "$main_branch")
     
-    # マージ済みのworktreeとブランチを収集
+    # Collect merged worktrees and branches.
     local -a merged_worktrees
     local -a merged_branches
     local -a auto_delete_worktrees
@@ -738,46 +738,46 @@ _gwt_prune() {
     local deleted_count=0
     local current_time=$(date +%s)
 
-    # worktree一覧を取得してマージ済みかチェック
+    # Get the worktree list and check merge status.
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
         
         local wt_path=$(echo "$line" | awk '{print $1}')
         local branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
         
-        # メインリポジトリはスキップ
+        # Skip the main repository.
         [[ "$wt_path" == *"[bare]"* ]] && continue
         [[ "$branch" == "$main_branch" ]] && continue
         
-        # 保護対象ブランチをスキップ
+        # Skip protected branches.
         local is_protected=false
         for protected in "${protected_branches[@]}"; do
             [[ "$branch" == "$protected" ]] && is_protected=true && break
         done
         [[ "$is_protected" == true ]] && continue
         
-        # マージ済みかチェック（master、main、developにマージ済みの場合）
+        # Check whether merged into master, main, or develop.
         local is_merged=false
 
-        # 通常マージ・スカッシュマージの検知
+        # Detect regular merges and squash merges.
         for check_branch in "master" "main" "develop"; do
-            # origin/$check_branch が存在するかチェック
+            # Check whether origin/$check_branch exists.
             if ! git show-ref --verify --quiet "refs/remotes/origin/$check_branch" 2>/dev/null; then
                 continue
             fi
 
-            # 通常のマージ: ブランチのHEADがorigin/$check_branchの祖先かチェック
+            # Regular merge: check whether the branch HEAD is an ancestor of origin/$check_branch.
             if git merge-base --is-ancestor "$branch" "origin/$check_branch" 2>/dev/null; then
                 is_merged=true
                 break
             fi
 
-            # スカッシュマージの検知: ブランチの変更がすべてリモートのメインブランチに含まれているかチェック
+            # Squash merge: check whether the remote main branch contains all branch changes.
             local merge_base=$(git merge-base "origin/$check_branch" "$branch" 2>/dev/null)
             if [[ -n "$merge_base" ]]; then
-                # merge-base..branchの差分がorigin/check_branchに全て含まれているか一括チェック
+                # Check whether all changes in merge-base..branch are included in origin/check_branch.
                 if git diff --quiet "$branch" "origin/$check_branch" -- $(git diff --name-only "$merge_base" "$branch" 2>/dev/null) 2>/dev/null; then
-                    # 差分なし = スカッシュマージ済み（ただし変更がある場合のみ）
+                    # No differences means squash-merged, but only if the branch had changes.
                     if [[ -n "$(git diff --name-only "$merge_base" "$branch" 2>/dev/null)" ]]; then
                         is_merged=true
                         break
@@ -786,7 +786,7 @@ _gwt_prune() {
             fi
         done
 
-        # GitHub PRマージ済みチェック（スカッシュマージ後にターゲットが進んだ場合のフォールバック）
+        # Check merged GitHub PRs as a fallback if the target advanced after a squash merge.
         if [[ "$is_merged" == false ]] && command -v gh > /dev/null 2>&1; then
             local _pr_count=$(gh pr list --head "$branch" --state merged --json number --jq 'length' 2>/dev/null)
             if [[ "$_pr_count" -gt 0 ]]; then
@@ -795,16 +795,16 @@ _gwt_prune() {
         fi
         
         if [[ "$is_merged" == true ]]; then
-            # 作成から30分以上経過しているかチェック
+            # Check whether at least 30 minutes have elapsed since creation.
             local is_old_enough=false
             if [[ -d "$wt_path" ]]; then
-                # macOSではstat -f %B、Linuxではstat -c %W（未対応の場合は%Y）
+                # Use stat -f %B on macOS or stat -c %W on Linux (%Y if unsupported).
                 local creation_time
                 if [[ "$OSTYPE" == "darwin"* ]]; then
                     creation_time=$(stat -f %B "$wt_path" 2>/dev/null)
                 else
                     creation_time=$(stat -c %W "$wt_path" 2>/dev/null)
-                    # 作成時間が取得できない場合は変更時間を使用
+                    # Use modification time if creation time is unavailable.
                     if [[ "$creation_time" == "0" || -z "$creation_time" ]]; then
                         creation_time=$(stat -c %Y "$wt_path" 2>/dev/null)
                     fi
@@ -820,7 +820,7 @@ _gwt_prune() {
                         echo -e "  ${CYAN}作成から ${age_minutes} 分経過（30分未満のためスキップ）${RESET}"
                     fi
                 else
-                    # 作成時間が取得できない場合は安全のためスキップ
+                    # Skip for safety if creation time cannot be obtained.
                     echo -e "${BLUE}⏳ スキップ: ${branch} (${wt_path})${RESET}"
                     echo -e "  ${CYAN}作成時間を取得できないためスキップ${RESET}"
                 fi
@@ -830,7 +830,7 @@ _gwt_prune() {
                 continue
             fi
 
-            # 未コミットの変更があるかチェック
+            # Check for uncommitted changes.
             local has_uncommitted=false
             if [[ -d "$wt_path" ]]; then
                 local uncommitted_count=$(cd "$wt_path" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
@@ -838,7 +838,7 @@ _gwt_prune() {
                     has_uncommitted=true
                     echo -e "${RED}⚠ スキップ: ${branch} (${wt_path})${RESET}"
                     echo -e "  ${YELLOW}未コミットの変更が ${uncommitted_count} 個あります${RESET}"
-                    # 変更内容を表示
+                    # Display changes.
                     (cd "$wt_path" && git status --porcelain | head -10 | while read -r status_line; do
                         echo -e "    ${CYAN}${status_line}${RESET}"
                     done)
@@ -850,15 +850,15 @@ _gwt_prune() {
             fi
 
             if [[ "$has_uncommitted" == false ]]; then
-                # ローカルの現在ブランチに取り込み済みか判定（通常マージ+スカッシュマージ）
+                # Check whether merged into the current local branch (regular or squash merge).
                 local _merged_to_local=false
 
-                # 通常マージの検出
+                # Detect regular merges.
                 if git merge-base --is-ancestor "$branch" "$_current_branch" 2>/dev/null; then
                     _merged_to_local=true
                 fi
 
-                # スカッシュマージの検出
+                # Detect squash merges.
                 if [[ "$_merged_to_local" == false ]]; then
                     local _local_merge_base=$(git merge-base "$_current_branch" "$branch" 2>/dev/null)
                     if [[ -n "$_local_merge_base" ]]; then
@@ -884,23 +884,23 @@ _gwt_prune() {
         fi
     done < <(git worktree list | grep -v "bare")
 
-    # メインリポジトリのパスをキャッシュ
+    # Cache the main repository path.
     local _main_repo_path=$(git worktree list | head -1 | awk '{print $1}')
 
-    # worktreeとブランチを削除する共通関数
+    # Shared function to remove a worktree and its branch.
     _gwt_delete_worktree_and_branch() {
         local wt_path="$1"
         local branch="$2"
 
         echo -e "${YELLOW}削除中: ${branch} -> ${wt_path}${RESET}"
 
-        # 現在のディレクトリがworktree内の場合、メインに移動
+        # Move to the main directory if currently inside the worktree.
         if [[ "$(pwd)" == "$wt_path"* ]]; then
             cd "$_main_repo_path"
             echo -e "${BLUE}メインリポジトリに移動: ${_main_repo_path}${RESET}"
         fi
 
-        # worktreeを削除（マージ済みなので--forceで確実に削除）
+        # Remove the worktree with --force because it is already merged.
         if git worktree remove "$wt_path" --force 2>/dev/null; then
             echo -e "${GREEN}✓ Worktreeを削除: ${wt_path}${RESET}"
             ((deleted_count++))
@@ -910,7 +910,7 @@ _gwt_prune() {
             return 1
         fi
 
-        # ブランチを削除
+        # Remove the branch.
         if git branch -d "$branch" 2>/dev/null; then
             echo -e "${GREEN}✓ ブランチを削除: ${branch}${RESET}"
         elif git branch -D "$branch" 2>/dev/null; then
@@ -921,7 +921,7 @@ _gwt_prune() {
         echo ""
     }
 
-    # ローカルに取り込み済みのworktreeを確認なしで自動削除
+    # Automatically remove worktrees already merged locally without confirmation.
     if [[ ${#auto_delete_worktrees[@]} -gt 0 ]]; then
         echo -e "\n${GREEN}=== ローカルに取り込み済み: ${#auto_delete_worktrees[@]}個を自動削除 ===${RESET}"
         for ((i=1; i<=$#auto_delete_worktrees; i++)); do
@@ -929,14 +929,14 @@ _gwt_prune() {
         done
     fi
 
-    # リモートのみにマージ済みのworktreeは確認して削除
+    # Ask before removing worktrees merged only on the remote.
     if [[ ${#merged_worktrees[@]} -gt 0 ]]; then
         echo -e "\n${YELLOW}=== リモートのみにマージ済み: ${#merged_worktrees[@]}個（確認が必要） ===${RESET}"
         for ((i=1; i<=$#merged_worktrees; i++)); do
             echo -e "  ${YELLOW}${merged_branches[$i]}${RESET} -> ${merged_worktrees[$i]}"
         done
 
-        # 確認プロンプト（--force でスキップ）
+        # Confirmation prompt (skipped with --force).
         if [[ "$force_mode" == false ]]; then
             echo ""
             local answer
@@ -965,7 +965,7 @@ _gwt_prune() {
 }
 
 # ========================================
-# 10. worktreeを作成してClaude Codeを起動
+# 10. Create a worktree and start Claude Code.
 # ========================================
 _gwt_claude() {
     local prefix="$1"
@@ -981,27 +981,27 @@ _gwt_claude() {
     local base_branch="$1"
     local original_dir="$(pwd)"
 
-    # quickでworktreeを作成
+    # Create the worktree with quick.
     _GWT_LAST_WORKTREE_PATH=""
     _gwt_quick "$prefix" ${base_branch:+"$base_branch"}
     if [[ $? -ne 0 ]]; then
         return 1
     fi
 
-    # 作成されたworktreeのパスを保持
+    # Keep the created worktree path.
     local worktree_dir="$_GWT_LAST_WORKTREE_PATH"
     if [[ -n "$worktree_dir" && -d "$worktree_dir" ]]; then
         cd "$worktree_dir"
     fi
 
-    # Claude Codeを遅延実行（関数リターン → precmd発火 → CWD更新 → claude起動）
+    # Defer Claude Code: return from function -> precmd -> CWD update -> start claude.
     echo -e "${CYAN}→ Claude Code を起動します ($(pwd))...${RESET}"
     _GWT_DEFERRED_CMD="claude"
     _GWT_DEFERRED_RETURN="$original_dir"
 }
 
 # ========================================
-# 11. worktreeを作成してClaude Code (dangerously-skip-permissions) を起動
+# 11. Create a worktree and start Claude Code with dangerously-skip-permissions.
 # ========================================
 _gwt_yolo() {
     local original_dir="$(pwd)"
@@ -1009,7 +1009,7 @@ _gwt_yolo() {
 }
 
 # ========================================
-# ヘルプ表示
+# Display help.
 # ========================================
 _gwt_help() {
     cat << EOF
@@ -1110,7 +1110,7 @@ EOF
 }
 
 # ========================================
-# 補完設定
+# Completion settings.
 # ========================================
 _gwt_completion() {
     local -a commands
@@ -1149,13 +1149,13 @@ _gwt_completion() {
     _describe 'short command' short_commands
 }
 
-# zsh補完を設定
+# Set up zsh completion.
 if [[ -n "$ZSH_VERSION" ]]; then
     compdef _gwt_completion gwt
 fi
 
 # ========================================
-# エイリアス
+# Aliases.
 # ========================================
 alias g='gwt'
 alias gq='gwt q'

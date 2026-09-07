@@ -1,10 +1,10 @@
-# PromptLine 用のキャッシュ更新
+# Refresh the PromptLine cache.
 #
-# ~/.prompt-line/*.txt は PromptLine アプリが読むだけで、シェル自身は使わない。
-# それを起動時に同期実行していたため、毎回のシェル起動で約 175ms 払っていた
-# (実測: mdfind 135ms + ghq list 30ms + zoxide query 9ms)。
-# 内容は「直近 7 日」「ghq のリポジトリ一覧」なので秒単位の鮮度は要らない。
-# 1 時間より古いときだけバックグラウンドで更新する。
+# Only the PromptLine app reads ~/.prompt-line/*.txt; the shell itself does not use these files.
+# Running this synchronously added about 175ms to every shell startup.
+# (Measured: mdfind 135ms + ghq list 30ms + zoxide query 9ms.)
+# The data covers the last seven days and ghq repositories, so second-level freshness is unnecessary.
+# Refresh in the background only when older than one hour.
 
 _prompt_line_refresh() {
     local dir="$HOME/.prompt-line"
@@ -15,22 +15,22 @@ _prompt_line_refresh() {
     ghq list > "$dir/ghq.txt" 2>/dev/null
 }
 
-# 起動のたびに走らせないためのゲート。
-# glob qualifier は素の形で書く ((#q...) は EXTENDED_GLOB が要る)。
-# N=無ければ空 / .=通常ファイル / mh-1=1時間以内に更新
+# Gate to avoid running on every startup.
+# Use plain glob qualifiers ((#q...) requires EXTENDED_GLOB).
+# N=empty if absent / .=regular file / mh-1=modified within one hour.
 #
-# ゲートは中身のファイル (ghq.txt 等) ではなく専用のスタンプファイルで持つ。
-# 中身のファイルを touch してゲートにすると、初回起動で背景ジョブが失敗したときに
-# 「空だが新しい」ghq.txt が残り、PromptLine 側は正常な空リストと区別できない。
-# スタンプなら失敗時はファイルが無いまま＝未生成と分かる。
-# (どちらでも再取得は次の 1 時間後になる。違うのは失敗の見え方だけ)
+# Use a dedicated timestamp file rather than a data file such as ghq.txt as the gate.
+# Touching a data file would leave a fresh but empty ghq.txt if the background job failed
+# on first startup; PromptLine could not distinguish it from a valid empty list.
+# With a timestamp file, a missing data file still indicates that it was never generated.
+# (Both approaches retry after one hour; only failure visibility differs.)
 _prompt_line_start_refresh() {
     local dir="$HOME/.prompt-line"
     local -a fresh=("$dir"/.refreshed(N.mh-1))
     (( $#fresh )) && return 0
 
-    # 先にスタンプを進めてから起動する。端末を一度に何枚も開いたときに
-    # mdfind が同時に何本も走るのを防ぐ (失敗しても次の 1 時間後に再挑戦する)。
+    # Advance the timestamp before starting, preventing simultaneous terminals from
+    # running multiple mdfind processes (retry after one hour even on failure).
     mkdir -p "$dir" || return
     touch "$dir/.refreshed"
     _prompt_line_refresh &!

@@ -1,13 +1,13 @@
 #!/usr/bin/env bats
-# シェル起動のスモークテスト
+# Shell startup smoke tests
 #
-# init.zsh は対話ログインシェルの起動経路そのものなので、壊れると全ターミナルが
-# 壊れる。しかも zsh の実行時エラー（glob qualifier の誤りなど）は起動を途中で
-# 打ち切るだけで、パッと見は「速く起動した」ように見えてしまう。
-# 「エラーを出さずに最後まで走り、必要なものが揃っている」ことを機械的に確かめる。
+# init.zsh is the interactive login shell startup path, so a failure breaks every terminal.
+# Zsh runtime errors, such as invalid glob qualifiers, can abort startup midway
+# while making it look as if the shell simply started faster.
+# Verify that startup completes without errors and all required features are available.
 #
-# 実ユーザーの ~/.zprofile を通す（HOMEBREW_PREFIX や PATH がそこで決まるため）。
-# 環境依存なので、前提が揃わないマシンでは skip する。
+# Load the real user's ~/.zprofile, which sets HOMEBREW_PREFIX and PATH.
+# These tests depend on the machine environment; skip when prerequisites are absent.
 
 setup() {
     REPO="${BATS_TEST_DIRNAME}/.."
@@ -23,45 +23,45 @@ setup() {
     } > "$ZD/.zshrc"
 }
 
-# 起動経路が撒くノイズを落として、アサーションしたい出力だけにする。
-#   - iTerm2 連携の OSC (ESC ] ... BEL) は終端ごと消す。
-#     先に BEL を消すと終端が失われ、後続の本文まで巻き込んで消えてしまう。
-#   - init.zsh の zshexit フック（動作確認用の echo）はシェル終了時に必ず 1 行出る。
+# Remove startup noise and retain only the output needed for assertions.
+# - Remove iTerm2 OSC sequences (ESC ] ... BEL), including the terminator.
+#   Removing BEL first would lose the boundary and consume subsequent output.
+# - The diagnostic zshexit hook in init.zsh always prints one line on exit.
 _strip_noise() {
     sed $'s/\x1b\][^\x07]*\x07//g' | tr -d '\a\r' | grep -av '^\[zshexit\]'
 }
 
-# 対話ログインシェルを起動して <コマンド> を実行する。stderr だけを返す。
+# Start an interactive login shell, run the command, and return only stderr.
 start_shell_stderr() {
     ZDOTDIR="$ZD" ZSH_CACHE_DIR="$ZSH_CACHE_DIR" \
         timeout 120 zsh -l -i -c "${1:-true}" 2>&1 >/dev/null | _strip_noise
 }
 
-# 対話ログインシェルを起動して <コマンド> を実行する。stdout だけを返す。
+# Start an interactive login shell, run the command, and return only stdout.
 start_shell_stdout() {
     ZDOTDIR="$ZD" ZSH_CACHE_DIR="$ZSH_CACHE_DIR" \
         timeout 120 zsh -l -i -c "$1" 2>/dev/null | _strip_noise
 }
 
-@test "startup: エラーを出さずに起動する" {
+@test "startup: starts without errors" {
     run start_shell_stderr
     [ "$status" -eq 0 ]
-    # zsh -i を tty 無しで起動すると出る既知のノイズだけは許容する
+    # Allow only the known noise from starting zsh -i without a TTY.
     local noise='can.t change option: zle'
     local rest
     rest="$(printf '%s\n' "$output" | grep -avE "$noise" | grep -av '^$' || true)"
     [ -z "$rest" ]
 }
 
-@test "startup: 途中で打ち切られず最後まで走る" {
-    # init.zsh の末尾で設定されるものが揃っていれば、最後まで到達している
+@test "startup: completes without aborting midway" {
+    # Variables set at the end of init.zsh confirm that startup reached the end.
     run start_shell_stdout 'print -r -- "${BUN_INSTALL:-未設定}"'
     [ "$status" -eq 0 ]
     [[ "$output" == *"/.bun"* ]]
 }
 
-@test "startup: 各 zsh/*.zsh が読み込まれている" {
-    # gwt.zsh / goenv.zsh / cache.zsh / iterm2.zsh の代表的な関数が定義されていること
+@test "startup: loads the zsh modules" {
+    # Check representative functions from gwt.zsh, goenv.zsh, cache.zsh, and iterm2.zsh.
     run start_shell_stdout 'for f in gwt _goenv_set_paths _zsh_cache_source _iterm2_precmd; do
         print -r -- "$f=${functions[$f]:+ok}"
     done'
@@ -72,21 +72,21 @@ start_shell_stdout() {
     [[ "$output" == *"_iterm2_precmd=ok"* ]]
 }
 
-@test "startup: 補完システムが有効になっている" {
+@test "startup: enables the completion system" {
     run start_shell_stdout 'print -r -- "${_comps[git]:-未登録}"'
     [ "$status" -eq 0 ]
     [ "$output" = "_git" ]
 }
 
-@test "startup: PATH に重複が無い" {
-    # typeset -U は配列だけでなくスカラー PATH にも掛けないと
-    # `export PATH="X:$PATH"` 形式の追加が重複除去されない
+@test "startup: contains no duplicate PATH entries" {
+    # Apply typeset -U to the scalar PATH as well as the array;
+    # otherwise export PATH="X:$PATH" additions are not deduplicated.
     run start_shell_stdout 'u=(${(u)path}); print -r -- $(( $#path - $#u ))'
     [ "$status" -eq 0 ]
     [ "$output" = "0" ]
 }
 
-@test "startup: anyenv の shim が PATH にある" {
+@test "startup: includes anyenv shims in PATH" {
     command -v anyenv >/dev/null || skip "anyenv が無い"
     run start_shell_stdout 'print -l $path'
     [ "$status" -eq 0 ]
@@ -94,16 +94,16 @@ start_shell_stdout() {
 }
 
 # ============================================================
-# キャッシュが実際に効いているか
+# Verify that caching actually works.
 # ============================================================
 
-@test "cache: 起動でキャッシュが作られる" {
+@test "cache: creates a cache during startup" {
     command -v anyenv >/dev/null || skip "anyenv が無い"
     start_shell_stderr >/dev/null
     [ -s "$ZSH_CACHE_DIR/anyenv-init.zsh" ]
 }
 
-@test "cache: 2 回目の起動ではキャッシュを作り直さない" {
+@test "cache: does not regenerate the cache on the second startup" {
     command -v anyenv >/dev/null || skip "anyenv が無い"
     start_shell_stderr >/dev/null
     local before
@@ -115,14 +115,14 @@ start_shell_stdout() {
     [ "$before" = "$after" ]
 }
 
-@test "cache: uv の補完を eval せず fpath に置いている" {
+@test "cache: puts uv completions in fpath instead of evaluating them" {
     command -v uv >/dev/null || skip "uv が無い"
     start_shell_stderr >/dev/null
     [ -s "$ZSH_CACHE_DIR/completions/_uv" ]
-    # compinit が fpath から拾って compdef 登録していること
+    # Verify that compinit finds the script in fpath and registers its compdef.
     run start_shell_stdout 'print -r -- "${_comps[uv]:-未登録}"'
     [ "$output" = "_uv" ]
-    # 起動時点では関数の実体が読み込まれていない（遅延ロードされている）こと
+    # Verify that the function body remains unloaded at startup (lazy loading).
     run start_shell_stdout 'print -r -- "${functions[_uv__run_commands]:+実体化済み}"'
     [ -z "$output" ]
 }

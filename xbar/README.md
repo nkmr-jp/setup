@@ -1,43 +1,46 @@
 # xbar plugins
 
-[xbar](https://xbarapp.com/) 用のメニューバープラグイン集。
-もともと SwiftBar で運用していたが、挙動が不安定だったため xbar に乗り換えた。
+Menu-bar plugins for [xbar](https://xbarapp.com/).
+Originally run with SwiftBar; migrated to xbar because SwiftBar behavior was unstable.
 
-## プラグイン一覧
+## Plugins
 
-| ファイル | 説明 | 依存 |
+| File | Description | Dependencies |
 | --- | --- | --- |
-| `focus.5s.sh` | [Horo.app](https://horo.app) の進行中タスクをメニューバーに表示 | `sqlite3`, Horo.app |
-| `claude-sessions.5s.sh` | Claude Code のセッション状態を `⚡running / 🔔awaiting / ⏸idle` で集約表示 | `jq`, Claude Code (session-monitor plugin) |
-| `kalloc1024.2m.sh` | Claude Code 起因のカーネルメモリリーク（`data.kalloc.1024`）の閾値到達進捗%・増加ペースを表示 | `zprint` |
-| `click-handler.sh` | `claude-sessions.5s.sh` から呼ばれるクリックハンドラ (xbar には登録しない) | cmux (任意) |
+| `focus.5s.sh` | Show the current [Horo.app](https://horo.app) task in the menu bar | `sqlite3`, Horo.app |
+| `claude-sessions.5s.sh` | Summarize Claude Code sessions as `⚡running / 🔔awaiting / ⏸idle` | `jq`, Claude Code (session-monitor plugin) |
+| `kalloc1024.2m.sh` | Show threshold progress and growth rate for the Claude Code kernel memory leak (`data.kalloc.1024`) | `zprint` |
+| `click-handler.sh` | Click handler called by `claude-sessions.5s.sh` (not registered with xbar) | cmux (optional) |
 
-`click-handler.sh` は `claude-sessions.5s.sh` 内で `${0:A:h}/click-handler.sh` として呼ばれる。
-xbar が実行する symlink は `${0:A}` で実体パスに解決されるため、シンボリックリンクは
-`*.5s.sh` だけで十分で、`click-handler.sh` をリンクする必要はない。
+`claude-sessions.5s.sh` calls `click-handler.sh` as `${0:A:h}/click-handler.sh`.
+`${0:A}` resolves the symlink executed by xbar to its real path, so the session
+plugin link is sufficient; `click-handler.sh` does not need its own link.
 
-## シンボリックリンク作成
+## Create symlinks
+
+Run in this directory:
 
 ```sh
 make ln
 ```
 
-このrepoの3本だけを `~/Library/Application Support/xbar/plugins/` へ個別にリンクする。
-同じリンクは維持し、既存実体や異なるリンクはタイムスタンプ付きで退避する。
-他のpluginやclick-handlerの配置は変更しない。`./install.sh --dry-run` で事前確認できる。
-別の配置先は `XBAR_PLUGIN_DIR=/path/to/plugins make ln` で指定する。
+Link only the three plugins from this repository into
+`~/Library/Application Support/xbar/plugins/`. Keep correct links and back up
+existing files or different links with a timestamp. Other plugins and the
+click-handler installation are left unchanged. Preview with `./install.sh --dry-run`.
+Use `XBAR_PLUGIN_DIR=/path/to/plugins make ln` for a different destination.
 
-リンク作成後、xbar のメニューバーから **xbar → Refresh all** を実行すれば反映される。
+After linking, choose **xbar → Refresh all** from the menu bar to apply the changes.
 
-## xbar 自体のインストール
+## Install xbar
 
 ```sh
 brew install --cask xbar
 ```
 
-## SwiftBar からの移行メモ
+## Migration notes from SwiftBar
 
-- メタデータの prefix を `<bitbar.*>` / `<swiftbar.*>` から `<xbar.*>` に統一
-- SwiftBar 専用の `<swiftbar.hideAbout>` / `<swiftbar.hideRunInTerminal>` は削除
-- `shell=` パラメータは xbar 標準の `bash=` に置き換え
-- `${0:A:h}` (zsh の symlink 解決) が xbar でも問題なく動くことに依存している
+- Standardize metadata prefixes from `<bitbar.*>` / `<swiftbar.*>` to `<xbar.*>`.
+- Remove SwiftBar-only `<swiftbar.hideAbout>` / `<swiftbar.hideRunInTerminal>`.
+- Replace `shell=` with xbar's standard `bash=` parameter.
+- Rely on `${0:A:h}` (zsh symlink resolution) working correctly under xbar as well.

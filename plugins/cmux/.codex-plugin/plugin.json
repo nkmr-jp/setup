@@ -17,9 +17,9 @@
     "category": "Developer Tools",
     "capabilities": ["Interactive", "Read", "Write"],
     "defaultPrompt": [
-      "cmux の現在のワークスペースとペインを確認してください。",
-      "cmux のペインを右に分割してください。",
-      "cmux から完了通知を送ってください。"
+      "Check the current cmux workspace and panes.",
+      "Split the cmux pane to the right.",
+      "Send a completion notification from cmux."
     ]
   }
 }

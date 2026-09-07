@@ -1,22 +1,23 @@
 # setup
 
-OS・汎用シェル・ツール設定と補助スクリプトを管理する。
-エージェント自身のユーザー設定は agent-settings に置き、cmux・xbar・plugin 本体は setup に残す。
+Manage OS settings, general shell configuration, tool settings, and helper scripts.
+Agent-specific user settings live in agent-settings; cmux, xbar, and plugin implementations remain here.
 
-- cmux の正本は `cmux/`。`cmux/link.sh` が設定2ファイルを個別に退避付きでリンクする。
-- エージェント設定のリポジトリへツールの実装や設定を複製しない。
-- KISS/YAGNI/DRY。構成変更時は README.md とこのファイルを更新する。
-- cmux の検証は `bats tests/cmux-link.bats`、`shellcheck cmux/link.sh`、`sh -n cmux/link.sh`。
-- テストでは一時 HOME / CMUX_CONFIG_HOME を使い、実ホームや実サービスを変更しない。
+- The canonical cmux settings live in `cmux/`. `cmux/link.sh` links the two configuration files individually and backs up existing targets.
+- Do not duplicate tool implementations or settings in the agent settings repository.
+- Follow KISS, YAGNI, and DRY. Update README.md and this file when the structure changes.
+- Validate cmux with `bats tests/cmux-link.bats`, `shellcheck cmux/link.sh`, and `sh -n cmux/link.sh`.
+- Tests must use temporary HOME / CMUX_CONFIG_HOME directories and must not modify the real home or services.
 
-## 公開リポジトリの境界
+## Public Repository Boundaries
 
-- シェル設定はユーザー指示により作業前の挙動へ戻した。シェルのパス汎用化と個人設定分離は保留し、初期化・PATH・aliasを変更しない。
-- マシン固有のシェル上書き設定は `~/.zshrc.local` に置き、公開リポジトリへ追加しない。
-- シェルのmake login・GUI PATH反映・PromptLine更新は従来の動作を維持する。検証時は実環境へsourceせず、外部コマンドを実行しない。
-- credentials・local設定をコミットしない。認証値をテストログやレポートへ出さない。
-- シェルの検証は `zsh -n` と作業前のバックアップ比較で行う。実ユーザーの起動設定を読む `tests/startup.bats` は実機用なので自動実行しない。
+- Shell settings were restored at the user's request. Defer shell portability and personal-setting separation; preserve initialization, PATH, and aliases.
+- Put machine-specific shell overrides in `~/.zshrc.local`, outside this public repository.
+- Preserve existing automatic make login, GUI PATH propagation, and PromptLine updates. Do not source real settings or invoke external integrations during validation.
+- Do not commit credentials or local settings. Do not expose authentication values in logs or reports.
+- Validate shell scripts with `zsh -n` and compare them with the pre-change backup. `tests/startup.bats` loads real user startup settings and must not run automatically.
+- Use `~/ghq/github.com/nkmr-jp/setup` for this repository's path in documentation and comments. Write documentation and comments in English.
 
-`iterm-run <command>` は従来どおり `zsh/init.zsh` で定義する。
+`iterm-run <command>` remains defined in `zsh/init.zsh`.
 
-Git設定はユーザー指示により作業前の `gitconfig` へ復元済み。ローカルGit設定のinclude分離は保留する。
+Git settings were restored to the original `gitconfig` at the user's request. Separation through a local Git include is deferred.

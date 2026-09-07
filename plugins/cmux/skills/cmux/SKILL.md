@@ -1,126 +1,126 @@
 ---
 name: cmux
-description: このスキルは、ユーザーが「cmux」「cmux で通知を送る」「cmux のワークスペースを操作」「cmux のペインを分割」「cmux のサーフェス」「cmux のステータスを更新」「cmux ブラウザを操作」と依頼したとき、または cmux 内で動作している Codex / Claude Code が cmux 自身を制御したいときに使用すべきです。manaflow-ai/cmux のネイティブ macOS ターミナルを CLI（`cmux` コマンド）と JSON-RPC ソケット API で操作する方法を提供します。
+description: Use this skill when the user asks about cmux, sending cmux notifications, managing workspaces, splitting panes, inspecting surfaces, updating status, or controlling the cmux browser; also use it when Codex / Claude Code running inside cmux needs to control cmux itself. It explains how to operate the manaflow-ai/cmux native macOS terminal through the cmux CLI and JSON-RPC socket API.
 ---
 
 # cmux
 
-`cmux`（[manaflow-ai/cmux](https://github.com/manaflow-ai/cmux)）は、複数の AI コーディングエージェント CLI を縦型タブ・分割ペイン・通知パネル付きで束ねるネイティブ macOS ターミナルである。本スキルは付属の `cmux` CLI コマンドと UNIX ソケット制御 API の使い方を提供する。
+`cmux` ([manaflow-ai/cmux](https://github.com/manaflow-ai/cmux)) is a native macOS terminal that groups multiple AI coding agent CLIs with vertical tabs, split panes, and a notification panel. This skill covers its bundled `cmux` CLI and UNIX socket control API.
 
-## 重要な前提
+## Important prerequisites
 
-- 対象 OS は **macOS のみ**
-- 対象アプリは **manaflow-ai/cmux**（Go 製の `soheilhy/cmux` ライブラリとは別物）
-- CLI のソケットパスは `/tmp/cmux.sock`
-- 旧称 `--panel` は CLI 互換エイリアスとして残るが、新規実装では `--surface` / `--pane` を使う
+- Supported OS: **macOS only**.
+- Target application: **manaflow-ai/cmux**, distinct from the Go library `soheilhy/cmux`.
+- CLI socket path: `/tmp/cmux.sock`.
+- The legacy `--panel` name remains a CLI compatibility alias; use `--surface` / `--pane` in new implementations.
 
-## インストールと疎通確認
+## Installation and connectivity
 
-未インストールなら以下の手順を案内する。
+If cmux is not installed, provide these steps:
 
 ```bash
 brew tap manaflow-ai/cmux
 brew install --cask cmux
 
-# /usr/local/bin に CLI を symlink
+# Symlink the CLI into /usr/local/bin
 sudo ln -sf "/Applications/cmux.app/Contents/Resources/bin/cmux" /usr/local/bin/cmux
 
-# 疎通確認（cmux アプリが起動している必要あり）
+# Check connectivity (cmux.app must be running)
 cmux ping
 ```
 
-`cmux ping` がエラーを返す場合は、cmux.app を起動してから再試行する。
+If `cmux ping` fails, launch cmux.app and try again.
 
-## コア概念（自動化用語）
+## Core concepts for automation
 
-| 用語 | 意味 |
+| Term | Meaning |
 |----|----|
-| **Window** | macOS の cmux ウィンドウ（最上位） |
-| **Workspace** | ウィンドウ内の「タブ」相当のグループ |
-| **Pane** | ワークスペース内の分割領域 |
-| **Surface** | ペイン内のタブ。ターミナルまたはブラウザ |
+| **Window** | A top-level macOS cmux window |
+| **Workspace** | A group equivalent to a tab within a window |
+| **Pane** | A split region within a workspace |
+| **Surface** | A tab within a pane, hosting a terminal or browser |
 
-ID 形式は `window:N` / `workspace:N` / `pane:N` / `surface:N`。CLI 引数の多くで ID または index を受け付ける。
+IDs use `window:N`, `workspace:N`, `pane:N`, and `surface:N`. Many CLI arguments accept either an ID or an index.
 
-> 旧 API では `panel` という語が使われるが、新 API では `surface` に統一されている。
+> Older APIs use the term `panel`; newer APIs consistently use `surface`.
 
-## 主要コマンド早見表
+## Command quick reference
 
-| 目的 | コマンド |
+| Purpose | Command |
 |----|----|
-| 自分のコンテキスト把握 | `cmux identify --json` |
-| 機能ケイパビリティ取得 | `cmux capabilities` |
-| 疎通確認 | `cmux ping` |
-| ウィンドウ一覧 | `cmux list-windows` |
-| ワークスペース一覧 | `cmux list-workspaces [--json]` |
-| ペイン一覧 | `cmux list-panes` |
-| サーフェス一覧 | `cmux list-pane-surfaces --pane pane:1` |
-| 新規ワークスペース | `cmux new-workspace [--cwd <dir>]` |
-| ワークスペース切替 | `cmux select-workspace --workspace workspace:2` |
-| ペイン分割 | `cmux new-split <right\|down\|left\|up> --pane pane:1` |
-| サーフェス移動 | `cmux move-surface --surface surface:7 --pane pane:2 --focus true` |
-| サーフェス並べ替え | `cmux reorder-surface --surface surface:7 --before surface:3` |
-| 視覚的なフラッシュ | `cmux trigger-flash --surface surface:7` |
-| 通知送信 | `cmux notify --title "..." [--body ...] [--workspace ...]` |
-| 通知一覧 | `cmux list-notifications [--json]` |
-| 通知クリア | `cmux clear-notifications` |
-| ステータス設定 | `cmux set-status <key> <value>` |
-| ステータス削除 | `cmux clear-status <key>` |
-| ブラウザ起動 | `cmux --json browser open <url>` |
-| ブラウザ操作 | `cmux browser <surface> <subcommand> ...` |
+| Identify the caller's context | `cmux identify --json` |
+| Get supported capabilities | `cmux capabilities` |
+| Check connectivity | `cmux ping` |
+| List windows | `cmux list-windows` |
+| List workspaces | `cmux list-workspaces [--json]` |
+| List panes | `cmux list-panes` |
+| List surfaces | `cmux list-pane-surfaces --pane pane:1` |
+| Create a workspace | `cmux new-workspace [--cwd <dir>]` |
+| Switch workspaces | `cmux select-workspace --workspace workspace:2` |
+| Split a pane | `cmux new-split <right\|down\|left\|up> --pane pane:1` |
+| Move a surface | `cmux move-surface --surface surface:7 --pane pane:2 --focus true` |
+| Reorder surfaces | `cmux reorder-surface --surface surface:7 --before surface:3` |
+| Trigger a visual flash | `cmux trigger-flash --surface surface:7` |
+| Send a notification | `cmux notify --title "..." [--body ...] [--workspace ...]` |
+| List notifications | `cmux list-notifications [--json]` |
+| Clear notifications | `cmux clear-notifications` |
+| Set status | `cmux set-status <key> <value>` |
+| Remove status | `cmux clear-status <key>` |
+| Open a browser | `cmux --json browser open <url>` |
+| Control a browser | `cmux browser <surface> <subcommand> ...` |
 
-各コマンドの詳細オプションは `references/cli-commands.md` を参照。
+See `references/cli-commands.md` for detailed command options.
 
-## 典型ワークフロー
+## Common workflows
 
-### 1. 現在の文脈を把握する
+### 1. Identify the current context
 
-cmux 内で動く Codex / Claude Code から自分の所在を知るには、まず `identify` を呼ぶ。
+Codex / Claude Code running inside cmux should first call `identify` to locate itself.
 
 ```bash
 cmux identify --json
 # => {"window": "...", "workspace": "...", "pane": "...", "surface": "..."}
 ```
 
-得られた ID を後続の `--workspace` / `--surface` 引数に渡す。
+Pass the returned IDs to subsequent `--workspace` / `--surface` arguments.
 
-### 2. ワークスペースを新規作成して開く
+### 2. Create and select a workspace
 
 ```bash
 cmux new-workspace --cwd ~/Projects/frontend
 cmux select-workspace --workspace workspace:2
 ```
 
-### 3. ペインを分割してサーフェスを配置
+### 3. Split a pane and arrange surfaces
 
 ```bash
 cmux new-split right --pane pane:1
 cmux move-surface --surface surface:7 --pane pane:2 --focus true
 ```
 
-### 4. 通知でユーザーの注意を引く
+### 4. Get the user's attention with a notification
 
-ビルド完了・承認待ちなど、AI エージェントから人間に合図を送る用途。
+Use notifications to signal events such as build completion or pending approval from an AI agent to a user.
 
 ```bash
 cmux notify --title "Claude Code" --subtitle "Permission" --body "Approval needed"
 ```
 
-`--workspace workspace:2` を付ければ特定のワークスペースを対象にできる。詳細は `references/notifications.md` を参照。
+Add `--workspace workspace:2` to target a specific workspace. See `references/notifications.md` for details.
 
-### 5. ステータスでアイドル/実行中を表現
+### 5. Represent idle / running state with status
 
 ```bash
 cmux set-status copilot_cli Running
-# 処理が終わったら
+# Once processing finishes
 cmux clear-status copilot_cli
 ```
 
-サイドバーにアイコンとラベルが表示される。
+The sidebar displays an icon and label.
 
-### 6. ブラウザを開いて操作する
+### 6. Open and control a browser
 
-cmux はサーフェスをブラウザにできる。AI エージェントが Web UI を制御する用途で使う。
+cmux can host a browser in a surface, allowing AI agents to control web interfaces.
 
 ```bash
 cmux --json browser open https://example.com
@@ -131,14 +131,14 @@ cmux browser surface:7 snapshot --interactive
 cmux browser surface:7 click e1 --snapshot-after
 ```
 
-詳細なブラウザ操作とフォーム入力は `references/agent-browser.md` を参照。
+See `references/agent-browser.md` for detailed browser operations and form input.
 
-## AI エージェントとの統合パターン
+## AI agent integration patterns
 
-cmux は他の CLI コーディングエージェント（Claude Code, Codex, Copilot CLI など）から呼ばれることを想定している。`hooks` を使った典型的な連携：
+cmux is designed to be called by other CLI coding agents, including Claude Code, Codex, and Copilot CLI. A typical integration using `hooks`:
 
 ```bash
-# エージェント停止時に通知
+# Notify when the agent stops
 if command -v cmux &>/dev/null; then
   cmux notify --title 'Claude Code' --body 'Done'
   cmux clear-status claude_code
@@ -147,39 +147,39 @@ else
 fi
 ```
 
-`cmux` 未インストール環境にもフォールバックさせる（`command -v cmux`）のがベストプラクティス。
+Provide a fallback when `cmux` is unavailable by checking `command -v cmux`.
 
-## ソケット API（自動化向け）
+## Socket API for automation
 
-CLI と等価な操作を JSON-RPC over UNIX socket で呼べる。スクリプトから多数のコマンドを高速に発行したい場合や、CLI が存在しない言語から制御したい場合に使う。
+Operations equivalent to the CLI are available through JSON-RPC over a UNIX socket. Use this for issuing many commands quickly from a script or controlling cmux from a language without a CLI wrapper.
 
 ```bash
 echo '{"id":"1","method":"workspace.list","params":{}}' | nc -U /tmp/cmux.sock
 echo '{"id":"2","method":"notification.create","params":{"title":"Hi","body":"Hello"}}' | nc -U /tmp/cmux.sock
 ```
 
-メソッド一覧とリクエスト/レスポンスの形式は `references/socket-api.md` を参照。
+See `references/socket-api.md` for methods and request / response formats.
 
-## トラブルシューティング
+## Troubleshooting
 
-| 症状 | 対処 |
+| Symptom | Resolution |
 |----|----|
-| `cmux ping` が失敗 | cmux.app が未起動。Spotlight 等で起動する |
-| `cmux: command not found` | symlink 未作成。インストール手順の `ln -sf ...` を実施 |
-| `--panel` を使った既存スクリプトの警告 | 互換のため当面動作するが、`--surface` / `--pane` に置換する |
-| ID と index が取り違えられる | `cmux list-*` でまず正確な ID を取得し、`--workspace workspace:N` のように prefix 付きで渡す |
-| ソケット接続が拒否される | cmux.app が起動しているか確認。`/tmp/cmux.sock` の存在を `ls -l` で確認 |
+| `cmux ping` fails | cmux.app is not running. Launch it through Spotlight or another method. |
+| `cmux: command not found` | The symlink is missing. Run `ln -sf ...` from the installation steps. |
+| Existing scripts using `--panel` produce warnings | The compatibility alias still works, but replace it with `--surface` / `--pane`. |
+| IDs and indexes are confused | Use `cmux list-*` to obtain exact IDs, then pass a prefix such as `--workspace workspace:N`. |
+| Socket connection is refused | Check that cmux.app is running and use `ls -l` to check `/tmp/cmux.sock`. |
 
-## その他のリソース
+## Additional resources
 
-- **`references/cli-commands.md`** — 全 CLI サブコマンドのオプションと出力形式の完全リファレンス
-- **`references/socket-api.md`** — JSON-RPC ソケット API のメソッド一覧、リクエスト/レスポンス形式、エラーコード
-- **`references/notifications.md`** — 通知・ステータス機能の詳細、エージェント連携パターン
-- **`references/agent-browser.md`** — `cmux browser` サブコマンド群（ナビゲーション、スナップショット、フォーム操作、JS 評価）
+- **`references/cli-commands.md`** — Complete CLI subcommand options and output formats
+- **`references/socket-api.md`** — JSON-RPC socket methods, request / response formats, and error codes
+- **`references/notifications.md`** — Notification and status details, with agent integration patterns
+- **`references/agent-browser.md`** — `cmux browser` subcommands for navigation, snapshots, forms, and JavaScript evaluation
 
-## 公式ドキュメント
+## Official documentation
 
-- リポジトリ: https://github.com/manaflow-ai/cmux
-- 通知 docs: https://github.com/manaflow-ai/cmux/blob/main/docs/notifications.md
-- agent-browser 仕様: https://github.com/manaflow-ai/cmux/blob/main/docs/agent-browser-port-spec.md
-- v2 API マイグレーション: https://github.com/manaflow-ai/cmux/blob/main/docs/v2-api-migration.md
+- Repository: https://github.com/manaflow-ai/cmux
+- Notification documentation: https://github.com/manaflow-ai/cmux/blob/main/docs/notifications.md
+- agent-browser specification: https://github.com/manaflow-ai/cmux/blob/main/docs/agent-browser-port-spec.md
+- V2 API migration: https://github.com/manaflow-ai/cmux/blob/main/docs/v2-api-migration.md

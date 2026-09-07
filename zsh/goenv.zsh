@@ -1,29 +1,29 @@
-# goenv の GOROOT / GOPATH 設定
+# Set GOROOT / GOPATH for goenv.
 #
-# 本家の `goenv rehash --only-manage-paths` は shim の rehash はせず GOROOT/GOPATH を
-# export するだけだが、goenv-version-name / goenv-prefix が bash のサブプロセスを
-# 連鎖的に起こすため 190ms 前後かかる。同じ解決をサブプロセス無しで行う。
+# Upstream `goenv rehash --only-manage-paths` only exports GOROOT/GOPATH without
+# rehashing shims, but goenv-version-name / goenv-prefix start a chain of bash subprocesses,
+# taking about 190ms. Resolve the same values without subprocesses.
 #
-# 解決規則は本家と同じ:
-#   0. $GOENV_VERSION が設定されていればそれ（`goenv shell` が export する）
-#   1. 無ければカレントから親へ辿って最初に見つかった .go-version
-#   2. 無ければ $GOENV_ROOT/version（global）
-#   3. system なら何もしない（システムの go を使う）
-#   4. 得られた版は実際にインストールされているものへ解決する
-#      （`1.24` のような major.minor 指定は最新パッチへ。解決できなければ何もしない）
+# Use the same resolution rules as upstream:
+#   0. Use $GOENV_VERSION if set (exported by `goenv shell`).
+#   1. Otherwise, use the first .go-version found while walking up from the current directory.
+#   2. Otherwise, use $GOENV_ROOT/version (global).
+#   3. Do nothing for system (use the system go).
+#   4. Resolve the selected version to an installed version.
+#      Map major.minor values such as `1.24` to the latest patch; do nothing if unresolved.
 #
-# 本家との一致は setup/tests/goenv.bats で検証している。
+# tests/goenv.bats verifies parity with upstream.
 _goenv_set_paths() {
     local root="${GOENV_ROOT:-$HOME/.anyenv/envs/goenv}" dir="$PWD" version=""
     root="${root%/}"
 
-    # 本家 goenv-version-name と同じく $GOENV_VERSION が最優先。
-    # `goenv shell <version>` が export するので、そこから起こした子シェルにも効く。
+    # Give $GOENV_VERSION highest priority, as upstream goenv-version-name does.
+    # `goenv shell <version>` exports it, so child shells inherit it too.
     version="${GOENV_VERSION%%:*}"
 
     if [[ -z "$version" ]]; then
-        # cwd が削除されていると PWD が "." になる。この状態で親を辿ると
-        # "." は "${dir%/*}" で縮まないため無限ループする（goenv 2.2.39 の実バグ）。
+        # If cwd has been deleted, PWD becomes ".". Walking up from there would loop forever
+        # because "${dir%/*}" does not shorten "." (an actual bug in goenv 2.2.39).
         [[ "$dir" == /* ]] || {
             print -u2 -r -- "goenv: cwd が削除されています (PWD=$PWD)。GOROOT/GOPATH は未設定です。有効なディレクトリへ cd してください。"
             return 0
@@ -39,17 +39,17 @@ _goenv_set_paths() {
         [[ -z "$version" && -r "$root/version" ]] && version="$(<"$root/version")"
     fi
 
-    # 複数行が書かれていたら本家と同じく先頭だけを使い、前後の空白を落とす
+    # As upstream does, use only the first line and trim surrounding whitespace.
     version="${version%%$'\n'*}"
     version="${version//[[:space:]]/}"
     [[ -z "$version" || "$version" == system ]] && return 0
 
-    # 実際にインストールされている版へ解決する（本家 goenv-prefix と同じ規則）。
-    #   - 完全一致が無ければ `go-` 接頭辞を落として再試行
-    #   - それも無ければ major.minor 指定とみなして最新パッチを選ぶ (1.24 -> 1.24.5)
-    #   - どれにも解決できなければ何も設定しない
-    #     （本家も goenv-prefix が exit 1 して GOROOT/GOPATH を出力しない。
-    #       ここで素通しすると存在しないディレクトリを GOROOT に入れてしまう）
+    # Resolve to an installed version using the same rules as upstream goenv-prefix.
+    #   - If there is no exact match, remove the `go-` prefix and retry.
+    #   - Otherwise, treat it as major.minor and choose the latest patch (1.24 -> 1.24.5).
+    #   - Leave everything unset if no version can be resolved.
+    #     (Upstream goenv-prefix also exits 1 without emitting GOROOT/GOPATH.
+    #      Passing an unresolved value through would set GOROOT to a nonexistent directory.)
     if [[ ! -d "$root/versions/$version" ]]; then
         local base="${version#go-}"
         local -a candidates=(
@@ -57,12 +57,12 @@ _goenv_set_paths() {
             "$root"/versions/${base}.<->(N/:t)
         )
         (( $#candidates )) || return 0
-        candidates=(${(n)candidates})   # 1.20.9 < 1.20.10 になるよう数値順
+        candidates=(${(n)candidates})   # Sort numerically so 1.20.9 < 1.20.10.
         version="${candidates[-1]}"
     fi
 
-    # 本家と同じく export だけ行い PATH は触らない
-    # (PATH への追加は env.zsh が GOROOT/GOPATH を見て行う)
+    # Only export values, without changing PATH, as upstream does.
+    # (env.zsh adds paths based on GOROOT/GOPATH.)
     export GOROOT="$root/versions/$version"
     export GOPATH="$HOME/go/$version"
 }

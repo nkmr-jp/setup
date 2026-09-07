@@ -1,16 +1,16 @@
 # herdr configuration
 # https://herdr.dev/docs/configuration/
-# スキーマ全体は `herdr --default-config` で確認できる。
-# 変更後は `herdr server reload-config` で反映する。
+# Run `herdr --default-config` to inspect the complete schema.
+# Apply changes with `herdr server reload-config`.
 
 [keys]
-# 方針: デフォルトの prefix(ctrl+b) バインドは維持しつつ、
-# ctrl+alt+X の直接チョードを併記してプレフィックスなしで操作できるようにする。
-# ctrl+alt 系を選ぶ理由:
-# - cmd 系は ghostty がターミナル層で消費して herdr に届かない
-# - 素の ctrl+letter は zsh ウィジェット（ctrl+g/f/] 等）や readline と衝突する
-# - herdr 公式も「explicit modified chords」を信頼できる直接バインドとして推奨
-# ※ herdr は cmux 内では使わない想定のため、cmux のショートカットとの衝突は考慮しない
+# Keep the default prefix (ctrl+b) bindings while adding direct ctrl+alt+X
+# chords so commands can also run without a prefix.
+# Reasons for choosing ctrl+alt:
+# - Ghostty consumes cmd chords at the terminal layer before they reach herdr.
+# - Bare ctrl+letter conflicts with zsh widgets (ctrl+g/f/], etc.) and readline.
+# - herdr also recommends explicit modified chords for reliable direct bindings.
+# herdr is not intended to run inside cmux, so cmux shortcut conflicts are not considered.
 
 # --- Pane ---
 focus_pane_left  = ["prefix+h", "ctrl+alt+h"]

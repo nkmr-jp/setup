@@ -2,48 +2,48 @@
 # ============================================================
 # iTerm2 Integration
 # ============================================================
-# iTerm2 のサブタイトル・タブタイトル・ディレクトリ復元を統合したスクリプト
+# Integrated iTerm2 subtitle, tab title, and directory restoration.
 #
-# 必要な設定:
-#   1. Settings > Profiles > General > Title に \(user.dirIcon) \(user.currentDir) を入力
-#   2. Settings > Profiles > General > Subtitle に \(user.branch) を入力
-#   3. Settings > Profiles > Terminal > Allow session to set title を有効化
+# Required settings:
+#   1. Set Settings > Profiles > General > Title to \(user.dirIcon) \(user.currentDir).
+#   2. Set Settings > Profiles > General > Subtitle to \(user.branch).
+#   3. Enable Settings > Profiles > Terminal > Allow session to set title.
 #
-# 参考:
+# References:
 #   - https://iterm2.com/documentation-shell-integration.html
 #   - https://iterm2.com/shell_integration/zsh
 # ============================================================
 
-# インタラクティブシェルでのみ動作
+# Run only in interactive shells.
 if [[ ! -o interactive ]]; then
   return
 fi
 
-# tmux/screen/dumb端末では動作しない
+# Do not run in tmux, screen, or dumb terminals.
 if [[ "${ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX-}${TERM}" == "tmux-256color" ]] ||
    [[ "${ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX-}${TERM}" == "screen" ]] ||
    [[ "$TERM" == "linux" ]] || [[ "$TERM" == "dumb" ]]; then
   return
 fi
 
-# 二重読み込み防止
+# Prevent loading twice.
 if [[ "${ITERM_SHELL_INTEGRATION_INSTALLED-}" != "" ]]; then
   return
 fi
 ITERM_SHELL_INTEGRATION_INSTALLED=Yes
 
 # ============================================================
-# ヘルパー関数
+# Helper functions.
 # ============================================================
 
 _get_git_branch() {
   local dir="$1"
-  # detached HEAD の場合は何も出力しない
+  # Output nothing for detached HEAD.
   git -C "$dir" -c core.useReplaceRefs=false -c advice.detachedHead=false \
     symbolic-ref --short HEAD 2>/dev/null
 }
 
-# worktree パスから元リポジトリのパスを返す（非 worktree ならそのまま）
+# Return the original repository path for a worktree; otherwise return the path unchanged.
 _iterm2_resolve_repo_path() {
   local dir="$1"
   if [[ "$dir" == *"-worktrees/"* ]]; then
@@ -54,7 +54,7 @@ _iterm2_resolve_repo_path() {
 }
 
 # ============================================================
-# サブタイトル用コンポーネント
+# Subtitle components.
 # ============================================================
 
 _iterm2_directory_name() {
@@ -67,7 +67,7 @@ _iterm2_directory_name() {
 
   local dir_name="${dir##*/}"
 
-  # gwt.zsh の worktree コピー規約: repo-wt-branch
+  # gwt.zsh worktree naming convention: repo-wt-branch.
   if [[ "$dir_name" == *"-wt-"* ]]; then
     dir_name="${dir_name%%-wt-*}"
   fi
@@ -78,13 +78,13 @@ _iterm2_directory_name() {
 _iterm2_git_branch_label() {
   local dir="$1"
   local branch
-  # _is_git_repo チェック不要: 非 git ディレクトリでは空文字が返る
+  # No _is_git_repo check needed: non-Git directories return an empty string.
   branch=$(_get_git_branch "$dir")
   if [ -z "$branch" ]; then
     return
   fi
 
-  # worktree で作業中の場合、wt: プレフィックスで区別
+  # Use the wt: prefix to distinguish worktrees.
   if [[ "$dir" == *"-worktrees/"* ]]; then
     branch="wt:$branch"
   fi
@@ -93,10 +93,10 @@ _iterm2_git_branch_label() {
 }
 
 # ============================================================
-# iTerm2 への情報送信
+# Send information to iTerm2.
 # ============================================================
 
-# 新しいタブ/ペインで同じディレクトリを復元するために必要
+# Required to restore the same directory in new tabs and panes.
 _iterm2_send_current_dir() {
   printf "\033]1337;CurrentDir=%s\007" "$PWD"
 }
@@ -161,7 +161,7 @@ _iterm2_set_user_last_prompt() {
 }
 
 # ============================================================
-# fswatch によるリアルタイム lastPrompt 更新
+# Update lastPrompt in real time with fswatch.
 # ============================================================
 
 _iterm2_prompt_watcher_pid=""
@@ -184,7 +184,7 @@ _iterm2_start_prompt_watcher() {
       current_count=$(wc -l < "$history_file" 2>/dev/null || echo 0)
       (( current_count <= last_count )) && { last_count=$current_count; continue; }
 
-      # 新しく追加された行のうち自セッションのもののみ取得
+      # Read only newly appended lines belonging to this session.
       local new_lines=$((current_count - last_count))
       local text
       text=$(tail -n "$new_lines" "$history_file" \
@@ -209,7 +209,7 @@ _iterm2_stop_prompt_watcher() {
 trap '_iterm2_stop_prompt_watcher' EXIT
 
 # ============================================================
-# precmd フック（プロンプト表示前に毎回実行）
+# precmd hook (runs before every prompt).
 # ============================================================
 
 _iterm2_precmd() {
@@ -219,16 +219,16 @@ _iterm2_precmd() {
   _iterm2_set_user_branch
   _iterm2_set_user_dir_icon
   _iterm2_set_user_last_prompt
-  # Smart Selection用のCWD（path変数はCWDポーリングで汚染されるためユーザー変数で管理）
+  # CWD for Smart Selection: use a user variable because CWD polling overwrites path.
   _iterm2_set_user_var gwtCwd "$PWD"
 }
 
-# precmd_functions 配列にフックを登録
+# precmd_functions: register the hook in this array.
 [[ -z ${precmd_functions-} ]] && precmd_functions=()
 precmd_functions=($precmd_functions _iterm2_precmd)
 
-# 初回読み込み時にも情報を送信（シェル起動直後のタブに反映させる）
+# Send information on initial load too, so the tab updates immediately after shell startup.
 _iterm2_precmd
 
-# fswatch によるリアルタイム監視を開始
+# Start real-time monitoring with fswatch.
 #_iterm2_start_prompt_watcher

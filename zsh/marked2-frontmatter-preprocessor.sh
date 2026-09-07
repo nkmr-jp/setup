@@ -1,24 +1,24 @@
 #!/bin/zsh
 #
-# Marked 2 Custom Preprocessor: Frontmatter Display (Shell版)
+# Marked 2 Custom Preprocessor: Frontmatter Display (shell version).
 #
-# このスクリプトはMarked 2のPreprocessorとして使用します。
-# YAML frontmatterを検出し、GitHubのようなテーブル形式で表示します。
+# Use this script as a Marked 2 preprocessor.
+# Detect YAML frontmatter and display it in a GitHub-style table.
 #
-# 設定手順:
-# 1. Marked 2の設定を開く (Cmd+,)
-# 2. "Advanced" タブを選択
-# 3. "Strip MMD3 Metadata headers" のチェックを外す
-# 4. "YAML Frontmatter" を "Ignore" にする
-# 5. "Preprocessor" タブをクリック
-# 6. "Enable Custom Preprocessor" にチェック
-# 7. "Path" にこのスクリプトのパスを設定
-# 8. "Automatically enable for new windows" にチェック（任意）
+# Setup:
+# 1. Open Marked 2 settings (Cmd+,).
+# 2. Select the "Advanced" tab.
+# 3. Uncheck "Strip MMD3 Metadata headers".
+# 4. Set "YAML Frontmatter" to "Ignore".
+# 5. Click the "Preprocessor" tab.
+# 6. Check "Enable Custom Preprocessor".
+# 7. Set "Path" to this script's path.
+# 8. Optionally check "Automatically enable for new windows".
 #
-# パス:
-# $HOME/ghq/github.com/nkmr-jp/setup/marked2-frontmatter-preprocessor.sh
+# Path:
+# ~/ghq/github.com/nkmr-jp/setup/zsh/marked2-frontmatter-preprocessor.sh
 
-# frontmatterを検出してYAMLコードブロックとして出力。
+# Detect frontmatter and output it as a YAML code block.
 awk '
 BEGIN {
     in_frontmatter = 0
@@ -26,7 +26,7 @@ BEGIN {
     line_count = 0
 }
 {
-    # 最初の行が---で始まるかチェック
+    # Check whether the first line starts with ---.
     if (first_line == 1) {
         first_line = 0
         if (/^---[[:space:]]*$/) {
@@ -35,11 +35,11 @@ BEGIN {
         }
     }
 
-    # frontmatter内で終了の---を検出
+    # Detect the closing --- inside frontmatter.
     if (in_frontmatter == 1 && /^---[[:space:]]*$/) {
         in_frontmatter = 0
 
-        # 折りたたみ可能なYAMLコードブロックとして出力
+        # Output a collapsible YAML code block.
         if (line_count > 0) {
             print "<details>"
             print "<summary>Frontmatter</summary>"
@@ -56,14 +56,14 @@ BEGIN {
         next
     }
 
-    # frontmatter内の行を保存
+    # Save lines inside frontmatter.
     if (in_frontmatter == 1) {
         line_count++
         lines[line_count] = $0
         next
     }
 
-    # frontmatter外の行はそのまま出力
+    # Output lines outside frontmatter unchanged.
     print
 }
 '

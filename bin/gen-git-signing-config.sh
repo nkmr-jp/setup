@@ -1,19 +1,14 @@
 #!/usr/bin/env bash
-# 公開リポジトリだけコミット署名を有効にする includeIf 群を生成する。
+# Generate includeIf entries to enable commit signing only for public repositories.
 #
-# 背景:
-#   グローバル既定はコミット署名なし（~/.gitconfig）。1Password の
-#   op-ssh-sign が署名のたびに生体認証を求め、エージェントの無人コミットが
-#   そこで止まるため。公開リポジトリは署名を維持したいので、GitHub 上で
-#   public なリポジトリのパスだけを includeIf で列挙して署名を有効に戻す。
+# The global default (~/.gitconfig) disables signing because 1Password's
+# op-ssh-sign requests biometric authentication and blocks unattended commits.
+# List public GitHub repositories with includeIf to re-enable signing for them.
 #
-# 使い方:
-#   bin/gen-git-signing-config.sh [owner]   # 既定 owner: gh のログインユーザー
-#
-# 出力:
-#   ~/.gitconfig-signing-includes （~/.gitconfig から include 済み）
-#
-# 新しく公開リポジトリを作ったら再実行する。
+# Usage: bin/gen-git-signing-config.sh [owner]
+# Default owner: the authenticated gh user.
+# Output: ~/.gitconfig-signing-includes (already included by ~/.gitconfig).
+# Run again after creating a public repository or changing repository visibility.
 set -euo pipefail
 
 OWNER="${1:-}"
@@ -36,8 +31,8 @@ command -v gh >/dev/null || { echo "gh コマンドが必要です" >&2; exit 1;
 [ -n "$OWNER" ] || OWNER=$(gh api user --jq .login)
 [[ "$OWNER" =~ ^[A-Za-z0-9][A-Za-z0-9-]*$ ]] || { echo "invalid GitHub owner" >&2; exit 2; }
 
-# ローカルに clone していない public リポジトリも含めて列挙する。
-# 後から clone したときに署名が漏れるのを防ぐため。
+# Include public repositories that have not been cloned yet, so signing
+# is enabled automatically when they are cloned later.
 repos=$(gh repo list "$OWNER" --limit 1000 --visibility public \
     --json name --jq '.[].name' | sort)
 
@@ -47,12 +42,12 @@ tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT
 
 {
-    echo "# 自動生成ファイル — 直接編集しない。"
-    echo "# 生成元: setup/bin/gen-git-signing-config.sh ($OWNER / $(date '+%Y-%m-%d'))"
+    echo "# Generated file - do not edit directly."
+    echo "# Source: ~/ghq/github.com/nkmr-jp/setup/bin/gen-git-signing-config.sh ($OWNER / $(date '+%Y-%m-%d'))"
     echo "#"
-    echo "# 公開リポジトリのみコミット署名を有効化する（既定は署名なし）。"
-    echo "# worktree（<repo>-wt-<branch>）も GIT_DIR が本体の .git 配下を指すため"
-    echo "# この gitdir 条件でマッチする。"
+    echo "# Enable signing only for public repositories; the default is unsigned."
+    echo "# Worktrees (<repo>-wt-<branch>) also use a GIT_DIR inside the main .git,"
+    echo "# so they match these gitdir conditions."
     echo
     while IFS= read -r name; do
         printf '[includeIf "gitdir:%s/github.com/%s/%s/"]\n' \

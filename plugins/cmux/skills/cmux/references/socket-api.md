@@ -1,34 +1,34 @@
-# cmux ソケット API リファレンス
+# cmux socket API reference
 
-cmux.app は UNIX ドメインソケット `/tmp/cmux.sock` で JSON-RPC を待ち受ける。CLI コマンドはこのソケット呼び出しの薄いラッパであり、スクリプトから直接叩くことも可能。
+cmux.app accepts JSON-RPC requests on the UNIX domain socket `/tmp/cmux.sock`. CLI commands are thin wrappers around socket calls; scripts can also call the socket directly.
 
-## トランスポート仕様（V2 プロトコル）
+## Transport specification (V2 protocol)
 
-- パス: `/tmp/cmux.sock`
-- フォーマット: **改行区切り JSON（NDJSON）**
-- 1 リクエスト 1 行、1 レスポンス 1 行
+- Path: `/tmp/cmux.sock`
+- Format: **newline-delimited JSON (NDJSON)**
+- One request per line and one response per line
 
-### リクエスト形式
+### Request format
 
 ```json
 {"id":"<string>","method":"<namespace>.<action>","params":{...}}
 ```
 
-| フィールド | 型 | 説明 |
+| Field | Type | Description |
 |----|----|----|
-| `id` | string | 呼び出し側で付与する任意の ID。レスポンスに同じ値が返る |
-| `method` | string | `<namespace>.<action>` 形式（例: `workspace.list`） |
-| `params` | object | メソッド固有パラメータ。空でも `{}` を渡す |
+| `id` | string | An arbitrary caller-provided ID, echoed in the response |
+| `method` | string | `<namespace>.<action>`, such as `workspace.list` |
+| `params` | object | Method-specific parameters; pass `{}` even when empty |
 
-### レスポンス形式
+### Response format
 
-成功:
+Success:
 
 ```json
 {"id":"1","ok":true,"result":{...}}
 ```
 
-失敗:
+Failure:
 
 ```json
 {"id":"1","ok":false,"error":{"code":"not_found","message":"workspace not found"}}
@@ -36,9 +36,9 @@ cmux.app は UNIX ドメインソケット `/tmp/cmux.sock` で JSON-RPC を待�
 
 ---
 
-## 呼び出し例
+## Invocation examples
 
-### netcat（最小構成）
+### netcat (minimal setup)
 
 ```bash
 echo '{"id":"1","method":"workspace.list","params":{}}' | nc -U /tmp/cmux.sock
@@ -72,79 +72,79 @@ EOF
 
 ---
 
-## 主要メソッド一覧
+## Main methods
 
 ### window.*
 
-| メソッド | params | 説明 |
+| Method | params | Description |
 |----|----|----|
-| `window.list` | `{}` | ウィンドウ列挙 |
-| `window.create` | `{}` | 新規ウィンドウ作成 |
+| `window.list` | `{}` | List windows |
+| `window.create` | `{}` | Create a window |
 
 ### workspace.*
 
-| メソッド | params | 説明 |
+| Method | params | Description |
 |----|----|----|
-| `workspace.list` | `{ "window_id"?: string }` | ワークスペース列挙 |
-| `workspace.create` | `{ "cwd"?: string, "window_id"?: string }` | 新規作成 |
-| `workspace.select` | `{ "workspace_id": string }` | フォーカス切替 |
-| `workspace.current` | `{}` | 現在フォーカスを返す |
-| `workspace.close` | `{ "workspace_id": string }` | クローズ |
-| `workspace.move_to_window` | `{ "workspace_id": string, "window_id": string }` | 別ウィンドウへ移動 |
+| `workspace.list` | `{ "window_id"?: string }` | List workspaces |
+| `workspace.create` | `{ "cwd"?: string, "window_id"?: string }` | Create a workspace |
+| `workspace.select` | `{ "workspace_id": string }` | Switch focus |
+| `workspace.current` | `{}` | Return the currently focused workspace |
+| `workspace.close` | `{ "workspace_id": string }` | Close a workspace |
+| `workspace.move_to_window` | `{ "workspace_id": string, "window_id": string }` | Move to another window |
 
 ### pane.* / surface.*
 
-| メソッド | params | 説明 |
+| Method | params | Description |
 |----|----|----|
-| `pane.list` | `{ "workspace_id"?: string }` | ペイン列挙 |
-| `pane.split` | `{ "pane_id": string, "direction": "right\|down\|left\|up" }` | 分割 |
-| `surface.list` | `{ "pane_id": string }` | サーフェス列挙 |
-| `surface.move` | `{ "surface_id": string, "pane_id": string, "focus"?: bool }` | 移動 |
-| `surface.reorder` | `{ "surface_id": string, "before"?: string, "after"?: string }` | 並べ替え |
-| `surface.trigger_flash` | `{ "surface_id"?: string, "workspace_id"?: string }` | 視覚的注意喚起 |
+| `pane.list` | `{ "workspace_id"?: string }` | List panes |
+| `pane.split` | `{ "pane_id": string, "direction": "right\|down\|left\|up" }` | Split a pane |
+| `surface.list` | `{ "pane_id": string }` | List surfaces |
+| `surface.move` | `{ "surface_id": string, "pane_id": string, "focus"?: bool }` | Move a surface |
+| `surface.reorder` | `{ "surface_id": string, "before"?: string, "after"?: string }` | Reorder surfaces |
+| `surface.trigger_flash` | `{ "surface_id"?: string, "workspace_id"?: string }` | Draw visual attention |
 
 ### notification.*
 
-| メソッド | params | 説明 |
+| Method | params | Description |
 |----|----|----|
-| `notification.create` | `{ "title": string, "subtitle"?: string, "body"?: string, "workspace_id"?: string }` | 通知作成 |
-| `notification.list` | `{}` | 通知一覧 |
-| `notification.clear` | `{}` | 全通知クリア |
+| `notification.create` | `{ "title": string, "subtitle"?: string, "body"?: string, "workspace_id"?: string }` | Create a notification |
+| `notification.list` | `{}` | List notifications |
+| `notification.clear` | `{}` | Clear all notifications |
 
 ### status.*
 
-| メソッド | params | 説明 |
+| Method | params | Description |
 |----|----|----|
-| `status.set` | `{ "key": string, "value": string }` | ステータス設定 |
-| `status.clear` | `{ "key": string }` | ステータス削除 |
+| `status.set` | `{ "key": string, "value": string }` | Set status |
+| `status.clear` | `{ "key": string }` | Remove status |
 
 ### identify / capabilities
 
-| メソッド | params | 説明 |
+| Method | params | Description |
 |----|----|----|
-| `identify` | `{}` | 呼び出し元の所在を返す |
-| `capabilities` | `{}` | サポート機能一覧を返す |
+| `identify` | `{}` | Return the caller's location |
+| `capabilities` | `{}` | Return supported capabilities |
 
 ### browser.*
 
-`agent-browser.md` を参照。`browser.open`, `browser.click`, `browser.fill`, `browser.snapshot` などが該当する。
+See `agent-browser.md` for methods such as `browser.open`, `browser.click`, `browser.fill`, and `browser.snapshot`.
 
 ---
 
-## エラーコード
+## Error codes
 
-| code | 意味 |
+| code | Meaning |
 |----|----|
-| `not_found` | 指定 ID のリソースが存在しない |
-| `invalid_params` | パラメータ不足／型不一致 |
-| `unsupported` | 旧バージョンで未サポート |
-| `internal` | 内部エラー |
+| `not_found` | No resource exists for the specified ID |
+| `invalid_params` | Missing parameters or mismatched types |
+| `unsupported` | Not supported in an older version |
+| `internal` | Internal error |
 
 ---
 
-## ベストプラクティスと注意
+## Best practices and caveats
 
-- **ID は文字列で送る**。数値だけの ID（`"1"`）も string で渡す
-- **タイムアウト**を呼び出し側で設けること（cmux.app 終了時にソケットがハングする可能性）
-- **複数呼び出し**はコネクションを使い回せる場合があるが、確実性のためコマンドごとに接続するのが安全
-- **CLI と API は等価**。CLI で動作確認 → スクリプト化のときに API へ移行、という流れが扱いやすい
+- **Send IDs as strings**, including numeric-looking IDs such as `"1"`.
+- **Set a caller-side timeout**: the socket can hang when cmux.app exits.
+- **Multiple calls** may reuse a connection, but connecting once per command is safer for reliability.
+- **The CLI and API are equivalent**. A practical workflow is to verify operations with the CLI, then use the API when scripting them.

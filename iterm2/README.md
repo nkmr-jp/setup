@@ -1,6 +1,6 @@
 # iTerm2 Scripts
 
-iTerm2 Python API を使った AutoLaunch スクリプト集。
+AutoLaunch scripts using the iTerm2 Python API.
 
 ## Setup
 
@@ -9,24 +9,26 @@ mkdir -p ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch
 ln -s ~/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount.py ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount.py
 ```
 
-iTerm2 を再起動するとスクリプトが自動実行される。
+The scripts run automatically after restarting iTerm2.
 
 ## PaneCount.py
 
-現在のタブのペイン数をユーザー定義変数 `user.paneCount` に設定する。
-`LayoutChangeMonitor` でペインの追加・削除をリアルタイム監視し、自動更新する。
+Set the current tab's pane count in the user-defined variable `user.paneCount`.
+`LayoutChangeMonitor` watches pane additions and removals in real time and updates it automatically.
 
-### 表示設定
+### Display configuration
 
-Preferences → Profiles → General → Title で以下のように設定する:
+In Preferences → Profiles → General → Title:
 
-1. Title ドロップダウンで適用したい項目にチェックを入れる
-2. 「Session Name」等のチェックボックスの下にあるテキストフィールドにカスタム文字列を入力
+1. Select the desired items in the Title dropdown.
+2. Enter a custom string in the text field below checkboxes such as "Session Name".
 
-例:
+Example:
+
 ```
 \(user.paneCount) panes
 ```
 
-`user.paneCount` は iTerm2 のユーザー定義変数として各セッションに設定されるため、
-タブタイトル以外にも Status Bar やトリガーなど `\(user.paneCount)` 記法が使える場所で利用できる。
+`user.paneCount` is set as a user-defined iTerm2 variable for each session. Besides
+tab titles, it is available anywhere that accepts `\(user.paneCount)`, including
+the Status Bar and triggers.

@@ -3,22 +3,22 @@
 # <xbar.version>v0.1.0</xbar.version>
 # <xbar.author>nkmr-jp</xbar.author>
 # <xbar.author.github>nkmr-jp</xbar.author.github>
-# <xbar.desc>Claude Code 起因のカーネルメモリリーク（data.kalloc.1024）の量をメニューバーに常時表示する</xbar.desc>
+# <xbar.desc>Continuously show the Claude Code kernel memory leak (data.kalloc.1024) in the menu bar</xbar.desc>
 # <xbar.dependencies>zprint</xbar.dependencies>
 #
-# data.kalloc.1024 ゾーンは Claude Code 起因のカーネルメモリリークで、ユーザー空間からは
-# 解放できず蓄積は再起動でしかリセットできない（詳細は issue #8 参照）。パニック閾値は
-# 約21,000,000要素（≈20GiB、1要素=1024バイト固定）。`zprint` の cur #inuse 列を2分毎に
-# 読み、閾値に対する進捗% と増加ペースをメニューバーに表示する。
+# The data.kalloc.1024 zone accumulates a Claude Code kernel memory leak that
+# userspace cannot release; only rebooting resets it (see issue #8). The panic
+# threshold is approximately 21,000,000 elements (about 20 GiB, 1024 bytes each).
+# Read the zprint cur #inuse column every 2 minutes to show threshold progress and growth rate.
 
 set -u
 PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
-# xbar 経由起動だと LANG が空になり、zsh の ${var:0:N} 等が
-# バイト単位になって日本語が壊れるので UTF-8 を明示する。
+# xbar may launch with LANG unset, making zsh slices such as ${var:0:N} operate
+# on bytes and corrupt Japanese text. Explicitly select UTF-8.
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
-# パニック閾値（要素数）。issue #10 の実測に基づく概算値（≈20GiB、1要素=1024バイト）。
+# Approximate panic threshold in elements, measured in issue #10 (about 20 GiB, 1024 bytes each).
 THRESHOLD=21000000
 STATE_FILE="$HOME/.cache/xbar-kalloc1024.state"
 
@@ -29,7 +29,7 @@ if ! command -v zprint >/dev/null 2>&1; then
   exit 0
 fi
 
-# 7列目 = cur #inuse（現在使用中の要素数）
+# Column 7 = cur #inuse (the number of elements currently in use)
 ELEMS=$(zprint 2>/dev/null | awk '$1=="data.kalloc.1024"{print $7}')
 
 if [[ -z "$ELEMS" || ! "$ELEMS" =~ '^[0-9]+$' ]]; then
@@ -41,7 +41,7 @@ fi
 
 NOW_EPOCH=$(date -u +%s)
 
-# 1要素=1024バイト固定なので GiB 換算は elements / 1024 / 1024。
+# Each element is exactly 1024 bytes, so GiB = elements / 1024 / 1024.
 GB=$(awk -v e="$ELEMS" 'BEGIN{printf "%.1f", e/1048576}')
 THRESHOLD_GB=$(awk -v t="$THRESHOLD" 'BEGIN{printf "%.1f", t/1048576}')
 PCT=$(awk -v e="$ELEMS" -v t="$THRESHOLD" 'BEGIN{printf "%.1f", (e/t)*100}')
@@ -55,7 +55,7 @@ else
   COLOR="red"
 fi
 
-# 前回計測（2分間隔想定）との差分から増加ペース（要素/秒）を推定する。
+# Estimate growth in elements/second from the previous sample (normally 2 minutes earlier).
 PACE=""
 REMAIN_STR=""
 PREV_EPOCH=""

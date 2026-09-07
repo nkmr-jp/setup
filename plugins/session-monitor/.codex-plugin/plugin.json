@@ -15,7 +15,7 @@
     "category": "Developer Tools",
     "capabilities": ["Read", "Write"],
     "defaultPrompt": [
-      "セッションモニターのセットアップ方法を確認してください。"
+      "Check how to set up the session monitor."
     ]
   }
 }

@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-# gwt.zsh テスト用ヘルパー
+# Test helpers for gwt.zsh
 
 GWT_WRAPPER="${BATS_TEST_DIRNAME}/gwt_wrapper.zsh"
 
-# テスト用 git リポジトリをセットアップ
+# Set up a fixture Git repository.
 setup_test_repos() {
     export GIT_AUTHOR_NAME="Test"
     export GIT_AUTHOR_EMAIL="test@test.com"
     export GIT_COMMITTER_NAME="Test"
     export GIT_COMMITTER_EMAIL="test@test.com"
 
-    # bare リポジトリ作成
+    # Create the bare repository.
     git init --bare "$BATS_TEST_TMPDIR/bare.git" >/dev/null 2>&1
 
-    # クローン
+    # Clone it.
     git clone "$BATS_TEST_TMPDIR/bare.git" "$BATS_TEST_TMPDIR/repo" >/dev/null 2>&1
 
-    # 初期コミット（main ブランチ）
+    # Create the initial commit on main.
     cd "$BATS_TEST_TMPDIR/repo"
     git checkout -b main >/dev/null 2>&1
     echo "initial" > README.md
@@ -24,24 +24,24 @@ setup_test_repos() {
     git commit -m "initial commit" >/dev/null 2>&1
     git push -u origin main >/dev/null 2>&1
 
-    # origin/HEAD を設定
+    # Set origin/HEAD.
     git remote set-head origin main >/dev/null 2>&1
 
     export TEST_REPO="$BATS_TEST_TMPDIR/repo"
     export TEST_BARE="$BATS_TEST_TMPDIR/bare.git"
 }
 
-# テスト用リポジトリをクリーンアップ
+# Clean up the fixture repository.
 teardown_test_repos() {
     cd "$BATS_TEST_TMPDIR" 2>/dev/null || true
-    # worktree のロックを解放
+    # Unlock worktrees.
     if [[ -d "$TEST_REPO" ]]; then
         cd "$TEST_REPO" && git worktree prune 2>/dev/null || true
     fi
 }
 
-# フィーチャーブランチを作成してプッシュ
-# 引数: branch_name [file_name] [file_content]
+# Create and push a feature branch.
+# Arguments: branch_name [file_name] [file_content]
 create_feature_branch() {
     local branch_name="$1"
     local file_name="${2:-${branch_name}.txt}"
@@ -56,7 +56,7 @@ create_feature_branch() {
     git checkout main >/dev/null 2>&1
 }
 
-# 通常マージをシミュレート
+# Simulate a regular merge.
 simulate_normal_merge() {
     local branch_name="$1"
 
@@ -66,7 +66,7 @@ simulate_normal_merge() {
     git push origin main >/dev/null 2>&1
 }
 
-# スカッシュマージをシミュレート
+# Simulate a squash merge.
 simulate_squash_merge() {
     local branch_name="$1"
 
@@ -77,9 +77,9 @@ simulate_squash_merge() {
     git push origin main >/dev/null 2>&1
 }
 
-# worktree を作成
-# 引数: branch_name
-# 出力: worktree パス
+# Create a worktree.
+# Arguments: branch_name
+# Output: worktree path
 create_worktree() {
     local branch_name="$1"
     local wt_path="$BATS_TEST_TMPDIR/repo-wt-${branch_name}"
@@ -89,33 +89,33 @@ create_worktree() {
     echo "$wt_path"
 }
 
-# worktree の作成時刻を古くする（30分以上前）
-# macOS では SetFile -d で creation time を変更
+# Backdate worktree creation by at least 30 minutes.
+# On macOS, use SetFile -d to change the creation time.
 backdate_worktree() {
     local wt_path="$1"
     local minutes_ago="${2:-60}"
 
     if [[ "$(uname)" == "Darwin" ]]; then
-        # macOS: SetFile で creation time を変更
+        # macOS: change the creation time with SetFile.
         local past_date=$(date -v-${minutes_ago}M "+%m/%d/%Y %H:%M:%S")
         SetFile -d "$past_date" "$wt_path" 2>/dev/null || true
-        # touch で modification time も変更
+        # Also update the modification time with touch.
         touch -t "$(date -v-${minutes_ago}M '+%Y%m%d%H%M.%S')" "$wt_path"
     else
-        # Linux: touch -d で変更
+        # Linux: change the timestamp with touch -d.
         touch -d "${minutes_ago} minutes ago" "$wt_path"
     fi
 }
 
-# モックディレクトリをセットアップ
+# Set up the mock command directory.
 setup_mock_dir() {
     export MOCK_DIR="$BATS_TEST_TMPDIR/mocks"
     mkdir -p "$MOCK_DIR"
     export PATH="$MOCK_DIR:$PATH"
 }
 
-# gh コマンドのモックを作成
-# 引数: merged_count（マージ済み PR 数）
+# Create a mock gh command.
+# Argument: merged_count (number of merged PRs)
 create_gh_mock() {
     local merged_count="${1:-0}"
     cat > "$MOCK_DIR/gh" << MOCK_EOF
@@ -130,7 +130,7 @@ MOCK_EOF
     chmod +x "$MOCK_DIR/gh"
 }
 
-# gh コマンドを無効化するモック
+# Mock gh as unavailable.
 disable_gh() {
     cat > "$MOCK_DIR/gh" << 'MOCK_EOF'
 #!/bin/bash
@@ -139,8 +139,8 @@ MOCK_EOF
     chmod +x "$MOCK_DIR/gh"
 }
 
-# gwt 関数を zsh サブプロセスで実行
-# 引数: function_name [args...]
+# Run a gwt function in a zsh subprocess.
+# Arguments: function_name [args...]
 run_gwt() {
     local func="$1"
     shift
@@ -148,8 +148,8 @@ run_gwt() {
     run zsh "$GWT_WRAPPER" "$func" "$@"
 }
 
-# gwt 関数を指定ディレクトリから実行
-# 引数: directory function_name [args...]
+# Run a gwt function from the specified directory.
+# Arguments: directory function_name [args...]
 run_gwt_from() {
     local dir="$1"
     local func="$2"

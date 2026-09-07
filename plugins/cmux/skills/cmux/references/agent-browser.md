@@ -1,31 +1,31 @@
-# cmux agent-browser リファレンス
+# cmux agent-browser reference
 
-cmux のサーフェスはターミナルだけでなく**ブラウザ**にもなる。`cmux browser` サブコマンド群は Playwright ライクな CLI を提供し、AI エージェントが Web UI を制御する用途に最適化されている。
+A cmux surface can host a **browser** as well as a terminal. The `cmux browser` subcommands provide a Playwright-like CLI optimized for AI agents controlling web interfaces.
 
-## 構文
+## Syntax
 
 ```bash
-# 主形式
+# Full form
 cmux browser --surface <surface-id> <subcommand> [args...]
 
-# 短縮形
+# Short form
 cmux browser <surface-id> <subcommand> [args...]
 ```
 
-`--surface` 省略時は短縮形と解釈される。
+Omitting `--surface` selects the short form.
 
-## 起動と疎通
+## Startup and connectivity
 
-### 新規ブラウザサーフェスを作成
+### Create a browser surface
 
 ```bash
 cmux --json browser open https://example.com
 # => {"surface":"surface:7"}
 ```
 
-返ってきた `surface:7` を以降の操作で使う。
+Use the returned `surface:7` in subsequent operations.
 
-### コンテキスト確認
+### Inspect the context
 
 ```bash
 cmux identify --json
@@ -35,15 +35,15 @@ cmux browser identify --surface surface:7
 
 ---
 
-## ナビゲーションと待機
+## Navigation and waiting
 
-| サブコマンド | 用途 |
+| Subcommand | Purpose |
 |----|----|
-| `get url` | 現在 URL を取得 |
-| `wait --load-state complete --timeout-ms <ms>` | ロード完了まで待機 |
-| `wait --selector <css> --timeout-ms <ms>` | 要素出現まで待機 |
-| `goto <url>` | URL 遷移 |
-| `back` / `forward` / `reload` | 履歴操作 |
+| `get url` | Get the current URL |
+| `wait --load-state complete --timeout-ms <ms>` | Wait for loading to complete |
+| `wait --selector <css> --timeout-ms <ms>` | Wait for an element to appear |
+| `goto <url>` | Navigate to a URL |
+| `back` / `forward` / `reload` | Navigate history or reload |
 
 ```bash
 cmux browser surface:7 get url
@@ -52,45 +52,45 @@ cmux browser surface:7 wait --load-state complete --timeout-ms 15000
 
 ---
 
-## スナップショットと参照（`e1`, `e2`, ... ref）
+## Snapshots and references (`e1`, `e2`, ...)
 
-`snapshot --interactive` を撮ると、操作可能な要素に短い参照（`e1`, `e2`, ...）が割り当てられる。後続の操作はこの ref または CSS セレクタで対象を指定する。
+`snapshot --interactive` assigns short references (`e1`, `e2`, ...) to interactive elements. Subsequent operations can target these references or CSS selectors.
 
 ```bash
 cmux browser surface:7 snapshot --interactive
-# 出力例:
+# Example output:
 # @e1: link "More information..."
 # @e2: input "email"
 # @e3: button "Submit"
 ```
 
-### スナップショットオプション
+### Snapshot options
 
 ```bash
 cmux browser <surface> snapshot [--interactive] [--compact] [--max-depth N]
 ```
 
-- `--interactive` — 操作可能な要素のみ抽出して ref を付与
-- `--compact` — 簡潔な出力
-- `--max-depth N` — DOM 走査の最大深度
+- `--interactive` — Include only interactive elements and assign references
+- `--compact` — Produce compact output
+- `--max-depth N` — Limit DOM traversal depth
 
 ---
 
-## 要素操作
+## Element interaction
 
-| サブコマンド | 用途 |
+| Subcommand | Purpose |
 |----|----|
-| `click <ref-or-selector>` | クリック |
-| `dblclick <ref-or-selector>` | ダブルクリック |
-| `hover <ref-or-selector>` | ホバー |
-| `focus <ref-or-selector>` | フォーカス |
-| `fill <ref-or-selector> <text>` | 入力欄に値をセット（クリア後） |
-| `type <ref-or-selector> <text>` | 文字を 1 文字ずつ入力 |
-| `press <key>` | キー入力（例: `Enter`, `Tab`） |
-| `keydown <key>` / `keyup <key>` | 個別キーイベント |
-| `select <ref-or-selector> <value>` | `<select>` の値を選択 |
-| `check <ref-or-selector>` / `uncheck <ref-or-selector>` | チェックボックス |
-| `scroll [--selector <css>] [--dx N] [--dy N]` | スクロール |
+| `click <ref-or-selector>` | Click |
+| `dblclick <ref-or-selector>` | Double-click |
+| `hover <ref-or-selector>` | Hover |
+| `focus <ref-or-selector>` | Focus |
+| `fill <ref-or-selector> <text>` | Clear an input and set its value |
+| `type <ref-or-selector> <text>` | Type text character by character |
+| `press <key>` | Press a key, such as `Enter` or `Tab` |
+| `keydown <key>` / `keyup <key>` | Send individual key events |
+| `select <ref-or-selector> <value>` | Choose a `<select>` value |
+| `check <ref-or-selector>` / `uncheck <ref-or-selector>` | Toggle a checkbox |
+| `scroll [--selector <css>] [--dx N] [--dy N]` | Scroll |
 
 ```bash
 cmux browser surface:7 fill e1 "hello"
@@ -98,21 +98,21 @@ cmux --json browser surface:7 click e2 --snapshot-after
 cmux browser surface:7 press Enter
 ```
 
-`--snapshot-after` を付けるとアクション直後に再スナップショットを返し、続く操作で新しい ref を使える。
+`--snapshot-after` returns a fresh snapshot immediately after the action so subsequent operations can use updated references.
 
 ---
 
-## 取得（getter）
+## Getters
 
-| サブコマンド | 用途 |
+| Subcommand | Purpose |
 |----|----|
-| `get text body` / `get text <selector-or-ref>` | テキスト取得 |
-| `get html body` | HTML 取得 |
-| `get value <selector-or-ref>` | フォーム値 |
-| `get attr <selector-or-ref> --attr <name>` | 属性値 |
-| `get count <selector-or-ref>` | マッチ要素数 |
+| `get text body` / `get text <selector-or-ref>` | Get text |
+| `get html body` | Get HTML |
+| `get value <selector-or-ref>` | Get a form value |
+| `get attr <selector-or-ref> --attr <name>` | Get an attribute value |
+| `get count <selector-or-ref>` | Count matching elements |
 | `get box <selector-or-ref>` | bounding box |
-| `get styles <selector-or-ref> --property <css-prop>` | 計算済みスタイル |
+| `get styles <selector-or-ref> --property <css-prop>` | Get a computed style |
 
 ```bash
 cmux browser surface:1 get text "#email"
@@ -122,7 +122,7 @@ cmux browser surface:1 get count "li.todo"
 
 ---
 
-## JavaScript 評価
+## JavaScript evaluation
 
 ```bash
 cmux browser surface:7 eval 'document.title'
@@ -131,74 +131,74 @@ cmux browser surface:7 eval 'Array.from(document.querySelectorAll("a")).map(a =>
 
 ---
 
-## 推奨ワークフロー（安定エージェントループ）
+## Recommended workflow for a stable agent loop
 
-スナップショット → アクション → 再スナップショットの 3 段で進めるのが最も安定する。
+Use three stages for reliable interaction: snapshot, action, then another snapshot.
 
 ```bash
-# 1. URL 確認（必要なら goto）
+# 1. Check the URL (use goto if needed)
 cmux browser surface:7 get url
 
-# 2. ロード完了待ち
+# 2. Wait for loading to complete
 cmux browser surface:7 wait --load-state complete --timeout-ms 15000
 
-# 3. スナップショットで ref を取得
+# 3. Obtain references from a snapshot
 cmux browser surface:7 snapshot --interactive
 
-# 4. アクション実行 + 直後スナップショット
+# 4. Perform the action and take an immediate snapshot
 cmux --json browser surface:7 click e5 --snapshot-after
 
-# 5. 必要なら再度スナップショット
+# 5. Take another snapshot if needed
 cmux browser surface:7 snapshot --interactive
 ```
 
-### なぜこの順序か
+### Why this order?
 
-- DOM が変わった直後に古い ref を使うと壊れる
-- `--snapshot-after` で「アクション直後」の DOM スナップを得れば次のアクションが安全
-- `wait --load-state complete` を間に入れることで動的読み込みのレースを抑える
+- Old references can become invalid after a DOM update.
+- `--snapshot-after` captures the DOM immediately after an action for the next operation.
+- Adding `wait --load-state complete` reduces races during dynamic loading.
 
 ---
 
-## エンドツーエンド例：フォーム送信
+## End-to-end example: submit a form
 
 ```bash
-# 1. 新規ブラウザを開く
+# 1. Open a browser surface
 cmux --json browser open https://example.com/login
 # {"surface":"surface:7"}
 
-# 2. ロード待ち + スナップショット
+# 2. Wait for loading and take a snapshot
 cmux browser surface:7 wait --load-state complete --timeout-ms 15000
 cmux browser surface:7 snapshot --interactive
 # @e1: input "email"
 # @e2: input "password"
 # @e3: button "Sign in"
 
-# 3. 入力 → 送信
+# 3. Fill the form and submit it
 cmux browser surface:7 fill e1 "user@example.com"
 cmux browser surface:7 fill e2 "secret"
 cmux --json browser surface:7 click e3 --snapshot-after
 
-# 4. 結果確認
+# 4. Check the result
 cmux browser surface:7 get url
 cmux browser surface:7 get text body
 ```
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-| 症状 | 対処 |
+| Symptom | Resolution |
 |----|----|
-| ref が無効と言われる | DOM が更新されている。`snapshot --interactive` を再実行 |
-| ロードが完了しない | `--timeout-ms` を伸ばす。動的 SPA なら特定セレクタの `wait` を使う |
-| クリックしても反応がない | 要素が overlay に隠れている可能性。`get box` で位置を確認 |
-| `fill` で値が入らない | input でなく contenteditable の場合あり。`type` を試す |
+| A reference is invalid | The DOM has changed. Run `snapshot --interactive` again. |
+| Loading never completes | Increase `--timeout-ms`. For a dynamic SPA, wait for a specific selector. |
+| Clicking has no effect | An overlay may cover the element. Check its position with `get box`. |
+| `fill` does not enter a value | The target may be contenteditable rather than an input. Try `type`. |
 
 ---
 
-## 関連
+## Related resources
 
-- 全 CLI: `cli-commands.md`
-- ソケット API（`browser.*` メソッド）: `socket-api.md`
-- 公式仕様: https://github.com/manaflow-ai/cmux/blob/main/docs/agent-browser-port-spec.md
+- Full CLI reference: `cli-commands.md`
+- Socket API (`browser.*` methods): `socket-api.md`
+- Official specification: https://github.com/manaflow-ai/cmux/blob/main/docs/agent-browser-port-spec.md

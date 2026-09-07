@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# iterm2.zsh テストスイート
+# iterm2.zsh test suite
 
 ITERM2_WRAPPER="${BATS_TEST_DIRNAME}/iterm2_wrapper.zsh"
 
@@ -10,41 +10,41 @@ run_iterm2() {
 }
 
 # ============================================================
-# Group 1: _iterm2_directory_name() - ディレクトリ名抽出
+# Group 1: _iterm2_directory_name() - directory name extraction
 # ============================================================
 
-@test "directory_name: 通常のディレクトリ名を返す" {
+@test "directory_name: returns a normal directory name" {
     run_iterm2 _iterm2_directory_name "/Users/test/myrepo"
     [ "$status" -eq 0 ]
     [ "$output" = "myrepo" ]
 }
 
-@test "directory_name: 空文字を渡すと何も返さない" {
+@test "directory_name: returns nothing for an empty string" {
     run_iterm2 _iterm2_directory_name ""
     [ "$status" -eq 0 ]
     [ "$output" = "" ]
 }
 
-@test "directory_name: worktree パスからリポジトリ名を抽出する" {
+@test "directory_name: extracts the repository name from a worktree path" {
     run_iterm2 _iterm2_directory_name "/Users/test/myrepo-worktrees/feature-branch"
     [ "$status" -eq 0 ]
     [ "$output" = "myrepo" ]
 }
 
-@test "directory_name: -wt- パスからリポジトリ名を抽出する" {
+@test "directory_name: extracts the repository name from a -wt- path" {
     run_iterm2 _iterm2_directory_name "/Users/test/myrepo-wt-feature"
     [ "$status" -eq 0 ]
     [ "$output" = "myrepo" ]
 }
 
-@test "directory_name: ネストしたパスでも末尾のディレクトリ名を返す" {
+@test "directory_name: returns the final directory name for nested paths" {
     run_iterm2 _iterm2_directory_name "/a/b/c/deep-dir"
     [ "$status" -eq 0 ]
     [ "$output" = "deep-dir" ]
 }
 
 # ============================================================
-# Group 2: _iterm2_git_branch_label() - ブランチラベル
+# Group 2: _iterm2_git_branch_label() - branch labels
 # ============================================================
 
 setup() {
@@ -54,7 +54,7 @@ setup() {
     export GIT_COMMITTER_EMAIL="test@test.com"
 }
 
-@test "git_branch_label: git リポジトリのブランチ名を返す" {
+@test "git_branch_label: returns the branch name in a Git repository" {
     local repo="$BATS_TEST_TMPDIR/test-repo"
     git init "$repo" >/dev/null 2>&1
     cd "$repo"
@@ -68,13 +68,13 @@ setup() {
     [ "$output" = "main" ]
 }
 
-@test "git_branch_label: 非 git ディレクトリでは空を返す" {
+@test "git_branch_label: returns empty outside a Git repository" {
     run_iterm2 _iterm2_git_branch_label "$BATS_TEST_TMPDIR"
     [ "$status" -eq 0 ]
     [ "$output" = "" ]
 }
 
-@test "git_branch_label: worktree パスで wt: プレフィックスを付ける" {
+@test "git_branch_label: adds the wt: prefix for a worktree path" {
     local repo="$BATS_TEST_TMPDIR/myrepo"
     git init "$repo" >/dev/null 2>&1
     cd "$repo"
@@ -93,10 +93,10 @@ setup() {
 }
 
 # ============================================================
-# Group 3: _iterm2_set_user_var() - エスケープシーケンス
+# Group 3: _iterm2_set_user_var() - escape sequences
 # ============================================================
 
-@test "set_user_var: 正しいエスケープシーケンスを出力する" {
+@test "set_user_var: emits the correct escape sequence" {
     run_iterm2 _iterm2_set_user_var testKey "hello"
     [ "$status" -eq 0 ]
 
@@ -104,17 +104,17 @@ setup() {
     [[ "$output" == *"SetUserVar=testKey=${expected_b64}"* ]]
 }
 
-@test "set_user_var: 空文字を正しくエンコードする" {
+@test "set_user_var: encodes an empty string correctly" {
     run_iterm2 _iterm2_set_user_var testKey ""
     [ "$status" -eq 0 ]
     [[ "$output" == *"SetUserVar=testKey="* ]]
 }
 
 # ============================================================
-# Group 3.5: _iterm2_directory_icon() - ディレクトリアイコン
+# Group 3.5: _iterm2_directory_icon() - directory icons
 # ============================================================
 
-@test "directory_icon: Go プロジェクトで 🐹 を返す" {
+@test "directory_icon: returns 🐹 for Go projects" {
     local dir="$BATS_TEST_TMPDIR/go-project"
     mkdir -p "$dir"
     touch "$dir/go.mod"
@@ -124,7 +124,7 @@ setup() {
     [ "$output" = "🐹" ]
 }
 
-@test "directory_icon: Node.js プロジェクトで ⬡ を返す" {
+@test "directory_icon: returns ⬡ for Node.js projects" {
     local dir="$BATS_TEST_TMPDIR/node-project"
     mkdir -p "$dir"
     touch "$dir/package.json"
@@ -134,7 +134,7 @@ setup() {
     [ "$output" = "⬡" ]
 }
 
-@test "directory_icon: Python プロジェクトで 🐍 を返す" {
+@test "directory_icon: returns 🐍 for Python projects" {
     local dir="$BATS_TEST_TMPDIR/py-project"
     mkdir -p "$dir"
     touch "$dir/pyproject.toml"
@@ -144,7 +144,7 @@ setup() {
     [ "$output" = "🐍" ]
 }
 
-@test "directory_icon: Rust プロジェクトで 🦀 を返す" {
+@test "directory_icon: returns 🦀 for Rust projects" {
     local dir="$BATS_TEST_TMPDIR/rust-project"
     mkdir -p "$dir"
     touch "$dir/Cargo.toml"
@@ -154,7 +154,7 @@ setup() {
     [ "$output" = "🦀" ]
 }
 
-@test "directory_icon: 不明なプロジェクトで 📁 を返す" {
+@test "directory_icon: returns 📁 for unknown projects" {
     local dir="$BATS_TEST_TMPDIR/unknown-project"
     mkdir -p "$dir"
 
@@ -163,13 +163,13 @@ setup() {
     [ "$output" = "📁" ]
 }
 
-@test "directory_icon: 空文字を渡すと何も返さない" {
+@test "directory_icon: returns nothing for an empty string" {
     run_iterm2 _iterm2_directory_icon ""
     [ "$status" -eq 0 ]
     [ "$output" = "" ]
 }
 
-@test "directory_icon: worktree パスでは元リポジトリを基に判定する" {
+@test "directory_icon: detects project type using the original repository for worktree paths" {
     local repo="$BATS_TEST_TMPDIR/myrepo"
     mkdir -p "$repo"
     touch "$repo/go.mod"
@@ -185,44 +185,44 @@ setup() {
 # Group 4: _iterm2_set_user_last_prompt() - lastPrompt
 # ============================================================
 
-@test "set_user_last_prompt: ディレクトリ名をセットする" {
+@test "set_user_last_prompt: sets the directory name" {
     run_iterm2 _iterm2_set_user_last_prompt
     [ "$status" -eq 0 ]
-    # lastPrompt にディレクトリ名がセットされる
+    # lastPrompt contains the directory name.
     [[ "$output" == *"SetUserVar=lastPrompt="* ]]
-    # セッション名（OSC 0）も同時にセットされる
+    # The session name (OSC 0) is also set.
     [[ "$output" == *"]0;"* ]]
 }
 
 # ============================================================
-# Group 6: _iterm2_send_current_dir() - CurrentDir 送信
+# Group 6: _iterm2_send_current_dir() - CurrentDir reporting
 # ============================================================
 
-@test "send_current_dir: PWD をエスケープシーケンスで出力する" {
+@test "send_current_dir: emits PWD in an escape sequence" {
     run_iterm2 _iterm2_send_current_dir
     [ "$status" -eq 0 ]
     [[ "$output" == *"CurrentDir="* ]]
 }
 
 # ============================================================
-# Group 7: _iterm2_precmd() - precmd フック
+# Group 7: _iterm2_precmd() - precmd hook
 # ============================================================
 
-@test "precmd: 全コンポーネントが出力される" {
+@test "precmd: emits every component" {
     export ITERM_SESSION_ID="w0t0p0:precmd-test"
     export HOME="$BATS_TEST_TMPDIR/precmd-home"
     mkdir -p "$HOME"
 
     run_iterm2 _iterm2_precmd
     [ "$status" -eq 0 ]
-    # CurrentDir が含まれる
+    # Includes CurrentDir.
     [[ "$output" == *"CurrentDir="* ]]
-    # currentDir ユーザー変数が含まれる
+    # Includes the currentDir user variable.
     [[ "$output" == *"SetUserVar=currentDir="* ]]
-    # branch ユーザー変数が含まれる
+    # Includes the branch user variable.
     [[ "$output" == *"SetUserVar=branch="* ]]
-    # dirIcon ユーザー変数が含まれる
+    # Includes the dirIcon user variable.
     [[ "$output" == *"SetUserVar=dirIcon="* ]]
-    # lastPrompt ユーザー変数が含まれる（初回はディレクトリ名フォールバック）
+    # Includes lastPrompt, falling back to the directory name on the first call.
     [[ "$output" == *"SetUserVar=lastPrompt="* ]]
 }

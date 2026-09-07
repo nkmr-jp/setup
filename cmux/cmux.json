@@ -2,18 +2,18 @@
   "$schema": "https://raw.githubusercontent.com/manaflow-ai/cmux/main/web/data/cmux.schema.json",
   "schemaVersion": 1,
 
-  // cmux の primary 設定ファイル。実際に変更している設定のみを記載し、
-  // cmux が自動生成するコメントアウト済みテンプレートは持たない。
-  // legacy の settings.json は廃止済み（v0.64+ は cmux.json が primary）。
-  // 編集後は `cmux reload-config` で反映（Ghostty config も同時 reload）。
+  // Primary cmux configuration. Include only customized settings, without the
+  // commented-out template that cmux generates automatically.
+  // Legacy settings.json is retired (cmux.json is primary in v0.64+).
+  // Apply edits with `cmux reload-config` (also reloads Ghostty configuration).
 
   "app": {
-    // Cmd+クリック等でファイルを開いた時、cmux 内プレビューではなく macOS 既定アプリで開く
+    // Open files (for example, Cmd+click) in the macOS default app instead of a cmux preview
     "openSupportedFilesInCmux": false
   },
 
   "sidebar": {
-    // Port / PR リンクを cmux 内蔵ブラウザでなく既定ブラウザで開く
+    // Open Port / PR links in the default browser instead of the built-in browser
     "openPortLinksInCmuxBrowser": false,
     "openPullRequestLinksInCmuxBrowser": false,
     "showBranchDirectory": false,
@@ -21,25 +21,25 @@
   },
 
   "browser": {
-    // 端末上の URL クリックと `open` コマンドを既定ブラウザに渡す
+    // Send terminal URL clicks and the `open` command to the default browser
     "interceptTerminalOpenCommandInCmuxBrowser": false,
     "openTerminalLinksInCmuxBrowser": false
   },
 
   "automation": {
-    // false: cmux 標準の workspace 単位 claude_code pill (Running/Awaiting) は
-    // 複数 pane が同一 workspace で同時に動くと Awaiting のまま固着する
-    // (cmux 本体の既知バグ: upstream issue #1027 / PR #5666、turnId ドリフトで
-    // 解除イベントがゲートされる。未マージのため本リポジトリ側では修正不可)。
-    // true にしていた唯一の実目的だった ~/.cmuxterm/claude-hook-sessions.json
-    // (sessionId -> surface/workspace UUID マッピング。ccdash / issues-site が
-    // 消費) は、plugins/cmux/hooks/scripts/claude-status-hook.sh が
-    // ~/.claude/cmux/hook-sessions.json へ自前生成する方式に移行したため、
-    // true を維持する理由が無くなった (setup#3 案1)。false 化の副作用として
-    // ワークスペースのタイトル自動生成・最新メッセージ表示は失われる。
-    // pane 別の表示は claude-status-hook.sh が管理する cwd_<panel-id> pill を使う。
-    // 注意: この設定は新規サーフェス作成時にしか評価されないため、変更後も
-    // 開き直していない既存ペインの Claude セッションは旧動作のまま動き続ける。
+    // false: the built-in workspace-level claude_code pill (Running/Awaiting) can
+    // get stuck at Awaiting when several panes run in the same workspace.
+    // This is a known upstream bug (issue #1027 / PR #5666): turnId drift gates
+    // the clearing event. The fix is unmerged, so this repository cannot fix it.
+    // The only reason for enabling it was ~/.cmuxterm/claude-hook-sessions.json
+    // (the sessionId -> surface/workspace UUID map consumed by ccdash and
+    // issues-site). plugins/cmux/hooks/scripts/claude-status-hook.sh now
+    // generates its own map at ~/.claude/cmux/hook-sessions.json, so there is
+    // no remaining reason to keep it true (setup#3, option 1). Setting false
+    // also disables automatic workspace titles and the latest-message display.
+    // Per-pane display uses the cwd_<panel-id> pills managed by claude-status-hook.sh.
+    // This setting is evaluated only when creating a surface: Claude sessions in
+    // existing panes retain the old behavior until those panes are reopened.
     "claudeCodeIntegration": false,
     "socketControlMode": "automation"
   },
@@ -62,15 +62,15 @@
       "findNext": "cmd+g",
       "findPrevious": "cmd+opt+g",
       "focusBrowserAddressBar": "cmd+l",
-      // v0.64+ 新デフォルト (cmd+opt+↓ 等) との競合を防ぐため旧キーを明示保持
+      // Explicitly retain the old keys to avoid conflicts with v0.64+ defaults (cmd+opt+down, etc.)
       "focusDown": "cmd+↓",
       "focusLeft": "cmd+←",
       "focusRight": "cmd+→",
       "focusUp": "cmd+↑",
-      // v0.64+ 新規追加デフォルト: browserBack/Forward (cmd+[/]) と競合するため無効化
+      // Disable new v0.64+ defaults that conflict with browserBack/Forward (cmd+[/])
       "focusHistoryBack": null,
       "focusHistoryForward": null,
-      // v0.64+ 新規追加デフォルト: editWorkspaceDescription (cmd+shift+e) と競合するため無効化
+      // Disable the new v0.64+ default that conflicts with editWorkspaceDescription (cmd+shift+e)
       "focusRightSidebar": null,
       "goToWorkspace": "cmd+p",
       "hideFind": "cmd+shift+f",
@@ -78,9 +78,9 @@
       "newSurface": "cmd+t",
       "newTab": "cmd+n",
       "newWindow": "cmd+shift+n",
-      // ワークスペース移動: cmd+alt+↓/↑。alt 単体は v0.64.16(#6007)で Option が端末優先となり
-      // cmux のショートカットとして発火しない（Ghostty で端末送出を止めても届かないと実験で確認済み）。
-      // サーフェス移動 cmd+alt+←/→ と上下/左右で対になる。
+      // Workspace navigation: cmd+alt+down/up. Since v0.64.16 (#6007), Option alone
+      // goes to the terminal first and never triggers cmux shortcuts, even when Ghostty suppresses it.
+      // This pairs vertical workspace navigation with horizontal cmd+alt+left/right surface navigation.
       "nextSidebarTab": "cmd+alt+↓",
       "nextSurface": "cmd+alt+→",
       "openBrowser": "cmd+shift+l",

@@ -3,17 +3,17 @@
 # <xbar.version>v0.1.0</xbar.version>
 # <xbar.author>nkmr-jp</xbar.author>
 # <xbar.author.github>nkmr-jp</xbar.author.github>
-# <xbar.desc>Claude Code の進行中セッションを ⚡running / 🔔awaiting / ⏸idle で集約表示する</xbar.desc>
+# <xbar.desc>Summarize Claude Code sessions as running, awaiting, or idle</xbar.desc>
 # <xbar.dependencies>jq, Claude Code (session-monitor plugin)</xbar.dependencies>
 #
-# session-monitor プラグインの hook が ${CLAUDE_PLUGIN_DATA}/sessions.jsonl を更新する。
-# ここでは ~/.claude/session-monitor/data-dir に書かれた anchor からその実パスを解決し、
-# jsonl を読んでメニューバー表示を組み立てる。
+# The session-monitor plugin hook updates ${CLAUDE_PLUGIN_DATA}/sessions.jsonl.
+# Resolve its actual path from the anchor in ~/.claude/session-monitor/data-dir,
+# then read the JSONL data to build the menu-bar display.
 
 set -u
 PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
-# xbar 経由で起動されると LANG が空になり、zsh の ${var:0:N} 等が
-# バイト単位になって日本語が壊れるので UTF-8 を明示する。
+# xbar may launch with LANG unset, making zsh slices such as ${var:0:N} operate
+# on bytes and corrupt Japanese text. Explicitly select UTF-8.
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
@@ -36,8 +36,8 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
-# jsonl が無い / 空 (0 行) の場合でも、バーにアイコンだけは出して
-# 「動いているが空」だと分かるようにする (完全非表示だと故障と区別できない)。
+# Keep an icon in the bar even if JSONL is missing or empty, so an empty but
+# working plugin can be distinguished from a broken, invisible one.
 if [[ ! -s "$SESSIONS_FILE" ]]; then
   print -- "💤"
   print -- "---"
@@ -51,11 +51,11 @@ fi
 
 now_epoch=$(date -u +%s)
 
-# GC: 1 日以上更新されていないレコードを除去する。SessionEnd が撃てずに残った
-# 残骸を放置すると menu が肥大化するので、xbar 駆動の 5s ループで掃除する。
-# updated_at は UTC の ISO 8601 なので、cutoff との文字列比較で十分。
-# lock は実際に stale 行があるときのみ取得し、hook 側 (高頻度書き込み) との
-# 競合を最小化する。
+# GC: remove records not updated for over a day. The xbar 5-second loop cleans
+# up sessions whose SessionEnd never ran, preventing an ever-growing menu.
+# updated_at is ISO 8601 UTC, so comparing strings against cutoff is sufficient.
+# Acquire the lock only when stale records exist, minimizing contention with
+# the hook, which writes frequently.
 cutoff_iso=$(date -u -r $(( now_epoch - 86400 )) +%Y-%m-%dT%H:%M:%SZ)
 if jq -e --arg cutoff "$cutoff_iso" 'select((.updated_at // "") < $cutoff)' "$SESSIONS_FILE" >/dev/null 2>&1; then
   lock_dir="$SESSIONS_FILE.lock"
@@ -113,7 +113,7 @@ if (( n_total == 0 )); then
   print -- "---"
 fi
 
-# 経過時間を "Ns / Nm / Nh / Nd ago" の短い文字列に整形
+# Format elapsed time as a short "Ns / Nm / Nh / Nd ago" string
 fmt_elapsed() {
   local ts="$1"
   local sec
@@ -127,13 +127,13 @@ fmt_elapsed() {
   fi
 }
 
-# 整形ロジックは jq に集約してまとめて出す。各レコードを 1 行にして読み込む。
+# Format all records together in jq, then read one record per line.
 # Field: rank | status | session_id | cwd | git_branch | model | last_prompt | in_tokens | out_tokens | cache_read | updated_at | transcript_path | term_program | cmux_panel_id | cmux_workspace_id
-# last_prompt 内の改行/タブは行を壊すので space に潰す (xbar 表示時に折り返す)。
+# Replace newlines/tabs in last_prompt with spaces to preserve rows; xbar wraps the display.
 #
-# 区切りに ASCII Unit Separator (\x1f) を使う。タブだと zsh の read が
-# IFS_WHITE 挙動で連続区切りを 1 つに潰し、空フィールド (git_branch="" 等)
-# 以降が前にズレる。非空白文字を IFS にすれば空フィールドが保持される。
+# Use ASCII Unit Separator (\x1f) as the delimiter. With tabs, zsh read collapses
+# consecutive delimiters via IFS_WHITE, shifting fields after an empty value
+# such as git_branch="". A non-whitespace IFS preserves empty fields.
 SEP=$'\x1f'
 records=$(jq -r '
   def rank: if .status=="running" then 0 elif .status=="awaiting" then 1 elif .status=="idle" then 2 else 3 end;
@@ -155,7 +155,7 @@ records=$(jq -r '
   ] | join("")
 ' "$SESSIONS_FILE" 2>/dev/null | sort -t"$SEP" -k1,1n -k11,11r)  # k11 = updated_at
 
-# TERM_PROGRAM → macOS bundle ID へのマッピング (空白を避けるため bundle ID を使う)。
+# Map TERM_PROGRAM to macOS bundle IDs (use bundle IDs to avoid spaces).
 bundle_for_term() {
   case "$1" in
     iTerm.app)      print -- "com.googlecode.iterm2" ;;
@@ -171,11 +171,11 @@ bundle_for_term() {
 print -r -- "$records" | while IFS="$SEP" read -r rank s_status session_id cwd branch model prompt in_tokens out_tokens cache_read updated_at transcript term_program cmux_panel_id cmux_workspace_id; do
   [[ -z "$s_status" ]] && continue
 
-  # xbar の menu item は `text | k=v ...` 形式なので、prompt 内の `|` は
-  # param と衝突する。一度だけ潰しておく。
+  # xbar menu items use `text | k=v ...`, so pipes in prompts would conflict
+  # with parameters. Replace them once here.
   prompt="${prompt//|/ }"
 
-  # ステータス絵文字 (zsh の予約変数 $status と衝突しないよう s_status を使う)
+  # Status emoji (use s_status to avoid the zsh reserved variable $status)
   case "$s_status" in
     running)  icon="⚡" ;;
     awaiting) icon="🔔" ;;
@@ -189,8 +189,8 @@ print -r -- "$records" | while IFS="$SEP" read -r rank s_status session_id cwd b
 
   elapsed=$(fmt_elapsed "$updated_at")
 
-  # メインクリック動作: cmux pane があればそこへフォーカス、なければ TERM_PROGRAM のアプリを前面に。
-  # どちらも分からなければ Finder で cwd を開く (従来挙動にフォールバック)。
+  # Main click: focus a cmux pane if available; otherwise foreground the TERM_PROGRAM app.
+  # If neither is known, fall back to opening cwd in Finder.
   if [[ -n "$cmux_panel_id" ]]; then
     click_action="bash=${HANDLER} param1=cmux param2=${cmux_panel_id}"
     [[ -n "$cmux_workspace_id" ]] && click_action+=" param3=${cmux_workspace_id}"
@@ -207,8 +207,8 @@ print -r -- "$records" | while IFS="$SEP" read -r rank s_status session_id cwd b
     fi
   fi
 
-  # 一行目: アイコン + [id8] + 短縮プロンプト + 経過時間。全文はサブメニューに
-  # 折り返し表示されるので、ここは短く保つ。
+  # First line: icon + [id8] + shortened prompt + elapsed time. Keep it short;
+  # the submenu wraps and displays the complete prompt.
   if [[ -n "$prompt" ]]; then
     short_prompt="${prompt:0:40}"
     [[ ${#prompt} -gt 40 ]] && short_prompt+="…"
@@ -218,7 +218,7 @@ print -r -- "$records" | while IFS="$SEP" read -r rank s_status session_id cwd b
   fi
   print -- "${icon} [${id8}] ${label} · ${elapsed} ago | ${click_action}"
 
-  # サブメニュー (-- prefix)
+  # Submenu (-- prefix)
   print -- "-- session: ${session_id} | size=11 color=gray"
   print -- "-- cwd: ${short_cwd} | size=11"
   [[ -n "$launcher_label" ]] && print -- "-- launcher: ${launcher_label} | size=11"
@@ -244,8 +244,8 @@ print -r -- "$records" | while IFS="$SEP" read -r rank s_status session_id cwd b
     print -- "-- Open transcript | bash=${HANDLER} param1=finder param2='${transcript}' terminal=false"
   fi
   print -- "-- Open cwd in Finder | bash=${HANDLER} param1=finder param2='${cwd}' terminal=false"
-  # ハングや異常終了で hook が SessionEnd を撃てなかったセッションを手動で掃除する。
-  # refresh=true でメニューを再構築して即時消える。
+  # Manually clean up sessions whose SessionEnd hook never ran after a hang or crash.
+  # refresh=true rebuilds the menu and removes the entry immediately.
   print -- "-- 🗑 Delete from list | bash=${HANDLER} param1=delete param2=${session_id} terminal=false refresh=true color=red"
 done
 

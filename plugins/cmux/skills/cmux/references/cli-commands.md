@@ -1,14 +1,14 @@
-# cmux CLI 完全リファレンス
+# Complete cmux CLI reference
 
-`cmux` バイナリの全サブコマンドとオプションを記載する。`cmux <command> --help` で個別ヘルプも参照可能。共通フラグとして多くのコマンドが `--json` を受け付ける（機械可読出力）。
+This reference lists the `cmux` binary's subcommands and options. Use `cmux <command> --help` for command-specific help. Many commands accept the common `--json` flag for machine-readable output.
 
 ---
 
-## 1. 基本／確認系
+## 1. Basic commands and inspection
 
 ### `cmux ping`
 
-cmux.app との疎通確認。成功時は短い "ok" を返す。
+Check connectivity with cmux.app. Returns a short "ok" on success.
 
 ```bash
 cmux ping
@@ -16,7 +16,7 @@ cmux ping
 
 ### `cmux identify [--json]`
 
-呼び出し元のコンテキスト（自分がどのウィンドウ・ワークスペース・ペイン・サーフェスにいるか）を返す。AI エージェントが自分の所在を知るのに必須。
+Return the caller's context: its window, workspace, pane, and surface. This lets AI agents identify their location.
 
 ```bash
 cmux identify --json
@@ -25,7 +25,7 @@ cmux identify --json
 
 ### `cmux capabilities`
 
-cmux アプリが提供する機能・API バージョンを返す。互換性チェック用途。
+Return the features and API version supported by cmux.app for compatibility checks.
 
 ```bash
 cmux capabilities
@@ -33,15 +33,15 @@ cmux capabilities
 
 ---
 
-## 2. トポロジ列挙
+## 2. List the topology
 
 ### `cmux list-windows [--json]`
 
-すべての cmux ウィンドウを列挙。
+List all cmux windows.
 
 ### `cmux list-workspaces [--json]`
 
-すべてのワークスペース（ウィンドウ横断）を列挙。
+List all workspaces across windows.
 
 ```bash
 cmux list-workspaces --json
@@ -49,11 +49,11 @@ cmux list-workspaces --json
 
 ### `cmux list-panes [--workspace <id>] [--json]`
 
-ペイン一覧。`--workspace` で絞り込み可能。
+List panes, optionally filtered by `--workspace`.
 
 ### `cmux list-pane-surfaces --pane <pane-id> [--json]`
 
-特定ペイン内のサーフェス一覧。
+List the surfaces in a specific pane.
 
 ```bash
 cmux list-pane-surfaces --pane pane:1 --json
@@ -61,11 +61,11 @@ cmux list-pane-surfaces --pane pane:1 --json
 
 ---
 
-## 3. ワークスペース管理
+## 3. Workspace management
 
 ### `cmux new-workspace [--cwd <dir>] [--window <id>] [--json]`
 
-新規ワークスペースを作成。`--cwd` で初期作業ディレクトリ、`--window` で配置先ウィンドウを指定。
+Create a workspace. `--cwd` sets the initial working directory; `--window` selects the destination window.
 
 ```bash
 cmux new-workspace --cwd ~/Projects/frontend
@@ -73,7 +73,7 @@ cmux new-workspace --cwd ~/Projects/frontend
 
 ### `cmux select-workspace --workspace <id>`
 
-指定ワークスペースをフォーカス。
+Focus the specified workspace.
 
 ```bash
 cmux select-workspace --workspace workspace:2
@@ -81,15 +81,15 @@ cmux select-workspace --workspace workspace:2
 
 ### `cmux close-workspace --workspace <id>`
 
-ワークスペースを閉じる。
+Close the workspace.
 
 ---
 
-## 4. レイアウト操作（ペイン／サーフェス）
+## 4. Layout operations (panes and surfaces)
 
 ### `cmux new-split <direction> --pane <id> [--cwd <dir>]`
 
-ペインを `right`/`down`/`left`/`up` のいずれかに分割。
+Split a pane in one of four directions: `right`, `down`, `left`, or `up`.
 
 ```bash
 cmux new-split right --pane pane:1
@@ -98,7 +98,7 @@ cmux new-split down --pane pane:2 --cwd ~/Projects
 
 ### `cmux move-surface --surface <id> --pane <id> [--focus true|false] [--index N]`
 
-サーフェスを別ペインへ移動。
+Move a surface to another pane.
 
 ```bash
 cmux move-surface --surface surface:7 --pane pane:2 --focus true
@@ -106,7 +106,7 @@ cmux move-surface --surface surface:7 --pane pane:2 --focus true
 
 ### `cmux reorder-surface --surface <id> [--before <id>] [--after <id>] [--index N]`
 
-ペイン内の並びを変更。
+Change the order within a pane.
 
 ```bash
 cmux reorder-surface --surface surface:7 --before surface:3
@@ -114,15 +114,15 @@ cmux reorder-surface --surface surface:7 --before surface:3
 
 ### `cmux trigger-flash [--workspace <id>] [--surface <id>]`
 
-サーフェス／ワークスペースを視覚的に点滅させる注意喚起。
+Flash a surface or workspace to draw attention.
 
 ---
 
-## 5. 通知
+## 5. Notifications
 
 ### `cmux notify --title <text> [--subtitle <text>] [--body <text>] [--workspace <id>] [--tab <id|index>] [--panel <id|index>]`
 
-通知を送信。`--workspace` を指定すると特定ワークスペースのサイドバーに紐付く。`--tab` / `--panel` は旧称（互換）。
+Send a notification. `--workspace` associates it with a specific workspace in the sidebar. `--tab` and `--panel` are legacy compatibility names.
 
 ```bash
 cmux notify --title "Build Complete"
@@ -131,7 +131,7 @@ cmux notify --title "Tests" --subtitle "Pass" --body "All 42 passed" --workspace
 
 ### `cmux list-notifications [--json]`
 
-通知一覧を取得。
+Get the list of notifications.
 
 ```bash
 cmux list-notifications --json
@@ -140,17 +140,17 @@ cmux list-notifications --json
 
 ### `cmux clear-notifications`
 
-すべての通知を消去。
+Clear all notifications.
 
 ---
 
-## 6. ステータス
+## 6. Status
 
-サイドバーにアイコンとラベル（例: Running / Idle / Error）を表示する仕組み。
+Display an icon and label, such as Running, Idle, or Error, in the sidebar.
 
 ### `cmux set-status <key> <value>`
 
-`<key>` はエージェント識別子（`copilot_cli`, `claude_code` など任意）、`<value>` は表示する状態名。
+`<key>` is an arbitrary agent identifier, such as `copilot_cli` or `claude_code`; `<value>` is the status label to display.
 
 ```bash
 cmux set-status claude_code Running
@@ -158,38 +158,38 @@ cmux set-status claude_code Running
 
 ### `cmux clear-status <key>`
 
-指定キーのステータスを削除。
+Remove the status for the specified key.
 
 ---
 
-## 7. エージェントブラウザ
+## 7. Agent browser
 
-サーフェスをブラウザにし、Playwright 風 CLI で操作。詳細は `agent-browser.md` を参照。
+Create a browser surface and control it with a Playwright-like CLI. See `agent-browser.md` for details.
 
 ```bash
-cmux --json browser open <url>                  # 新規ブラウザサーフェスを作成
-cmux browser <surface> <subcommand> ...         # 既存サーフェスを操作
+cmux --json browser open <url>                  # Create a browser surface
+cmux browser <surface> <subcommand> ...         # Control an existing surface
 ```
 
-主な `<subcommand>`: `get url`, `wait`, `snapshot`, `click`, `fill`, `type`, `press`, `select`, `check`, `scroll`, `eval`, `get text|html|value|attr|count|box|styles`。
+Common `<subcommand>` values: `get url`, `wait`, `snapshot`, `click`, `fill`, `type`, `press`, `select`, `check`, `scroll`, `eval`, and `get text|html|value|attr|count|box|styles`.
 
 ---
 
-## 8. 共通フラグ
+## 8. Common flags
 
-| フラグ | 意味 |
+| Flag | Meaning |
 |----|----|
-| `--json` | 出力を JSON 化（機械処理向け） |
-| `--surface <id>` | 対象サーフェスの指定 |
-| `--pane <id>` | 対象ペインの指定 |
-| `--workspace <id>` | 対象ワークスペースの指定 |
-| `--window <id>` | 対象ウィンドウの指定 |
-| `--panel <id>` | 旧称。`--surface` / `--pane` への移行を推奨 |
+| `--json` | Produce machine-readable JSON output |
+| `--surface <id>` | Select the target surface |
+| `--pane <id>` | Select the target pane |
+| `--workspace <id>` | Select the target workspace |
+| `--window <id>` | Select the target window |
+| `--panel <id>` | Legacy name; migrate to `--surface` / `--pane` |
 
 ---
 
-## 9. 終了コードと出力規約
+## 9. Exit codes and output conventions
 
-- 成功: 終了コード `0`、stdout に結果（テキストまたは JSON）
-- 失敗: 非ゼロ終了コード、stderr にエラーメッセージ
-- `--json` 指定時は失敗もエラーオブジェクト（`{"error":{...}}`）として返る場合あり
+- Success: exit code `0`, with text or JSON on stdout.
+- Failure: a nonzero exit code, with an error message on stderr.
+- With `--json`, failures may also return an error object (`{"error":{...}}`).

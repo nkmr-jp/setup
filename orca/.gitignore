@@ -1,5 +1,5 @@
-# Orca がこのディレクトリ (~/.orca) に自動生成する状態物。設定として管理するのは
-# keybindings.json だけなので、それ以外はすべて無視する。
+# Ignore state generated automatically by Orca in this directory (~/.orca).
+# Only keybindings.json is managed as configuration; ignore all other state.
 *
 !.gitignore
 !README.md

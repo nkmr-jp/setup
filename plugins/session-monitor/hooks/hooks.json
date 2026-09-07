@@ -1,5 +1,5 @@
 {
-  "description": "全セッションのステータスを sessions.jsonl に集約し SwiftBar から監視できるようにする",
+  "description": "Aggregate all session statuses in sessions.jsonl for monitoring through SwiftBar",
   "hooks": {
     "SessionStart": [
       {

@@ -54,19 +54,19 @@
 # ============================================================
 # Keybindings (aligned with cmux/settings.json shortcuts)
 # ============================================================
-# cmux のショートカットと整合させる。
-# ターミナルに対応する操作のみマッピング（browser/sidebar/workspace 系は対象外）。
+# Align these bindings with cmux shortcuts.
+# Map terminal operations only; exclude browser/sidebar/workspace operations.
 
 # --- Tab / Surface ---
 # cmux: newSurface (cmd+t) / newTab (cmd+n)
 keybind = cmd+t=new_tab
 keybind = cmd+n=new_tab
 # cmux: closeTab (cmd+w)
-# 注: close_surface に equalize_splits をチェーンしても動作しない（chain は
-# 元 surface のコンテキストで実行されるが、close_surface がそれを破棄するため）。
-# ペイン削除後にサイズを揃えるには下の cmd+shift+e を手動で押す。
+# Note: chaining equalize_splits after close_surface does not work: the chain runs
+# in the original surface context, which close_surface destroys.
+# Press cmd+shift+e below to equalize sizes after closing a pane.
 keybind = cmd+w=close_surface
-# cmux: closeWorkspace (cmd+shift+w) → タブ一括クローズの近似
+# cmux: closeWorkspace (cmd+shift+w) -> approximate by closing all tabs
 keybind = cmd+shift+w=close_tab
 # cmux: nextSurface (cmd+alt+→) / prevSurface (cmd+alt+←)
 keybind = cmd+alt+right=next_tab
@@ -94,7 +94,7 @@ keybind = cmd+q=quit
 
 # --- Splits (panes) ---
 # cmux: splitRight (cmd+d) / splitDown (cmd+shift+d)
-# 分割直後に equalize_splits をチェーンし、全 pane を同じサイズに揃える。
+# Chain equalize_splits after splitting to give every pane the same size.
 keybind = cmd+d=new_split:right
 keybind = chain=equalize_splits
 keybind = cmd+shift+d=new_split:down
@@ -106,7 +106,7 @@ keybind = cmd+left=goto_split:left
 keybind = cmd+right=goto_split:right
 # cmux: toggleSplitZoom (cmd+enter)
 keybind = cmd+enter=toggle_split_zoom
-# 手動で全 pane のサイズを均等化
+# Manually equalize all pane sizes
 keybind = cmd+shift+e=equalize_splits
 
 # --- Config ---
@@ -118,7 +118,7 @@ keybind = cmd+shift+comma=reload_config
 # ============================================================
 # Behavior
 # ============================================================
-# タブ/ペインを閉じる際の確認ポップアップを無効化
+# Disable the confirmation popup when closing a tab or pane
 confirm-close-surface = false
 
 theme = 0x96f

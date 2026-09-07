@@ -1,17 +1,17 @@
 # Zsh key bindings
 #
-# NOTE: fzfのインタラクティブ操作はiTerm2のプロセスCWD追跡を混乱させる。
-# そのため、fzfはウィジェット内で「選択のみ」行い、cdはzle-line-init経由の
-# 遅延実行で行う（gwt.zshの_GWT_DEFERRED_CMD機構を共用）。
+# NOTE: fzf interaction interferes with iTerm2 process CWD tracking.
+# Use fzf only for selection inside the widget, then defer cd through zle-line-init
+# using the shared _GWT_DEFERRED_CMD mechanism in gwt.zsh.
 
 # ========================================
-# ghqリポジトリ検索と移動 (Ctrl+G)
+# Find and enter a ghq repository (Ctrl+G).
 # ========================================
 _ghq_finder_widget() {
     local selected_dir=$(find -L ~/ghq -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sed "s|$HOME/ghq/||" | fzf --reverse --height 40%)
     if [[ -n "$selected_dir" ]]; then
         local full_path="$HOME/ghq/$selected_dir"
-        # fzfの影響外でcdするため遅延実行（gwt.zshの_GWT_DEFERRED_CMD機構を使用）
+        # Defer cd to avoid fzf interference, using _GWT_DEFERRED_CMD from gwt.zsh.
         _GWT_DEFERRED_CMD="cd '${full_path}'"
         _GWT_DEFERRED_RETURN=""
         BUFFER=""
@@ -24,7 +24,7 @@ zle -N _ghq_finder_widget
 bindkey '^G' _ghq_finder_widget
 
 # ========================================
-# fzfと組み合わせたディレクトリ移動 (Ctrl+])
+# Navigate directories with fzf (Ctrl+]).
 # ========================================
 _fzf_cd_widget() {
     local dir

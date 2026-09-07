@@ -1,12 +1,12 @@
 #!/usr/bin/env zsh
-# xbar から呼ばれるクリックハンドラ。menu item 内に長い bash= 構文を埋めると
-# xbar の引数パースで取りこぼしが起きやすいので、ここに集約する。
+# Click handler invoked by xbar. Long bash= expressions embedded in menu items
+# are prone to xbar argument parsing errors, so keep the handling here.
 #
-# 使い方: click-handler.sh <mode> <identifier> [workspace_id]
-#   mode = cmux   : identifier = panel (= surface) id, workspace_id = 任意
+# Usage: click-handler.sh <mode> <identifier> [workspace_id]
+#   mode = cmux   : identifier = panel (= surface) id, workspace_id = optional
 #   mode = bundle : identifier = macOS bundle id
 #   mode = finder : identifier = path
-#   mode = delete : identifier = session_id (sessions.jsonl から該当行を除去)
+#   mode = delete : identifier = session_id (remove its line from sessions.jsonl)
 
 mode="${1:-}"
 ident="${2:-}"
@@ -17,9 +17,9 @@ CMUX_CLI="${CMUX_BUNDLED_CLI_PATH:-/Applications/cmux.app/Contents/Resources/bin
 
 case "$mode" in
   cmux)
-    # 重要: cmux のソケット API (focus-panel など) は cmux 内部のフォーカスを
-    # 移すだけで、macOS アプリ自体を前面に上げてくれない。先に `open -b` で
-    # アプリを activate する必要がある (claude-notify と同じ知見)。
+    # The cmux socket API (focus-panel, etc.) only changes focus inside cmux;
+    # it does not bring the macOS app to the foreground. Activate the app first
+    # with `open -b`, as in claude-notify.
     /usr/bin/open -b "$CMUX_BUNDLE_ID"
     [[ -n "$workspace_id" ]] && "$CMUX_CLI" select-workspace --workspace "$workspace_id" >/dev/null 2>&1
     exec "$CMUX_CLI" focus-panel --panel "$ident"
@@ -31,8 +31,8 @@ case "$mode" in
     exec /usr/bin/open "$ident"
     ;;
   delete)
-    # メニューバーに古いセッションが残ったときに手動で除去するための入口。
-    # データソース解決は xbar 本体スクリプトと同じ規約 (anchor file → fallback)。
+    # Allow manual removal of stale sessions left in the menu bar.
+    # Resolve the data source using the same anchor-file -> fallback rule as the main script.
     [[ -n "$ident" ]] || exit 1
     command -v jq >/dev/null 2>&1 || exit 1
 
@@ -43,7 +43,7 @@ case "$mode" in
     sessions_file="$DATA_DIR/sessions.jsonl"
     [[ -f "$sessions_file" ]] || exit 0
 
-    # update-session.sh と同じ mkdir lock 規約 (1s 超 = stale)。
+    # Use the same mkdir lock convention as update-session.sh (stale after 1 second).
     lock_dir="$sessions_file.lock"
     attempts=0
     while ! mkdir "$lock_dir" 2>/dev/null; do
@@ -60,7 +60,7 @@ case "$mode" in
     jq -c --arg sid "$ident" 'select(.session_id != $sid)' "$sessions_file" > "$tmp_file" 2>/dev/null || : > "$tmp_file"
     mv "$tmp_file" "$sessions_file"
 
-    # xbar に即時再描画を要求 (5s ループでも追従するが UI 反映を早めるため)。
+    # Request an immediate xbar redraw instead of waiting for the 5-second loop.
     /usr/bin/open -g "xbar://app.xbarapp.com/refreshPlugin?path=claude-sessions.5s.sh" >/dev/null 2>&1 &
     exit 0
     ;;

@@ -2,8 +2,8 @@
 # AI coding assistants and tools
 
 # AI agents
-# cmux の Codex hook 注入を無効化する。hook trust の確認を迂回する
-# --dangerously-bypass-hook-trust が自動付与されるのを防ぐ。
+# Disable cmux Codex hook injection to prevent automatic addition of
+# --dangerously-bypass-hook-trust, which bypasses hook trust checks.
 export CMUX_CODEX_HOOKS_DISABLED=1
 
 alias cl='claude'
@@ -18,7 +18,7 @@ alias cl77='CLAUDE_CODE_SUBAGENT_MODEL=claude-sonnet-5 claude --append-system-pr
 # See: https://spiess.dev/blog/how-i-use-claude-code
 # See: https://github.com/anthropics/claude-code/issues/8473
 #alias claude="unset CLAUDE_CODE_OAUTH_TOKEN; unset ANTHROPIC_API_KEY; claude"
-# cmux 内では claude を直接、cmux 外では cmux claude-teams を起動
+# Run claude directly inside cmux; otherwise start cmux claude-teams.
 yolo() {
   if [[ -n "$CMUX_SHELL_INTEGRATION" ]]; then
     claude --dangerously-skip-permissions "$@"

@@ -1,101 +1,101 @@
-# cmux 通知・ステータス機能リファレンス
+# cmux notifications and status reference
 
-cmux の通知機能は AI エージェントから人間に注意を引くための主要な手段である。サイドバーへのバッジ表示、macOS システム通知の発火、未読サーフェスへの青リング表示などを行う。
+Notifications are the main way for AI agents to get a user's attention in cmux. They provide sidebar badges, macOS system notifications, and blue rings around surfaces with unread notifications.
 
-## 通知の特徴
+## Notification features
 
-- **サイドバー表示**: cmux アプリのサイドバーに未読バッジ付きで表示
-- **macOS 通知**: オプションでシステム通知を発火（OS の通知センターに表示）
-- **青リング**: 未読通知を持つターミナルペインに青い枠が出る
-- **ワークスペース指定**: `--workspace` で特定ワークスペースに紐付け可能
+- **Sidebar display**: Show notifications with unread badges in the cmux sidebar.
+- **macOS notifications**: Optionally send system notifications to Notification Center.
+- **Blue ring**: Highlight terminal panes that have unread notifications with a blue border.
+- **Workspace targeting**: Associate a notification with a specific workspace using `--workspace`.
 
-## CLI 使用方法
+## CLI usage
 
-### 基本送信
+### Send a notification
 
 ```bash
-# 最小（タイトルのみ）
+# Minimal notification (title only)
 cmux notify --title "Build Complete"
 
-# 本文付き
+# Include a body
 cmux notify --title "Claude Code" --body "Waiting for input"
 
-# サブタイトル + 本文
+# Include a subtitle and body
 cmux notify --title "Claude Code" --subtitle "Permission" --body "Approval needed"
 
-# 特定ワークスペース指定
+# Target a specific workspace
 cmux notify --title "Tests Passed" --body "All 42 tests passed" --workspace workspace:2
 ```
 
-### 一覧と消去
+### List and clear notifications
 
 ```bash
-# テキスト形式で一覧
+# List as text
 cmux list-notifications
 # [unread] Build Complete - Your build finished
 # [read] Tests Passed - All tests passed
 
-# JSON 形式（プログラム処理向け）
+# JSON output for programmatic use
 cmux list-notifications --json
 # {"notifications":[{"id":"...","title":"...","body":"...","is_read":false}]}
 
-# 全消去
+# Clear all notifications
 cmux clear-notifications
 ```
 
-## ステータス機能
+## Status
 
-ステータスはサイドバー上に「実行中／待機中／エラー」などの状態を表示する。通知と異なり**上書き型**であり、同じキーを set すると前の値を置き換える。
+Status displays values such as running, idle, or error in the sidebar. Unlike notifications, it **overwrites** the previous value when the same key is set again.
 
 ```bash
-# 設定
+# Set status
 cmux set-status claude_code Running
 cmux set-status copilot_cli Idle
 
-# 削除
+# Remove status
 cmux clear-status claude_code
 ```
 
-> **注意**: `claude_code` キーは cmux の `automation.claudeCodeIntegration: true` の間は
-> daemon が管理しており、外部からの `cmux set-status claude_code ...` は `OK` を返しつつ
-> **黙って無視される**（setup#3 で実機検証済み）。外部から書けるのは cmux 自身の
-> `cmux hooks claude <event>` 経由のみだが、これは upstream の turnId ドリフトバグ
-> (issue #1027) の影響を受けるため、自前の書き込みレイヤーを構築してはならない。
+> **Note**: While cmux has `automation.claudeCodeIntegration: true`, the daemon manages
+> the `claude_code` key. External `cmux set-status claude_code ...` calls return `OK` but
+> are **silently ignored** (verified on a real system in setup#3). External updates are
+> only possible through cmux's own `cmux hooks claude <event>`, which is affected by
+> the upstream turnId drift bug (issue #1027). Do not build a custom write layer on it.
 
-### キーの命名規約
+### Key naming conventions
 
-慣例として `<agent>_cli` や `<agent>` 形式を使う：
+Use `<agent>_cli` or `<agent>` by convention:
 
 - `claude_code`
 - `copilot_cli`
 - `codex`
-- 任意のエージェント識別子
+- Any custom agent identifier
 
-### 状態値の慣例
+### Conventional status values
 
-- `Running` — 処理実行中
-- `Idle` — 待機中
-- `Error` — エラー発生
-- `Waiting` — 入力待ち
+- `Running` — Processing
+- `Idle` — Idle
+- `Error` — An error occurred
+- `Waiting` — Waiting for input
 
 ---
 
-## ソケット API での通知
+## Notifications through the socket API
 
-CLI と等価な操作を JSON-RPC で行える。
+Use JSON-RPC for operations equivalent to the CLI.
 
 ```bash
-# 作成
+# Create
 echo '{"id":"1","method":"notification.create","params":{"title":"Hello","body":"World"}}' | nc -U /tmp/cmux.sock
 
-# 一覧
+# List
 echo '{"id":"2","method":"notification.list","params":{}}' | nc -U /tmp/cmux.sock
 
-# クリア
+# Clear
 echo '{"id":"3","method":"notification.clear","params":{}}' | nc -U /tmp/cmux.sock
 ```
 
-ステータス用：
+For status:
 
 ```bash
 echo '{"id":"4","method":"status.set","params":{"key":"claude_code","value":"Running"}}' | nc -U /tmp/cmux.sock
@@ -104,9 +104,9 @@ echo '{"id":"5","method":"status.clear","params":{"key":"claude_code"}}' | nc -U
 
 ---
 
-## エージェント統合パターン
+## Agent integration patterns
 
-### パターン 1: シェルスクリプトでビルド結果を通知
+### Pattern 1: Report build results from a shell script
 
 ```bash
 #!/bin/bash
@@ -118,9 +118,9 @@ else
 fi
 ```
 
-### パターン 2: GitHub Copilot CLI / 他エージェントの hooks 連携
+### Pattern 2: Integrate hooks in GitHub Copilot CLI or other agents
 
-`hooks` 機構を持つエージェント CLI なら、ライフサイクルイベントごとに `cmux` を呼ぶよう設定する。`cmux` 未インストール環境にもフォールバックさせるのが堅牢。
+For agent CLIs with a `hooks` mechanism, configure lifecycle events to call `cmux`. Include a fallback for environments without `cmux` installed.
 
 ```json
 {
@@ -157,9 +157,9 @@ fi
 }
 ```
 
-### パターン 3: Claude Code の Stop フックから呼ぶ
+### Pattern 3: Call from a Claude Code Stop hook
 
-Claude Code の `Stop` / `Notification` フックから cmux 通知を発火する例（`hooks.json`）：
+Example of sending cmux notifications from Claude Code `Stop` / `Notification` hooks (`hooks.json`):
 
 ```json
 {
@@ -176,19 +176,19 @@ Claude Code の `Stop` / `Notification` フックから cmux 通知を発火す�
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-| 症状 | 原因 / 対処 |
+| Symptom | Cause / resolution |
 |----|----|
-| 通知が表示されない | cmux.app が未起動。`cmux ping` で疎通確認 |
-| macOS のシステム通知が出ない | システム設定 > 通知 で cmux.app の通知を許可 |
-| 通知が消えない | `cmux clear-notifications` で一括削除 |
-| ステータスがすぐ消える | 同じキーを別プロセスが上書きしている可能性。キー名を一意にする |
+| Notifications do not appear | cmux.app is not running. Check connectivity with `cmux ping`. |
+| macOS system notifications do not appear | Allow notifications for cmux.app in System Settings > Notifications. |
+| Notifications remain visible | Remove all of them with `cmux clear-notifications`. |
+| Status disappears immediately | Another process may overwrite the same key. Use a unique key. |
 
 ---
 
-## 関連
+## Related resources
 
-- CLI の詳細オプション: `cli-commands.md`
-- ソケット API 一般: `socket-api.md`
-- 公式 docs: https://github.com/manaflow-ai/cmux/blob/main/docs/notifications.md
+- Detailed CLI options: `cli-commands.md`
+- General socket API reference: `socket-api.md`
+- Official documentation: https://github.com/manaflow-ai/cmux/blob/main/docs/notifications.md

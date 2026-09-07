@@ -2,7 +2,7 @@
 
 <!-- TOC -->
 - [Setup](#setup)
-  - [公開設定とローカル設定](#公開設定とローカル設定)
+  - [Shared and Local Settings](#shared-and-local-settings)
   - [Homebrew Settings (homebrew)](#homebrew-settings-homebrew)
     - [Install homebrew](#install-homebrew)
     - [Install commands](#install-commands)
@@ -12,10 +12,10 @@
     - [Install QucickLook Plugins](#install-qucicklook-plugins)
   - [Git Settings](#git-settings)
     - [Set ssh key to github](#set-ssh-key-to-github)
-    - [clone this repository](#clone-this-repository)
+    - [Clone this repository](#clone-this-repository)
     - [Set .gitconfig](#set-gitconfig)
     - [Set git user](#set-git-user)
-    - [コミット署名は公開リポジトリのみ](#コミット署名は公開リポジトリのみ)
+    - [Sign Commits Only in Public Repositories](#sign-commits-only-in-public-repositories)
     - [Set gtr](#set-gtr)
     - [opg - Open GitHub repository in browser](#opg---open-github-repository-in-browser)
   - [Repository Structure](#repository-structure)
@@ -24,7 +24,7 @@
   - [Antigravity (AGY) Plugins](#antigravity-agy-plugins)
   - [Zsh Configuration](#zsh-configuration)
     - [Optional: Set greeting messages](#optional-set-greeting-messages)
-    - [起動時のキャッシュ](#起動時のキャッシュ)
+    - [Startup Cache](#startup-cache)
   - [Anyenv (anyenv)](#anyenv-anyenv)
     - [Install env commands](#install-env-commands)
     - [Install programing langages and set global version](#install-programing-langages-and-set-global-version)
@@ -42,30 +42,27 @@
     - [Google Cloud SDK](#google-cloud-sdk)
     - [tig](#tig)
     - [obsidian](#obsidian)
-  - [guard-agent-rm（Claude Code の hook）](#guard-agent-rmclaude-code-の-hook)
 <!-- TOC -->
 
-## 公開設定とローカル設定
+## Shared and Local Settings
 
-このリポジトリはmacOS用の共有設定です。エージェント個別設定と個人ジョブは別管理します。
-ターミナルの挙動を維持するため、シェル設定の汎用化は保留しています。
-現在の `.zshrc` は従来の `~/ghq/github.com/nkmr-jp/setup` を読み込みます。
+This repository contains shared macOS settings. Agent-specific settings and personal jobs are managed separately.
+Shell portability changes are deferred to preserve existing terminal behavior.
+The current `.zshrc` loads `~/ghq/github.com/nkmr-jp/setup`.
 
-```sh
-git clone https://github.com/nkmr-jp/setup.git "$HOME/src/setup"
-export SETUP_DIR="$HOME/src/setup"  # 任意のclone先
-```
+Install Homebrew and ghq using the steps below. After configuring GitHub SSH access,
+follow [Clone this repository](#clone-this-repository) to fetch the repository with ghq.
 
-以下の `SETUP_DIR` は導入コマンド用です。現在のシェル初期化の配置先を変更するものではありません。Git設定のincludeには
-`git config --global --add include.path "$SETUP_DIR/gitconfig"` で実際の絶対パスを設定してください
-（Git設定ファイル内ではshellの `${SETUP_DIR}` は展開されません）。
+The examples use the default ghq checkout. Include its Git settings with
+`git config --global --add include.path "$HOME/ghq/github.com/nkmr-jp/setup/gitconfig"`.
+Git configuration files do not expand shell variables such as `${SETUP_DIR}`.
 
-マシン固有のシェル上書き設定は `~/.zshrc.local` に記述します。
-個人設定や認証情報を公開リポジトリへ追加しないでください。
+Put machine-specific shell overrides in `~/.zshrc.local`.
+Do not add personal settings or credentials to this public repository.
 
-シェルは従来の初期化・PATH・alias・終了時処理を維持します。
-`make login` 自動実行、GUIへのPATH反映、PromptLine更新、AGYのaliasも従来どおりです。
-未導入ツールへの対応やシェル側の個人設定分離は、挙動変更とあわせて別途検討します。
+Shell initialization, PATH, aliases, and exit hooks retain their existing behavior.
+Automatic `make login`, GUI PATH propagation, PromptLine updates, and AGY aliases are unchanged.
+Support for missing tools and separation of personal shell settings will be considered separately.
 
 
 ## Homebrew Settings ([homebrew](https://brew.sh/index_ja))
@@ -120,24 +117,23 @@ menu -> Install Shell Integration
 
 ### Terminal app configs
 
-ghostty / iTerm2 Scripts / Orca の設定は本リポジトリ配下で管理している。詳細とインストール手順は各 README を参照:
+Ghostty, iTerm2 scripts, cmux, and Orca settings live in this repository. See their READMEs for details and installation:
 
 - [ghostty/README.md](ghostty/README.md)
-- [cmux/README.md](cmux/README.md) — ユーザー設定・sidebar 連携・プラグインは setup で管理する。
+- [cmux/README.md](cmux/README.md) — User settings, sidebar integration, and plugins are managed in setup.
 - [orca/README.md](orca/README.md)
 - [iterm2/README.md](iterm2/README.md)
 
 ```sh
 mkdir -p ~/.config/ghostty ~/.config/cmux ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch
-ln -sf "$SETUP_DIR/ghostty/config" ~/.config/ghostty/config
-./cmux/link.sh --install # setup リポジトリのルートで実行
-ln -sf "$SETUP_DIR/iterm2/PaneCount.py" ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount.py
+ln -sf "$HOME/ghq/github.com/nkmr-jp/setup/ghostty/config" ~/.config/ghostty/config
+./cmux/link.sh --install # Run from the setup repository root
+ln -sf "$HOME/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount.py" ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount.py
 ```
 
-Orca だけは**ディレクトリごと** symlink する（ファイル単体の symlink は Orca 側の
-atomic write で無言で外れるため）。既存の `~/.orca` が残っていると
-`ln -s` がその**中に**リンクを作ってしまうので、退避と削除を含む手順は
-[orca/README.md](orca/README.md) を参照する。
+For Orca, symlink the **entire directory**: atomic writes silently replace individual file symlinks.
+If `~/.orca` already exists, `ln -s` creates a link **inside** it.
+Follow [orca/README.md](orca/README.md) for the backup and replacement procedure.
 
 ### Install QucickLook Plugins
 
@@ -154,16 +150,17 @@ xattr -d -r com.apple.quarantine ~/Library/QuickLook
 
 [GitHub Help](https://help.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
 
-### clone this repository
+### Clone this repository
 ```shell
 ghq get -p nkmr-jp/setup
+cd ~/ghq/github.com/nkmr-jp/setup
 ```
 
 ### Set .gitconfig
 ```ini
 # ~/.gitconfig
 [include]
-    path = /absolute/path/to/setup/gitconfig
+    path = ~/ghq/github.com/nkmr-jp/setup/gitconfig
 ```
 
 ### Set git user
@@ -172,37 +169,37 @@ git config --global user.name "username"
 git config --global user.email "mailaddress"
 ```
 
-### コミット署名は公開リポジトリのみ
+### Sign Commits Only in Public Repositories
 
-署名鍵は 1Password の SSH agent（`op-ssh-sign`）にあり、署名のたびに生体認証を求める。
-エージェントの無人コミットがそこで止まるため、**既定は署名なし・公開リポジトリだけ署名あり**にしている。
+The signing key uses the 1Password SSH agent (`op-ssh-sign`), which requests biometric authentication for each signature.
+To avoid blocking unattended agent commits, **signing is disabled by default and enabled only for public repositories**.
 
 ```ini
-# ~/.gitconfig（この順序に意味がある。後に書いたものが勝つ）
+# ~/.gitconfig (order matters: later settings take precedence)
 [commit]
-    gpgsign = false                      # 既定: 署名なし
+    gpgsign = false                      # Default: no signing
 [include]
-    path = ~/.gitconfig-signing-includes # public リポジトリだけ署名ONに戻す
+    path = ~/.gitconfig-signing-includes # Enable signing only for public repositories
 ```
 
-`~/.gitconfig-signing-includes` は生成物。GitHub 上で public なリポジトリすべての
-`includeIf "gitdir:..."` を並べ、`gitconfig-signing` を読ませる。
-**リポジトリの公開/非公開を切り替えたら再実行する**（public→private のまま放置すると古いエントリが残って署名され続ける）。
-未 clone のリポジトリも含めて生成するので、clone しただけなら再実行不要。
+`~/.gitconfig-signing-includes` is generated. It lists `includeIf "gitdir:..."` entries for all public
+GitHub repositories and loads `gitconfig-signing`.
+**Regenerate it whenever repository visibility changes**: stale public entries keep signing enabled after a repository becomes private.
+Repositories that have not been cloned are included, so cloning alone does not require regeneration.
 
 ```sh
-bin/gen-git-signing-config.sh          # 既定 owner: ghのログインユーザー
+bin/gen-git-signing-config.sh          # Default owner: the authenticated gh user
 ```
 
-確認方法（`--show-origin` でどのファイルが効いたか分かる）:
+Check the effective setting; `--show-origin` identifies the configuration file:
 
 ```sh
 git -C <repo> config --show-origin --get commit.gpgsign
 ```
 
-- worktree（`<repo>-wt-<branch>`）は `GIT_DIR` が本体の `.git` 配下を指すため、本体と同じ判定になる。
-- 他 org の clone は署名なし。OSS へコントリビュートするときはそのリポジトリで
-  `git config commit.gpgsign true` を設定する。
+- Worktrees (`<repo>-wt-<branch>`) use the same rules because their `GIT_DIR` points inside the main checkout's `.git`.
+- Clones from other organizations are unsigned. Enable signing with
+  `git config commit.gpgsign true` in a repository when contributing to open source.
 
 ### Set gtr
 ```sh
@@ -212,14 +209,14 @@ ln -s "$(pwd)/bin/git-gtr" ~/src/bin/git-gtr
 
 ### opg - Open GitHub repository in browser
 
-`bin/opg` は origin リモートの GitHub リポジトリをブラウザで開く。現在のブランチが `main` / `master` 以外なら、そのブランチの tree ページを開く。
+`bin/opg` opens the origin GitHub repository in a browser. For branches other than `main` or `master`, it opens that branch's tree page.
 
 ```sh
-# カレントディレクトリのリポジトリを開く
+# Open the repository in the current directory
 opg
 
-# 指定したディレクトリのリポジトリを開く
-opg "$SETUP_DIR"
+# Open the repository at the specified path
+opg "$HOME/ghq/github.com/nkmr-jp/setup"
 ```
 
 ## Repository Structure
@@ -230,33 +227,33 @@ This repository uses a modular approach for Zsh configuration:
 setup/
 ├── .zshrc            # Main Zsh configuration (symlinked to ~/.zshrc)
 ├── zsh/              # Modular Zsh configurations
-│   ├── init.zsh      # 起点。他の設定を読む順序を決める
-│   ├── env.zsh       # 環境変数と PATH
-│   ├── cache.zsh     # 起動時の重い初期化のキャッシュヘルパー
-│   ├── completion.zsh # 補完・プラグイン・プロンプト
+│   ├── init.zsh      # Entry point; controls module loading order
+│   ├── env.zsh       # Environment variables and PATH
+│   ├── cache.zsh     # Cache helpers for expensive initialization
+│   ├── completion.zsh # Completions, plugins, and prompt
 │   ├── aliases.zsh   # Shell aliases
 │   ├── functions.zsh # Utility functions
 │   ├── keybindings.zsh # Key bindings
 │   ├── gwt.zsh       # Git worktree utilities
-│   ├── ghu.zsh       # ghq + GitHub ユーティリティ
+│   ├── ghu.zsh       # ghq + GitHub utilities
 │   ├── gh.zsh        # GitHub CLI
-│   ├── github.zsh    # GitHub 関連
+│   ├── github.zsh    # GitHub integration
 │   ├── gcloud.zsh    # Google Cloud SDK
-│   ├── anyenv.zsh    # anyenv init のキャッシュ生成
-│   ├── goenv.zsh     # GOROOT / GOPATH の解決
-│   ├── prompt-line.zsh # PromptLine 用キャッシュの背景更新
-│   ├── ai.zsh        # AI ツール
-│   └── iterm2.zsh    # iTerm2 シェル統合
+│   ├── anyenv.zsh    # Cached anyenv initialization
+│   ├── goenv.zsh     # GOROOT / GOPATH resolution
+│   ├── prompt-line.zsh # Background PromptLine cache refresh
+│   ├── ai.zsh        # AI tools
+│   └── iterm2.zsh    # iTerm2 shell integration
 ├── tools/            # Tool-specific configurations
 ├── bin/              # Local executables (symlinked into ~/bin)
 ├── gitconfig         # Git configuration
-└── gitconfig-signing # 公開リポジトリ用の署名ON設定（includeIf から読まれる）
+└── gitconfig-signing # Signing settings for public repositories (loaded by includeIf)
 ```
 
 ## Claude Code Plugins
 
-ターミナルでこのリポジトリをmarketplaceとして登録し、必要なプラグインをインストールします。
-以下はsetupリポジトリのルートで実行します。
+Register this repository as a marketplace and install the plugins you need.
+Run these commands from `~/ghq/github.com/nkmr-jp/setup`.
 
 ```sh
 claude plugin marketplace add . --scope user
@@ -264,34 +261,34 @@ claude plugin install cmux@setup --scope user
 claude plugin install session-monitor@setup --scope user
 ```
 
-- `cmux`: ワークスペース・ペイン・通知などの操作と、Claude Codeの状態をサイドバーへ同期するhooks。
-- `session-monitor`: Claude Codeのセッション状態を集約し、xbarに表示するhooks。
+- `cmux`: Workspace, pane, and notification commands, with hooks that synchronize Claude Code status to the sidebar.
+- `session-monitor`: Hooks that aggregate Claude Code session states for display in xbar.
 
-`--scope user` はユーザー全体へのインストールです。必要なプラグインだけ選んでインストールできます。
-前提条件と連携設定は [cmux](plugins/cmux/README.md)・[session-monitor](plugins/session-monitor/README.md) を参照してください。
+`--scope user` installs plugins for your user account. Install only the plugins you need.
+See [cmux](plugins/cmux/README.md) and [session-monitor](plugins/session-monitor/README.md) for prerequisites and integration settings.
 
 ## Codex Plugins
 
-このリポジトリの marketplace を登録し、必要なプラグインをインストールする:
+Register this repository's marketplace and install the plugins you need:
 
 ```sh
-codex plugin marketplace add "$SETUP_DIR"
+codex plugin marketplace add "$HOME/ghq/github.com/nkmr-jp/setup"
 codex plugin add cmux@setup
 codex plugin add session-monitor@setup
 ```
 
-- `cmux`: cmux のワークスペース、ペイン、通知、ブラウザなどを操作するスキルと状態同期 hooks
-- `session-monitor`: Codex / Claude Code のセッション状態を集約し、xbar に表示する hooks
+- `cmux`: Skills for cmux workspaces, panes, notifications, and browsers, plus status synchronization hooks
+- `session-monitor`: Hooks that aggregate Codex / Claude Code session states for display in xbar
 
-インストール後は、新しいスレッドを開始してプラグインを読み込む。個別の前提条件や Claude Code へのインストール方法は、[cmux](plugins/cmux/README.md) と [session-monitor](plugins/session-monitor/README.md) を参照。
+Start a new thread after installation to load the plugins. See [cmux](plugins/cmux/README.md) and [session-monitor](plugins/session-monitor/README.md) for prerequisites and Claude Code installation instructions.
 
 ## Antigravity (AGY) Plugins
 
-Google Antigravity (AGY CLI / IDE) 向けには、AGY CLI のネイティブインポーターでインストールする:
+For Google Antigravity (AGY CLI / IDE), use the AGY CLI native importer:
 
 ```sh
-agy plugin install "$SETUP_DIR/plugins/cmux"
-agy plugin install "$SETUP_DIR/plugins/session-monitor"
+agy plugin install "$HOME/ghq/github.com/nkmr-jp/setup/plugins/cmux"
+agy plugin install "$HOME/ghq/github.com/nkmr-jp/setup/plugins/session-monitor"
 ```
 
 ## Zsh Configuration
@@ -303,40 +300,40 @@ ghq get -p Aloxaf/fzf-tab
 Create a symlink from this repository's `.zshrc` to your home directory:
 
 ```shell
-ln -s "$SETUP_DIR/.zshrc" ~/.zshrc
+ln -s "$HOME/ghq/github.com/nkmr-jp/setup/.zshrc" ~/.zshrc
 source ~/.zshrc
 ```
 
 ### Optional: Set greeting messages
 ```shell
 # A message that is displayed at random when the shell starts.
-echo "hello world!" >> "$SETUP_DIR/.messages"
-echo "shut the fuck up and write some code" >> "$SETUP_DIR/.messages"
-echo "stay hungry stay foolish" >> "$SETUP_DIR/.messages"
+echo "hello world!" >> "$HOME/ghq/github.com/nkmr-jp/setup/.messages"
+echo "shut the fuck up and write some code" >> "$HOME/ghq/github.com/nkmr-jp/setup/.messages"
+echo "stay hungry stay foolish" >> "$HOME/ghq/github.com/nkmr-jp/setup/.messages"
 ```
 
-### 起動時のキャッシュ
+### Startup Cache
 
-`anyenv init` の出力・`uv` / `uvx` の補完・`ghq root` などは、起動のたびに別プロセスを
-起こしていると合計で 1 秒近くかかる。値はツールを更新しない限り変わらないので、
-`~/.cache/zsh-init/` にキャッシュして依存ファイルが新しくなったときだけ作り直している
-（実装は `zsh/cache.zsh`）。
+Spawning processes for `anyenv init`, `uv` / `uvx` completions, and `ghq root` on every startup
+adds nearly a second. Their output is stable until tools change, so it is cached in
+`~/.cache/zsh-init/` and regenerated only when dependencies are newer.
+The implementation is in `zsh/cache.zsh`.
 
-ツールを更新して古い内容が残っていると感じたら、キャッシュを捨てる:
+If cached output appears stale after updating a tool, clear the cache:
 
 ```sh
-zsh-cache-clear   # 次のシェル起動で作り直される
+zsh-cache-clear   # Regenerated on the next shell startup
 ```
 
-補完については、生成した `#compdef` スクリプトを `~/.cache/zsh-init/completions/` に置き、
-`compinit` の遅延ロードに任せている（起動時に `eval` しない）。`compinit` 自体は
-dump が 24 時間より古いときだけフル実行し、それ以外は `-C`（チェック省略）で済ませる。
+Generated `#compdef` scripts are stored in `~/.cache/zsh-init/completions/` and loaded lazily
+by `compinit`, rather than evaluated at startup. A full `compinit` runs only when the dump is
+more than 24 hours old; otherwise `-C` skips the checks.
 
-**新しい実行ファイルを入れた直後は shim / 補完がまだ無い**ことがある:
+**Shims or completions may be missing immediately after installing new executables**:
 
-- `pip install` / `gem install` / `npm i -g` の後は `pyenv rehash` などを明示的に実行する
-  （起動時の rehash は廃止済み。ロック残留で全シェル起動が 60 秒ブロックする事故を防ぐため）
-- 新しいツールの補完が効かないときは `rm ~/.zcompdump` して起動し直す
+- Run `pyenv rehash` or its equivalent explicitly after `pip install`, `gem install`, or `npm i -g`.
+  Startup rehashing was removed because stale locks could block every shell startup for 60 seconds.
+- If a new tool's completions are unavailable, run `rm ~/.zcompdump` and start a new shell.
 
 ## Anyenv ([anyenv](https://github.com/anyenv/anyenv))
 
@@ -526,7 +523,7 @@ curl -sS https://starship.rs/install.sh | sh
 
 ```sh
 mkdir -p ~/.config/yazi
-ln -s "$SETUP_DIR/yazi/yazi.toml" ~/.config/yazi/yazi.toml
+ln -s "$HOME/ghq/github.com/nkmr-jp/setup/yazi/yazi.toml" ~/.config/yazi/yazi.toml
 ```
 
 ### pack
@@ -535,7 +532,7 @@ See: https://buildpacks.io/docs/tools/pack/
 
 ### Google Cloud SDK
 
-See: [クイックスタート: Cloud SDK スタートガイド  |  Cloud SDK のドキュメント  |  Google Cloud](https://cloud.google.com/sdk/docs/quickstart?hl=ja)
+See: [Quickstart: Get Started with the Cloud SDK | Google Cloud](https://cloud.google.com/sdk/docs/quickstart?hl=ja)
 
 ### tig
 
@@ -552,62 +549,6 @@ bind diff    B !git rebase -i %(commit)
 ln -s "$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/vault" "$HOME/vault"
 ```
 
-## guard-agent-rm（Claude Code の hook）
+`iterm-run <command>` remains defined in `zsh/init.zsh`.
 
-エージェントが実行しようとする `rm` が、**ホームの実データをゴミ箱を経由せずに**
-消そうとしていないか検査する `PreToolUse` hook。
-
-`alias rm='trash'`（[zsh/aliases.zsh](zsh/aliases.zsh)）は **対話 zsh にしか効かない**。
-alias は子プロセスに継承されず、非対話シェルもスクリプトも `.zshrc` を読まないため:
-
-| 実行文脈 | `rm` の実体 |
-| --- | --- |
-| エージェントの Bash ツール（zsh） | `trash` ✅ |
-| `bash -lc '...'` | `/bin/rm` ❌ |
-| `bash script.sh` / `zsh script.sh` / `zsh -c` / `zsh -lc` | `/bin/rm` ❌ |
-
-長いコマンドは Bash ツールに弾かれるためスクリプト化はむしろ推奨経路で、安全網が
-主要な実行経路をカバーしていなかった（実害: 2026-08-29 に検証スクリプトが
-`mv ~/.prompt-line ~/.prompt-line.verifybak` のあと退避ごと `rm -rf` した。setup#19）。
-
-**コマンド文字列だけでなく、そこから呼ばれるスクリプトの中身も読む**のが要点。
-上記の事故はコマンド文字列が `bash verify-edge.sh` だけで、危険がそこに現れなかった。
-
-判定は best effort（変数越しのパスまでは追わない）。`$HOME` / `~/` / `/Users/<user>/` を
-指す `rm` の行をブロックし、`/tmp`・`$TMPDIR`・`/private/tmp`・ghq 配下のリポジトリは通す。
-`mv` は正当な退避と区別できず誤検知が多いので対象外。
-
-#### Install
-
-`~/.claude/settings.json` の `hooks.PreToolUse` に追加する（`matcher` は `Bash`）:
-
-```json
-{
-  "matcher": "Bash",
-  "hooks": [
-    { "type": "command", "command": "$SETUP_DIR/bin/guard-agent-rm.sh" }
-  ]
-}
-```
-
-#### Usage（動作確認）
-
-```sh
-echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf ~/.foo"}}' | bin/guard-agent-rm.sh; echo "exit=$?"   # 2
-echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /tmp/foo"}}' | bin/guard-agent-rm.sh; echo "exit=$?"  # 0
-```
-
-テストは `bats tests/guard-agent-rm.bats`（14 件）。**誤検知でブロックすると日常作業が
-壊れる**ので、通すべきケースのテストを厚くしてある。
-
-#### 注意
-
-- これは best effort の網であって、`rm` を変数越しに組み立てる形は捕まえられない。
-  **ホームの実データを検証で触らない**（`~/.prompt-line-isolated/` のような隔離環境を使う）
-  のが一次の対策で、この hook は二次の網。
-- `jq` が無い環境では黙って通す（hook が作業を止めない側に倒す）。
-
-
-`iterm-run <command>` は従来どおり `zsh/init.zsh` で定義する。
-
-Git設定は従来の `gitconfig` を維持する。`~/.config/setup/gitconfig` は読み込まない。
+Git retains the existing `gitconfig`; `~/.config/setup/gitconfig` is not loaded.

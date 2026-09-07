@@ -1,15 +1,15 @@
-# anyenv init のキャッシュ生成
+# Generate the anyenv init cache.
 #
-# `anyenv init -` は env ごとに別プロセスを起こすため 550ms かかるが、出力は env の
-# 顔ぶれとバージョンが変わらない限り不変。init.zsh がこの関数の出力をキャッシュする。
+# `anyenv init -` takes 550ms because it starts a process for each environment, but
+# its output stays unchanged until environments or versions change. init.zsh caches this function's output.
 #
-# 出力から落としているもの:
-#   jenv refresh-plugins — プラグインの symlink を張り直す保守コマンドで、実際に働くのは
-#     jenv 本体を更新したときだけ (jenv.version と現在の版を比べている)。なのに毎回の
-#     シェル起動で 70ms 使う。キャッシュを作り直すのは jenv を更新したとき (依存に
-#     $ANYENV_ROOT/envs/*/libexec を入れてある) なので、そのタイミングでここで 1 回だけ
-#     実行し、起動のたびに走る分は落とす。
-#     jenv を更新したのにプラグインの link が古いと感じたら `jenv refresh-plugins --force`。
+# Removed from the output:
+#   jenv refresh-plugins is a maintenance command that recreates plugin symlinks.
+#     It only does real work after jenv itself changes (by comparing jenv.version with the current version),
+#     yet costs 70ms on every shell startup. The cache is rebuilt when jenv changes
+#     ($ANYENV_ROOT/envs/*/libexec is a dependency), so run it once here
+#     when rebuilding and remove it from the per-startup output.
+#     If plugin links seem stale after updating jenv, run `jenv refresh-plugins --force`.
 _zsh_gen_anyenv_init() {
     local jenv="${ANYENV_ROOT:-$HOME/.anyenv}/envs/jenv/bin/jenv"
     [[ -x $jenv ]] && "$jenv" refresh-plugins >/dev/null 2>&1

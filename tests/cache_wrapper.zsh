@@ -1,6 +1,6 @@
 #!/bin/zsh
-# cache.zsh テスト用ラッパー
-# 指定された関数を実行する（ZSH_CACHE_DIR は呼び出し側が環境変数で渡す）
+# Test wrapper for cache.zsh
+# Run the requested function; the caller supplies ZSH_CACHE_DIR in the environment.
 
 source "${0:A:h}/../zsh/cache.zsh"
 

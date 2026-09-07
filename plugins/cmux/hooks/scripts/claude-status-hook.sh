@@ -1,70 +1,70 @@
 #!/usr/bin/env sh
-# cmux サイドバーの cwd pill のアイコンを Claude Code の状態に合わせて切り替える。
+# Update the cmux sidebar cwd pill icon to reflect Claude Code state.
 # UserPromptSubmit / PreToolUse / PostToolUse -> running, Notification -> awaiting,
-# Stop -> idle (応答完了・次の入力待ち), SessionStart / SessionEnd -> clear (folder
-# アイコンに戻し state file を削除) を扱い、state file が無い (= 初期状態) のとき
-# は zsh 側でも folder アイコンに戻る。PostToolUse は AskUserQuestion 回答や
-# permission 承認後に awaiting -> running を確実に戻すために必要。SessionStart の
-# clear は前セッションがクラッシュ等で SessionEnd を逃した場合の stale state を
-# 掃除する。
+# Stop -> idle (response finished, awaiting the next input); SessionStart / SessionEnd
+# -> clear (restore the folder icon and remove the state file). When no state file
+# exists (the initial state), zsh also restores the folder icon. PostToolUse is needed
+# to reliably restore awaiting -> running after AskUserQuestion answers or permission
+# approvals. SessionStart clears stale state when the previous session missed
+# SessionEnd, for example after a crash.
 #
 # Usage: claude-status-hook.sh <running|awaiting|idle|clear>
 #
-# 副次責務 (setup issue #3): pill 更新と同じ最終段で、sessionId -> cmux
-# surface/workspace UUID のマッピングを ~/.claude/cmux/hook-sessions.json に
-# upsert する (sync_sessions_json)。cmux の claudeCodeIntegration を false に
-# したことで cmux 自身が ~/.cmuxterm/claude-hook-sessions.json を更新しなく
-# なるため、その消費側 (ccdash / issues-site) 向けの代替データを自前生成する。
+# Secondary responsibility (setup issue #3): at the same final stage as pill updates,
+# upsert the sessionId -> cmux surface/workspace UUID mapping into
+# ~/.claude/cmux/hook-sessions.json (sync_sessions_json). Disabling cmux's
+# claudeCodeIntegration stops cmux from updating ~/.cmuxterm/claude-hook-sessions.json,
+# so generate replacement data for its consumers (ccdash / issues-site).
 #
-# 状態は ${TMPDIR}/cmux-pane-state/<panel-id> に保存し、zsh 側の precmd/chpwd でも
-# 同じアイコンを再描画できるようにする（state→icon の写像は両側で同期）。
+# Store state in ${TMPDIR}/cmux-pane-state/<panel-id> so zsh precmd/chpwd can
+# redraw the same icon. Keep the state-to-icon mapping synchronized on both sides.
 #
-# cmux 0.61+ は子プロセスに CMUX_PANEL_ID / CMUX_SURFACE_ID / CMUX_WORKSPACE_ID
-# のいずれも継承しないため、空の場合は session_id 別 cache に hook 自身のペインの
-# surface UUID を解決して保存する。pill key は `cwd_<UUID>` 形式 (zsh 側
-# sidebar-cwd.zsh の sweeper が surface.list の `id` フィールドと照合するため、
-# ref 形式 `surface:N` ではなく UUID でなければ即 sweep されて pill が消える)。
+# cmux 0.61+ does not pass CMUX_PANEL_ID / CMUX_SURFACE_ID / CMUX_WORKSPACE_ID
+# to child processes. When unset, resolve this hook's surface UUID and save it in
+# a per-session_id cache. Pill keys use `cwd_<UUID>` because the sweeper in zsh's
+# sidebar-cwd.zsh compares them with the surface.list `id` field. A `surface:N`
+# reference instead of a UUID would be swept immediately, making the pill disappear.
 #
-# 解決アプローチは複数試行した:
-#   - `cmux identify` の focused フィールド -> ユーザーが別ペインに focus を
-#     移していると別ワークスペースを掴んでしまうため使えない
-#   - `cmux identify` の caller フィールド -> CMUX_SURFACE_ID / CMUX_WORKSPACE_ID
-#     環境変数が hook プロセスに無いと caller が null になるため使えない
-#   - ★採用: `cmux top --all --processes --format tsv` の TSV 出力で各 process が
-#     どの surface に属するかをツリーで返してくれる。hook 自身の PID から ps で
-#     parent をたどり、TSV の `process <PID> <surface:N>` 行に当たった時点で確定。
-#     その後 workspace.list / surface.list を walk して surface UUID に変換する。
-# cache が無い間はどの hook event でも実行する。SessionEnd で cache を掃除。
+# Resolution approaches considered:
+#   - The `cmux identify` focused field is unusable: if the user moves focus to
+#     another pane, it can select a different workspace.
+#   - The `cmux identify` caller field is unusable without CMUX_SURFACE_ID /
+#     CMUX_WORKSPACE_ID in the hook environment, because caller becomes null.
+#   - Selected approach: `cmux top --all --processes --format tsv` returns a tree
+#     mapping each process to its surface. Walk parents with ps from this hook's PID
+#     until matching a TSV `process <PID> <surface:N>` row.
+#     Then walk workspace.list / surface.list to resolve the surface UUID.
+# Run this for any hook event while the cache is missing; clear it on SessionEnd.
 #
-# tmux 内 (claude ラッパーが ccdash-<sid8> セッションで起動するケース) は追加の
-# 迂回が必要: tmux server はデーモン化されて親が launchd になるため、hook 自身の
-# PID から親を辿っても cmux surface に到達しない (hook → claude → tmux server →
-# launchd)。また TERM_PROGRAM も tmux に上書きされる。代わりに、このセッションに
-# attach している tmux client の PID (cmux surface の zsh の子として cmux top に
-# 載る) を起点に辿る。複数 client が attach している場合 (ccdash パネル併用等) は
-# 全 client を試し、cmux top にヒットしたものを採用する。cmux 以外のターミナルの
-# client はヒットしないので自然に除外される。
+# Inside tmux (when the claude wrapper starts a ccdash-<sid8> session), take an extra
+# step: the tmux server is daemonized under launchd, so walking this hook's parents
+# cannot reach the cmux surface (hook -> claude -> tmux server ->
+# launchd). tmux also overrides TERM_PROGRAM. Instead, start from the PIDs of tmux
+# clients attached to this session, which appear in cmux top as children of the
+# surface's zsh. If several clients are attached (for example alongside a ccdash panel),
+# try all of them and select one that matches cmux top. Clients in other terminals
+# do not match and are naturally excluded.
 #
-# 並列・近接して呼ばれた hook が cmux daemon で逆順に処理されると古い state で
-# pill が固定化するため、event 時刻 (perl で nanosecond) を各 hook が起動直後に
-# 記録し、pane 単位の lock 内で「自分の時刻が直近に適用された時刻より新しい場合
-# にのみ state file を更新する」ことで最新 event を判定する。clear (SessionEnd)
-# も同じ機構を共有しないと、SessionEnd と並走した古い running/awaiting hook が
-# 後勝ちして pill を上書きしてしまうため、clear も同じ lock/timestamp を経由する。
+# Concurrent or closely timed hooks can be handled out of order by the cmux daemon,
+# leaving an old pill state. Each hook records its event time immediately on startup
+# (nanoseconds via perl). Within a per-pane lock, update the state file only if
+# this timestamp is newer than the last applied one. clear (SessionEnd) must share
+# this mechanism; otherwise an older running/awaiting hook could finish later and
+# overwrite the pill. Route clear through the same lock and timestamp checks.
 #
-# `cmux set-status` の socket I/O は lock を解放した後に実行する (PreToolUse の
-# 並列発火で daemon 応答待ちが lock を握り続け、後続 hook が無駄に待たされる
-# のを避けるため)。並列 event の cmux 配信順は厳密でなくなるが、PreToolUse 等
-# で頻繁に最新 state へ上書きされるので、ずれた最終状態は直近の遷移で解消する。
+# Perform `cmux set-status` socket I/O after releasing the lock so concurrent
+# PreToolUse hooks do not hold it while waiting for the daemon and unnecessarily
+# delay later hooks. Concurrent events may reach cmux out of order, but frequent
+# updates such as PreToolUse restore the latest state on a subsequent transition.
 #
-# pill は workspace スコープで管理される (`workspace:<WS_UUID>:tag:cwd_<SURFACE>`)。
-# `cmux set-status` を `--workspace` 無しで呼ぶと `$CMUX_WORKSPACE_ID` 環境変数を
-# 参照するが、cmux 0.61+ は CMUX_WORKSPACE_ID も子プロセスに継承しないため、
-# 結果として daemon は「現在 focus している workspace」に pill を attach してしまう。
-# 別 pane の Claude Code セッションが running になった瞬間、その pill が
-# ユーザーが今見ている (別) workspace のサイドバーに混入する原因となるため、
-# 必ず `--workspace $CMUX_WORKSPACE_ID` を明示指定する。WORKSPACE_ID は panel と
-# 一緒に session 別 cache (2 行目) に保存して再解決コストを抑える。
+# Pills are workspace-scoped (`workspace:<WS_UUID>:tag:cwd_<SURFACE>`).
+# Without --workspace, `cmux set-status` reads the CMUX_WORKSPACE_ID environment
+# variable. cmux 0.61+ does not pass that variable to child processes either,
+# causing the daemon to attach the pill to the currently focused workspace.
+# When a Claude Code session in another pane becomes running, its pill can then
+# appear in the sidebar of the unrelated workspace the user is viewing.
+# Always pass `--workspace $CMUX_WORKSPACE_ID` explicitly. Cache WORKSPACE_ID with
+# the panel in the second line of the per-session cache to avoid repeated resolution.
 
 exec >/dev/null 2>&1
 umask 077
@@ -83,8 +83,8 @@ esac
 state_dir="${TMPDIR:-/tmp}/cmux-pane-state"
 mkdir -p "$state_dir" 2>/dev/null
 
-# stdin の JSON を一時ファイルに保存して session_id / hook_event_name を抽出する。
-# CMUX_PANEL_ID fallback の cache key と SessionEnd 時の cache 掃除に使う。
+# Save stdin JSON to a temporary file and extract session_id / hook_event_name.
+# Use them for the CMUX_PANEL_ID fallback cache key and SessionEnd cache cleanup.
 input_file=$(mktemp "$state_dir/hook-input.XXXXXX") || exit 0
 trap 'rm -f "$input_file" "${sessions_tmp:-}"' EXIT INT TERM HUP
 cat > "$input_file" 2>/dev/null
@@ -107,8 +107,8 @@ if [ -z "$hook_event" ]; then
   esac
 fi
 
-# 自動実行・要約セッション (claude-auto / codex-auto / agy-auto など) は cmux ワークスペースを持たない
-# ため、セッションマッピングや pill を更新しない。
+# Automated and summary sessions (claude-auto / codex-auto / agy-auto, etc.) have
+# no cmux workspace, so do not update their session mappings or pills.
 if [ -n "${CCDASH_AUTO:-}" ] || [ -n "${CLAUDE_AUTO:-}" ]; then
   exit 0
 fi
@@ -120,26 +120,26 @@ if command -v jq >/dev/null 2>&1; then
   esac
 fi
 
-# clear の detach 子プロセスは stdin が /dev/null になるため、親が抽出済みの
-# 値を環境変数経由で引き継ぐ (sessions JSON の upsert/削除に必要)。
+# The detached clear child has /dev/null as stdin. Pass the values already extracted
+# by the parent through environment variables for sessions JSON upserts and deletion.
 [ -n "$session_id" ] || session_id="${CMUX_STATUS_HOOK_SID:-}"
 [ -n "$hook_event" ] || hook_event="${CMUX_STATUS_HOOK_EVENT:-}"
 [ -n "$hook_cwd" ] || hook_cwd="${CMUX_STATUS_HOOK_CWD:-$PWD}"
 
-# CMUX_PANEL_ID が継承されない cmux 0.61+ 対策: session_id 別 cache + cmux identify。
-# cache が無ければ caller ベースで identify を呼んで作る。SessionStart に限らず
-# どの hook event でも安全 (caller は呼び出したプロセス自身のペインを返すので
-# focused のような「ユーザーが今前面にしているペイン = 別ペインの可能性」リスクが
-# 無い)。SessionStart 限定にすると、既に動いているセッションでスクリプトが更新
-# された場合に永遠に cache が作られなくなるため、event を限定しない。
+# Handle cmux 0.61+ not passing CMUX_PANEL_ID with a per-session cache and cmux identify.
+# If the cache is missing, build it using caller-based identification. This is safe
+# for any hook event, not just SessionStart: caller refers to the invoking process's
+# pane, unlike focused, which can refer to another pane the user has brought forward.
+# Do not restrict cache creation to SessionStart: otherwise updating this script
+# during an existing session could leave that session without a cache indefinitely.
 panel_cache=""
 if [ -n "$session_id" ]; then
   panel_cache="$state_dir/session-${session_id}.panel"
 fi
 
-# 既存 cache を読み込む。format は 1 行目=surface UUID, 2 行目=workspace UUID。
-# 旧 format (1 行のみ) は workspace 未指定で set-status を呼んでしまい今回のバグの
-# 原因となるので、workspace UUID が欠けている cache は無効として再生成する。
+# Read the existing cache: line 1 is the surface UUID; line 2 is the workspace UUID.
+# The old single-line format causes set-status calls without a workspace, producing
+# this bug. Treat caches without a workspace UUID as invalid and regenerate them.
 load_panel_cache() {
   [ -n "$panel_cache" ] && [ -f "$panel_cache" ] || return 0
   cached_panel=$(awk 'NR==1{print; exit}' "$panel_cache" 2>/dev/null)
@@ -158,21 +158,21 @@ load_panel_cache() {
   CMUX_WORKSPACE_ID="$cached_ws"
 }
 
-# 環境変数で渡されていない場合は cache を試す。
+# Try the cache when environment variables did not supply the values.
 if [ -z "${CMUX_PANEL_ID:-}" ] || [ -z "${CMUX_WORKSPACE_ID:-}" ]; then
-  # SessionStart のときは cache を強制再生成する。過去の壊れた実装で書き込まれた
-  # 別 workspace の UUID が残っている可能性があるため。
+  # Force cache regeneration on SessionStart: an older broken implementation
+  # may have stored a UUID belonging to a different workspace.
   [ "$hook_event" = "SessionStart" ] && [ -n "$panel_cache" ] && rm -f "$panel_cache"
   load_panel_cache
 fi
 
-# cmux top で自分の PID から surface/pane/workspace ref を辿り UUID に変換して
-# cache に書き込む。途中で何も解決できなければ何もしない (caller が判断)。
+# Follow this PID through cmux top surface/pane/workspace references, resolve UUIDs,
+# and write the cache. If resolution fails, leave it unchanged for the caller to handle.
 resolve_and_cache_panel() {
   [ -n "$panel_cache" ] || return 0
-  # 探索起点の PID 一覧を決める。tmux 内なら attach 中の client PID 群
-  # (TERM_PROGRAM/__CFBundleIdentifier は tmux server 経由で信頼できないため、
-  # 判定は cmux top でのヒット有無に委ねる)、そうでなければ hook 自身の PID。
+  # Choose starting PIDs: attached client PIDs inside tmux, otherwise this hook's PID.
+  # TERM_PROGRAM / __CFBundleIdentifier cannot be trusted through the tmux server,
+  # so determine whether a client belongs to cmux by whether cmux top matches it.
   if [ -n "${TMUX:-}" ] && command -v tmux >/dev/null 2>&1; then
     if [ -n "${TMUX_PANE:-}" ]; then
       tmux_session=$(tmux display-message -p -t "$TMUX_PANE" '#{session_name}' 2>/dev/null)
@@ -191,9 +191,9 @@ resolve_and_cache_panel() {
   cmux_cli="${CMUX_BUNDLED_CLI_PATH:-/Applications/cmux.app/Contents/Resources/bin/cmux}"
   [ -x "$cmux_cli" ] || return 0
 
-  # 1. cmux top で全 process / surface / pane / workspace の階層を取得し、
-  #    各起点 PID から親方向に辿って `process <PID> <surface:N>` 行に当たった
-  #    surface ref を確定する。
+  # 1. Obtain the process / surface / pane / workspace hierarchy from cmux top.
+  #    Walk ancestors from each starting PID until a `process <PID> <surface:N>`
+  #    row identifies the surface reference.
   top_tsv=$("$cmux_cli" top --all --processes --format tsv 2>/dev/null)
   surface_ref=""
   for start_pid in $probe_pids; do
@@ -213,10 +213,10 @@ resolve_and_cache_panel() {
   done
   [ -n "$surface_ref" ] || return 0
 
-  # 2. surface -> pane -> workspace を TSV 上で辿って workspace ref を確定する。
-  #    surface ref (`surface:N`) は workspace 内ローカル番号で別 workspace に
-  #    同名の surface ref が存在しうるため、workspace.list を盲目的に walk
-  #    して `ref` 一致だけで UUID を取ると別ペインを掴むリスクがある。
+  # 2. Follow surface -> pane -> workspace in the TSV to identify the workspace.
+  #    Surface references (`surface:N`) are local to a workspace and can repeat
+  #    in another workspace. Blindly walking workspace.list and matching only `ref`
+  #    when resolving the UUID can therefore select the wrong pane.
   pane_ref=$(printf '%s\n' "$top_tsv" | awk -F'\t' -v sref="$surface_ref" '
     $4 == "surface" && $5 == sref && $6 ~ /^pane:/ { print $6; exit }')
   [ -n "$pane_ref" ] || return 0
@@ -248,14 +248,14 @@ fi
 [ -n "${CMUX_PANEL_ID:-}" ] || exit 0
 [ -n "${CMUX_WORKSPACE_ID:-}" ] || exit 0
 
-# SessionEnd は Claude Code 側に時間制約があり (1 秒未満)、lock 競合で sleep
-# すると "Hook cancelled" として打ち切られる。clear だけは即時に親へ制御を
-# 返し、実処理は detach した子プロセスで race-safe lock を取って実行する。
-# 親 session が消えても cmux daemon への set-status は子プロセスから完了する。
-# CMUX_PANEL_ID / CMUX_WORKSPACE_ID は環境変数で子プロセスに引き継ぐ
-# (stdin は /dev/null になるので cache 経由の再解決はできない)。
+# Claude Code gives SessionEnd less than a second. Sleeping on lock contention can
+# trigger "Hook cancelled". For clear, immediately return control to the parent
+# and perform the work in a detached child using the race-safe lock.
+# The child can finish set-status calls to the cmux daemon after the parent exits.
+# Pass CMUX_PANEL_ID / CMUX_WORKSPACE_ID through the child's environment because
+# its stdin becomes /dev/null and it cannot resolve them again through the cache.
 if [ "$state" = clear ] && [ -z "${CMUX_STATUS_HOOK_BG:-}" ]; then
-  # SessionEnd では panel cache も掃除しておく (次回 SessionStart で再取得)。
+  # Also clear the panel cache on SessionEnd; the next SessionStart will rebuild it.
   [ "$hook_event" = "SessionEnd" ] && [ -n "$panel_cache" ] && rm -f "$panel_cache"
   CMUX_STATUS_HOOK_BG=1 CMUX_PANEL_ID="$CMUX_PANEL_ID" \
     CMUX_WORKSPACE_ID="$CMUX_WORKSPACE_ID" \
@@ -266,26 +266,26 @@ if [ "$state" = clear ] && [ -z "${CMUX_STATUS_HOOK_BG:-}" ]; then
   exit 0
 fi
 
-# sessionId -> cmux surface/workspace UUID のマッピングを自前で永続化する
-# (setup issue #3)。cmux の automation.claudeCodeIntegration は claude_code pill
-# 固着バグ (upstream #1027) を避けるため false にしており、cmux が書いていた
-# ~/.cmuxterm/claude-hook-sessions.json は更新されなくなる。その代替として、
-# 消費側 (ccdash / issues-site) が実際に読む `sessions` マップだけを同スキーマの
-# サブセット (sessionId / workspaceId / surfaceId / cwd / agentLifecycle /
-# startedAt / updatedAt) で ~/.claude/cmux/hook-sessions.json に upsert する。
-# agentLifecycle の語彙は cmux 本家に合わせる (running / needsInput / idle)。
-# SessionEnd でエントリを削除する。SessionEnd を逃した分 (クラッシュ・workspace
-# の強制クローズ等) は書き込み時に prune する (issue #5):
-#   - liveness prune: workspace.list + surface.list で生存 surface UUID 集合を
-#     取得し、集合に無い surfaceId のエントリを削除する。RPC (~200ms) は 60 秒
-#     スロットルし、取得に失敗した場合は誤って全エントリを消さないようスキップ
-#     する (zsh 側 sweeper と同じ安全策)。live 集合の取得は per-file lock 内で
-#     行うので、lock 前に書かれたエントリの surface は必ず取得時点より古く、
-#     新規セッションのエントリを stale な集合で誤 prune することはない。
-#   - 7 日超 prune: cmux daemon 不達等で liveness prune が動けない場合の
-#     フォールバック (cmux 本家の pruneExpired と同じ寿命)。
-# 呼び出し元の早期 exit (非 cmux 環境 / 古い event / 同一 state) をそのまま
-# 流用するため、この関数は set-status と同じ最終段でのみ呼ばれる。
+# Persist the sessionId -> cmux surface/workspace UUID mapping ourselves
+# (setup issue #3). cmux automation.claudeCodeIntegration is false to avoid the
+# stuck claude_code pill bug (upstream #1027), so cmux no longer updates
+# ~/.cmuxterm/claude-hook-sessions.json. Instead, upsert only the `sessions` map
+# actually read by consumers (ccdash / issues-site), using a compatible schema subset
+# (sessionId / workspaceId / surfaceId / cwd / agentLifecycle /
+# startedAt / updatedAt) in ~/.claude/cmux/hook-sessions.json.
+# Match upstream cmux agentLifecycle values: running / needsInput / idle.
+# Remove entries on SessionEnd. Prune entries whose SessionEnd was missed because
+# of a crash or a forced workspace close during subsequent writes (issue #5):
+#   - Liveness pruning: obtain live surface UUIDs with workspace.list + surface.list
+#     and remove entries whose surfaceId is absent. Throttle RPC calls (~200 ms)
+#     to once every 60 seconds. Skip pruning on lookup failure to avoid accidentally
+#     removing all entries, following the zsh sweeper's safeguard. Fetch the live set
+#     under the per-file lock so every previously written entry predates the lookup;
+#     a stale live set cannot incorrectly prune newly created sessions.
+#   - Seven-day expiration: fall back to this if liveness pruning cannot run, such
+#     as when the cmux daemon is unreachable (the same lifetime as cmux pruneExpired).
+# Call this only at the final set-status stage so the caller's existing early exits
+# for non-cmux environments, old events, or unchanged state also apply here.
 sync_sessions_json() {
   [ -n "$session_id" ] || return 0
   command -v jq >/dev/null 2>&1 || return 0
@@ -297,12 +297,12 @@ sync_sessions_json() {
     awaiting) lifecycle=needsInput ;;
     idle)     lifecycle=idle ;;
     clear)
-      # SessionStart は idle で upsert、SessionEnd はエントリ削除。
+      # Upsert SessionStart as idle; remove the entry on SessionEnd.
       if [ "$hook_event" = "SessionEnd" ]; then lifecycle=ended; else lifecycle=idle; fi ;;
     *) return 0 ;;
   esac
 
-  # Per-file mutex (state file の lock とは別)。1 秒以上経過したロックは stale。
+  # Per-file mutex, separate from the state-file lock. Locks older than one second are stale.
   sessions_lock="$sessions_file.lock.d"
   s_attempts=0
   while ! mkdir "$sessions_lock" 2>/dev/null; do
@@ -316,8 +316,8 @@ sync_sessions_json() {
 
   now=$(date +%s)
 
-  # liveness prune 用の生存 surface UUID 集合 (JSON 配列)。null は「今回は
-  # liveness prune をしない」(スロットル中 / RPC 失敗) を意味する。
+  # Live surface UUIDs for liveness pruning, as a JSON array. null means skip
+  # liveness pruning this time because of throttling or an RPC failure.
   live_json=null
   prune_marker="$sessions_file.pruned"
   last_prune=$(cat "$prune_marker" 2>/dev/null)
@@ -337,8 +337,8 @@ sync_sessions_json() {
         live_ids="$live_ids
 $(printf '%s' "$sf_json" | jq -r '.surfaces[]?.id // empty' 2>/dev/null)"
       done
-      # surface が 1 つも取れないのは異常 (この hook 自身が surface 内に居る)
-      # なので、全エントリの誤削除を避けるため prune しない。
+      # An empty surface list is unexpected because this hook is itself in a surface.
+      # Skip pruning to avoid accidentally deleting every entry.
       [ -n "$(printf '%s' "$live_ids" | tr -d '[:space:]')" ] || fetch_ok=0
       if [ "$fetch_ok" = 1 ]; then
         live_json=$(printf '%s\n' "$live_ids" \
@@ -379,13 +379,13 @@ $(printf '%s' "$sf_json" | jq -r '.surfaces[]?.id // empty' 2>/dev/null)"
                  and ($live == null or ($live | index($s)) != null))))}
     ' > "$sessions_tmp" 2>/dev/null
   fi
-  # jq が失敗した場合 (壊れた既存 JSON 等) は既存ファイルを壊さず放置し、
-  # 空の tmp だけ回収する。次回の正常な書き込みで復旧する。
+  # If jq fails (for example on corrupt existing JSON), preserve the original file
+  # and remove only the empty temporary file. A later successful write can recover.
   if [ -s "$sessions_tmp" ]; then
     mv "$sessions_tmp" "$sessions_file"
   else
     rm -f "$sessions_tmp"
-    # 既存ファイルが壊れて jq が parse できない場合はここに落ちるので初期化する。
+    # Reinitialize here if corrupt existing JSON could not be parsed by jq.
     if [ -s "$sessions_file" ] && ! jq empty "$sessions_file" >/dev/null 2>&1; then
       printf '{"version":1,"sessions":{}}\n' > "$sessions_file"
     fi
@@ -393,9 +393,9 @@ $(printf '%s' "$sf_json" | jq -r '.surfaces[]?.id // empty' 2>/dev/null)"
   rmdir "$sessions_lock" 2>/dev/null
 }
 
-# basename "$PWD" が空 (PWD 未設定など) になると cmux set-status が空 value で
-# 失敗し、pill が前回値のまま固定化したり stale 判定で消えたりする。空のとき
-# は "." に fallback して pill 名が消えないようにする。
+# If basename "$PWD" is empty (for example when PWD is unset), cmux set-status fails
+# with an empty value, leaving the previous pill frozen or removed as stale.
+# Fall back to "." to keep a nonempty pill label.
 label=$(basename "$PWD" 2>/dev/null)
 [ -n "$label" ] || label="."
 
@@ -404,11 +404,11 @@ time_file="$state_file.time"
 lock_dir="$state_file.lock"
 key="cwd_${CMUX_PANEL_ID}"
 
-# Lock contention 前に event 時刻を採取する (lock 取得順 ≠ event 順序を補正)。
+# Capture event time before lock contention to account for lock order differing from event order.
 my_time=$(perl -MTime::HiRes -e 'printf "%d", Time::HiRes::time*1e9' 2>/dev/null)
 [ -n "$my_time" ] || my_time=$(($(date +%s) * 1000000000))
 
-# Per-pane mutex (mkdir は POSIX で atomic)。1 秒以上経過したロックは stale。
+# Per-pane mutex (mkdir is atomic on POSIX). Locks older than one second are stale.
 attempts=0
 while ! mkdir "$lock_dir" 2>/dev/null; do
   attempts=$((attempts + 1))
@@ -420,23 +420,23 @@ while ! mkdir "$lock_dir" 2>/dev/null; do
 done
 trap 'rmdir "$lock_dir" 2>/dev/null; rm -f "$input_file" "${sessions_tmp:-}"' EXIT INT TERM HUP
 
-# 既に新しい event が反映済みなら自分は古いので set-status をスキップ。
+# Skip set-status if a newer event has already been applied.
 existing_time=$(cat "$time_file" 2>/dev/null)
 [ -n "$existing_time" ] || existing_time=0
 is_newer=$(awk -v a="$my_time" -v b="$existing_time" 'BEGIN{print (a+0 > b+0) ? 1 : 0}')
 [ "$is_newer" = 1 ] || exit 0
 
-# 自分の時刻を記録 (これ以降に届く古い hook をブロックする)。次の SessionStart
-# 以降に飛んでくる新しい event は my_time > 既存値で正しく上書きできる。
+# Record this timestamp to block older hooks arriving later. New events from the next
+# SessionStart onward have my_time greater than this value and can overwrite it normally.
 printf '%s\n' "$my_time" > "$time_file"
 
-# state file 更新までを lock 内で完結させる。PreToolUse は毎ツール呼び出しで
-# 発火するため、既に同じ state なら state file 書き込みも cmux 呼び出しも省く。
+# Update the state file under the lock. PreToolUse fires for every tool call, so skip
+# both the state-file write and cmux call when the state is already unchanged.
 existing_state=$(cat "$state_file" 2>/dev/null)
 if [ "$state" = clear ]; then
-  # SessionEnd: state_file は削除して folder アイコンに戻す。time_file は
-  # my_time を保持しているので、まだ実行中の古い running/awaiting hook が
-  # 後から pill を上書きすることはない。
+  # SessionEnd removes state_file to restore the folder icon. time_file retains
+  # my_time, preventing older running/awaiting hooks still in progress from
+  # overwriting the pill afterward.
   rm -f "$state_file"
 elif [ "$state" = "$existing_state" ]; then
   exit 0
@@ -444,8 +444,8 @@ else
   printf '%s\n' "$state" > "$state_file"
 fi
 
-# Lock を解放してから daemon を叩く (cmux set-status の socket I/O 待ちで
-# lock が長く握られ、後続 hook の起動が遅延するのを避ける)。
+# Release the lock before calling the daemon so cmux set-status socket I/O does not
+# hold the lock for an extended period and delay subsequent hooks.
 rmdir "$lock_dir" 2>/dev/null
 trap 'rm -f "$input_file" "${sessions_tmp:-}"' EXIT INT TERM HUP
 
@@ -455,7 +455,7 @@ if [ "$state" = clear ]; then
   exit 0
 fi
 
-# 旧バージョンの per-pane Claude pill が残っていたら回収しておく。
+# Remove any per-pane Claude pill left by an older version.
 cmux clear-status "claude_${CMUX_PANEL_ID}" --workspace "$CMUX_WORKSPACE_ID" 2>/dev/null
 
 cmux set-status "$key" "$label" --workspace "$CMUX_WORKSPACE_ID" \

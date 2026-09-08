@@ -10,7 +10,7 @@
 #
 # Usage: claude-status-hook.sh <running|awaiting|idle|clear>
 #
-# Secondary responsibility (setup issue #3): at the same final stage as pill updates,
+# Secondary responsibility (SETUP-3): at the same final stage as pill updates,
 # upsert the sessionId -> cmux surface/workspace UUID mapping into
 # ~/.claude/cmux/hook-sessions.json (sync_sessions_json). Disabling cmux's
 # claudeCodeIntegration stops cmux from updating ~/.cmuxterm/claude-hook-sessions.json,
@@ -267,7 +267,7 @@ if [ "$state" = clear ] && [ -z "${CMUX_STATUS_HOOK_BG:-}" ]; then
 fi
 
 # Persist the sessionId -> cmux surface/workspace UUID mapping ourselves
-# (setup issue #3). cmux automation.claudeCodeIntegration is false to avoid the
+# (SETUP-3). cmux automation.claudeCodeIntegration is false to avoid the
 # stuck claude_code pill bug (upstream #1027), so cmux no longer updates
 # ~/.cmuxterm/claude-hook-sessions.json. Instead, upsert only the `sessions` map
 # actually read by consumers (ccdash / issues-site), using a compatible schema subset
@@ -275,7 +275,7 @@ fi
 # startedAt / updatedAt) in ~/.claude/cmux/hook-sessions.json.
 # Match upstream cmux agentLifecycle values: running / needsInput / idle.
 # Remove entries on SessionEnd. Prune entries whose SessionEnd was missed because
-# of a crash or a forced workspace close during subsequent writes (issue #5):
+# of a crash or a forced workspace close during subsequent writes (SETUP-5):
 #   - Liveness pruning: obtain live surface UUIDs with workspace.list + surface.list
 #     and remove entries whose surfaceId is absent. Throttle RPC calls (~200 ms)
 #     to once every 60 seconds. Skip pruning on lookup failure to avoid accidentally

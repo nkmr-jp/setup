@@ -35,7 +35,7 @@
     // (the sessionId -> surface/workspace UUID map consumed by ccdash and
     // issues-site). plugins/cmux/hooks/scripts/claude-status-hook.sh now
     // generates its own map at ~/.claude/cmux/hook-sessions.json, so there is
-    // no remaining reason to keep it true (setup#3, option 1). Setting false
+    // no remaining reason to keep it true (SETUP-3, option 1). Setting false
     // also disables automatic workspace titles and the latest-message display.
     // Per-pane display uses the cwd_<panel-id> pills managed by claude-status-hook.sh.
     // This setting is evaluated only when creating a surface: Claude sessions in

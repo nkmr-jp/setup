@@ -7,7 +7,7 @@
 # <xbar.dependencies>zprint</xbar.dependencies>
 #
 # The data.kalloc.1024 zone accumulates a Claude Code kernel memory leak that
-# userspace cannot release; only rebooting resets it (see issue #8). The panic
+# userspace cannot release; only rebooting resets it (see SETUP-8). The panic
 # threshold is approximately 21,000,000 elements (about 20 GiB, 1024 bytes each).
 # Read the zprint cur #inuse column every 2 minutes to show threshold progress and growth rate.
 
@@ -18,7 +18,7 @@ PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
-# Approximate panic threshold in elements, measured in issue #10 (about 20 GiB, 1024 bytes each).
+# Approximate panic threshold in elements, measured in SETUP-10 (about 20 GiB, 1024 bytes each).
 THRESHOLD=21000000
 STATE_FILE="$HOME/.cache/xbar-kalloc1024.state"
 

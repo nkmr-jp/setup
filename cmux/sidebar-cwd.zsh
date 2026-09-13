@@ -32,7 +32,7 @@ typeset -gra _CMUX_PILL_PREFIXES=(cwd_ claude_ run_)  # claude_/run_: sweep lega
 _cmux_resolve_ids() {
   (( ${+commands[cmux]} )) || return 1
   [[ "${TERM_PROGRAM:-}" == ghostty ]] || return 1
-  [[ "${__CFBundleIdentifier:-}" == com.cmuxterm.app ]] || return 1
+  [[ "${__CFBundleIdentifier:-}" == com.cmuxterm.app || "${CMUX_BUNDLE_ID:-}" == com.cmuxterm.app ]] || return 1
   (( ${+commands[jq]} )) || return 1
 
   local cmux_cli="${CMUX_BUNDLED_CLI_PATH:-/Applications/cmux.app/Contents/Resources/bin/cmux}"

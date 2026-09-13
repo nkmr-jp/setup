@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
-# Update the cmux sidebar cwd pill icon to reflect Claude Code state.
-# UserPromptSubmit / PreToolUse / PostToolUse -> running, Notification -> awaiting,
+# Update the cmux sidebar cwd pill icon to reflect Claude Code / AGY state.
+# UserPromptSubmit / PreInvocation / PreToolUse / PostToolUse -> running,
+# Notification / PermissionRequest -> awaiting,
 # Stop -> idle (response finished, awaiting the next input); SessionStart / SessionEnd
 # -> clear (restore the folder icon and remove the state file). When no state file
 # exists (the initial state), zsh also restores the folder icon. PostToolUse is needed
@@ -184,7 +185,7 @@ resolve_and_cache_panel() {
     [ -n "$probe_pids" ] || return 0
   else
     [ "${TERM_PROGRAM:-}" = "ghostty" ] || return 0
-    [ "${__CFBundleIdentifier:-}" = "com.cmuxterm.app" ] || return 0
+    [ "${__CFBundleIdentifier:-}" = "com.cmuxterm.app" ] || [ "${CMUX_BUNDLE_ID:-}" = "com.cmuxterm.app" ] || return 0
     probe_pids=$$
   fi
   command -v jq >/dev/null 2>&1 || return 0
@@ -393,10 +394,13 @@ $(printf '%s' "$sf_json" | jq -r '.surfaces[]?.id // empty' 2>/dev/null)"
   rmdir "$sessions_lock" 2>/dev/null
 }
 
-# If basename "$PWD" is empty (for example when PWD is unset), cmux set-status fails
+# Prefer hook_cwd (from stdin payload) over $PWD, as AGY sets the working directory
+# to the hooks.json directory rather than the workspace directory.
+# If basename is empty (for example when PWD is unset), cmux set-status fails
 # with an empty value, leaving the previous pill frozen or removed as stale.
 # Fall back to "." to keep a nonempty pill label.
-label=$(basename "$PWD" 2>/dev/null)
+target_cwd="${hook_cwd:-$PWD}"
+label=$(basename "$target_cwd" 2>/dev/null)
 [ -n "$label" ] || label="."
 
 state_file="$state_dir/$CMUX_PANEL_ID"

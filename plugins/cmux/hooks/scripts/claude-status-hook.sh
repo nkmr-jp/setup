@@ -117,7 +117,7 @@ fi
 if command -v jq >/dev/null 2>&1; then
   auto_indicator=$(jq -r '[(.transcriptPath // ""), (.artifactDirectoryPath // ""), (.cwd // "")] | join(" ")' < "$input_file" 2>/dev/null)
   case "$auto_indicator" in
-    *-auto*|*antigravity-cli-auto*|*/.gemini/config*) exit 0 ;;
+    *-auto*|*antigravity-cli-auto*) exit 0 ;;
   esac
 fi
 

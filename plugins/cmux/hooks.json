@@ -7,10 +7,17 @@
         "timeout": 5
       }
     ],
-    "Stop": [
+    "PostInvocation": [
       {
         "type": "command",
         "command": "sh -c 'hook=\"./hooks/scripts/claude-status-hook.sh\"; [ -x \"$hook\" ] && \"$hook\" idle; echo \"{}\"'",
+        "timeout": 5
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "sh -c 'hook=\"./hooks/scripts/claude-status-hook.sh\"; [ -x \"$hook\" ] && \"$hook\" idle; echo \"{\\\"decision\\\":\\\"\\\"}\"'",
         "timeout": 5
       }
     ],

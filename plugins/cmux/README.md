@@ -1,8 +1,8 @@
 # cmux
 
-A skill plugin for controlling the [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux) native macOS terminal from Codex / Claude Code.
+A skill plugin for controlling the [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux) native macOS terminal from Codex / Claude Code / Devin CLI.
 
-cmux is a macOS-only terminal that groups multiple AI coding agent CLIs with vertical tabs, split panes, and a notification panel. It supports external control through the `cmux` CLI and UNIX socket API (`/tmp/cmux.sock`). This plugin teaches Codex / Claude Code how to use them.
+cmux is a macOS-only terminal that groups multiple AI coding agent CLIs with vertical tabs, split panes, and a notification panel. It supports external control through the `cmux` CLI and UNIX socket API (`/tmp/cmux.sock`). This plugin teaches Codex / Claude Code / Devin CLI how to use them.
 
 ## Prerequisites
 
@@ -29,6 +29,24 @@ claude plugin marketplace add ~/ghq/github.com/nkmr-jp/setup
 claude plugin install cmux@setup
 ```
 
+## Install in Devin CLI
+
+Install the plugin from the setup repository subfolder:
+
+```bash
+devin plugins install nkmr-jp/setup#plugins/cmux
+```
+
+For local development against a checkout, use `--local` so edits apply on the
+next session:
+
+```bash
+devin plugins install --local ~/ghq/github.com/nkmr-jp/setup/plugins/cmux
+```
+
+The skill is available as `/cmux:cmux`. Verify the loaded skills and hooks with
+`devin plugins info cmux`.
+
 ## Included skills
 
 | Skill | Purpose |
@@ -42,11 +60,19 @@ claude plugin install cmux@setup
 | `UserPromptSubmit` | [`hooks/scripts/claude-status-hook.sh running`](hooks/scripts/claude-status-hook.sh) | Set the sidebar pill to `bolt.fill` (#4C8DFF) |
 | `PreToolUse` | [`hooks/scripts/claude-status-hook.sh running`](hooks/scripts/claude-status-hook.sh) | Restore `bolt.fill` (#4C8DFF) when tool execution resumes after a notification |
 | `PostToolUse` | [`hooks/scripts/claude-status-hook.sh running`](hooks/scripts/claude-status-hook.sh) | Switch from `awaiting` to `bolt.fill` (#4C8DFF) after an AskUserQuestion answer or permission approval |
-| `Notification` | [`hooks/scripts/claude-status-hook.sh awaiting`](hooks/scripts/claude-status-hook.sh) | Set the sidebar pill to `bell.fill` (#FF9500) |
-| `PermissionRequest` | [`hooks/scripts/claude-status-hook.sh awaiting`](hooks/scripts/claude-status-hook.sh) | Set the pill to `bell.fill` (#FF9500) while Codex awaits approval |
+| `Notification` | [`hooks/scripts/claude-status-hook.sh awaiting`](hooks/scripts/claude-status-hook.sh) | Set the sidebar pill to `bell.fill` (#FF9500) (Claude Code only) |
+| `PermissionRequest` | [`hooks/scripts/claude-status-hook.sh awaiting`](hooks/scripts/claude-status-hook.sh) | Set the pill to `bell.fill` (#FF9500) while the agent awaits approval |
 | `Stop` | [`hooks/scripts/claude-status-hook.sh idle`](hooks/scripts/claude-status-hook.sh) | Set the pill to `pause.fill` (#8E8E93) when a response finishes |
 | `SessionStart` | [`hooks/scripts/claude-status-hook.sh clear`](hooks/scripts/claude-status-hook.sh) | Clear stale state left by a missed SessionEnd and restore the `folder` icon |
 | `SessionEnd` | [`hooks/scripts/claude-status-hook.sh clear`](hooks/scripts/claude-status-hook.sh) | Delete the state file and restore the `folder` icon |
+
+Each agent reads a different hooks file:
+
+| Agent | File | Notes |
+|----|----|----|
+| Claude Code | [`hooks/claude.json`](hooks/claude.json) | All events above, referenced through the `hooks` field of `.claude-plugin/plugin.json` |
+| Devin CLI | [`hooks/hooks.json`](hooks/hooks.json) | Same events except `Notification`, which Devin does not support. Devin rejects the entire file if it contains an unknown event, so the Claude version lives in a separate file. Devin also reads the root `hooks.json`, which stays in AGY format and simply registers no Devin events |
+| AGY / Codex | [`hooks.json`](hooks.json) (plugin root) | `PreInvocation` / `PostInvocation` / `PreToolUse` / `PostToolUse` / `Stop` |
 
 Without `CMUX_PANEL_ID` (for Claude Code started outside cmux), the hook exits immediately without effects. zsh renders the pill through `~/.config/cmux/sidebar-cwd.zsh`, sharing state through `${TMPDIR}/cmux-pane-state/<panel-id>`.
 

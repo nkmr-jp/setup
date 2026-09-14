@@ -6,6 +6,6 @@
     "name": "nkmr-jp"
   },
   "homepage": "https://github.com/manaflow-ai/cmux",
-  "keywords": ["cmux", "terminal", "macos", "claude-code", "agent", "workspace"],
-  "hooks": "./hooks/claude.json"
+  "repository": "https://github.com/nkmr-jp/setup",
+  "keywords": ["cmux", "terminal", "macos", "devin-cli", "agent", "workspace"]
 }

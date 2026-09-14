@@ -4,6 +4,7 @@ Manage OS settings, general shell configuration, tool settings, and helper scrip
 Agent-specific user settings live in agent-settings; cmux, xbar, and plugin implementations remain here.
 
 - The canonical cmux settings live in `cmux/`. `cmux/link.sh` links the two configuration files individually and backs up existing targets.
+- The `plugins/cmux` plugin serves Claude Code, Codex, Devin CLI, and AGY. Hooks are split per agent: `hooks/claude.json` (Claude Code, via the `.claude-plugin/plugin.json` `hooks` field), `hooks/hooks.json` (Devin CLI — it rejects files containing events it does not support, so `Notification` must stay out), and the root `hooks.json` (AGY format). The root `plugin.json` is a real file, not a symlink, so AGY never sees the Claude `hooks` field.
 - Do not duplicate tool implementations or settings in the agent settings repository.
 - Follow KISS, YAGNI, and DRY. Update README.md and this file when the structure changes.
 - Validate cmux with `bats tests/cmux-link.bats`, `shellcheck cmux/link.sh`, and `sh -n cmux/link.sh`.

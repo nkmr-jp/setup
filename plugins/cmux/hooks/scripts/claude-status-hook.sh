@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Update the cmux sidebar cwd pill icon to reflect Claude Code / AGY state.
+# Update the cmux sidebar cwd pill icon to reflect Claude Code / AGY / Devin CLI state.
 # UserPromptSubmit / PreInvocation / PreToolUse / PostToolUse -> running,
 # Notification / PermissionRequest -> awaiting,
 # Stop -> idle (response finished, awaiting the next input); SessionStart / SessionEnd
@@ -123,9 +123,10 @@ fi
 
 # The detached clear child has /dev/null as stdin. Pass the values already extracted
 # by the parent through environment variables for sessions JSON upserts and deletion.
+# Devin CLI hook payloads carry no cwd; DEVIN_PROJECT_DIR holds the project root.
 [ -n "$session_id" ] || session_id="${CMUX_STATUS_HOOK_SID:-}"
 [ -n "$hook_event" ] || hook_event="${CMUX_STATUS_HOOK_EVENT:-}"
-[ -n "$hook_cwd" ] || hook_cwd="${CMUX_STATUS_HOOK_CWD:-$PWD}"
+[ -n "$hook_cwd" ] || hook_cwd="${CMUX_STATUS_HOOK_CWD:-${DEVIN_PROJECT_DIR:-$PWD}}"
 
 # Handle cmux 0.61+ not passing CMUX_PANEL_ID with a per-session cache and cmux identify.
 # If the cache is missing, build it using caller-based identification. This is safe
@@ -399,7 +400,7 @@ $(printf '%s' "$sf_json" | jq -r '.surfaces[]?.id // empty' 2>/dev/null)"
 # If basename is empty (for example when PWD is unset), cmux set-status fails
 # with an empty value, leaving the previous pill frozen or removed as stale.
 # Fall back to "." to keep a nonempty pill label.
-target_cwd="${hook_cwd:-$PWD}"
+target_cwd="${hook_cwd:-${DEVIN_PROJECT_DIR:-$PWD}}"
 label=$(basename "$target_cwd" 2>/dev/null)
 [ -n "$label" ] || label="."
 

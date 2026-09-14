@@ -1,5 +1,5 @@
 {
-  "description": "Synchronize the cmux sidebar cwd pill icon with Devin CLI state (running/awaiting/idle/clear), and maintain sessionId -> cmux surface/workspace UUID mappings in ~/.claude/cmux/hook-sessions.json (SETUP-3). Claude Code uses hooks/claude.json instead, because Devin rejects the whole file when it contains event names it does not support (Notification).",
+  "description": "Synchronize the cmux sidebar cwd pill icon with Claude Code state (running/awaiting/idle/clear), and maintain sessionId -> cmux surface/workspace UUID mappings in ~/.claude/cmux/hook-sessions.json (SETUP-3)",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -27,6 +27,16 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh running"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh awaiting"
           }
         ]
       }

@@ -21,6 +21,7 @@
   - [Repository Structure](#repository-structure)
   - [Claude Code Plugins](#claude-code-plugins)
   - [Codex Plugins](#codex-plugins)
+  - [Devin CLI Plugins](#devin-cli-plugins)
   - [Antigravity (AGY) Plugins](#antigravity-agy-plugins)
   - [Zsh Configuration](#zsh-configuration)
     - [Optional: Set greeting messages](#optional-set-greeting-messages)
@@ -281,6 +282,20 @@ codex plugin add session-monitor@setup
 - `session-monitor`: Hooks that aggregate Codex / Claude Code session states for display in xbar
 
 Start a new thread after installation to load the plugins. See [cmux](plugins/cmux/README.md) and [session-monitor](plugins/session-monitor/README.md) for prerequisites and Claude Code installation instructions.
+
+## Devin CLI Plugins
+
+Install plugins from this repository's subfolders:
+
+```sh
+devin plugins install nkmr-jp/setup#plugins/cmux
+```
+
+- `cmux`: Skills for cmux workspaces, panes, notifications, and browsers, plus status synchronization hooks
+
+For local development, `devin plugins install --local <path>` links the source
+folder so edits apply on the next session. See [cmux](plugins/cmux/README.md)
+for prerequisites and details.
 
 ## Antigravity (AGY) Plugins
 

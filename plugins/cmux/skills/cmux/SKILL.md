@@ -1,6 +1,6 @@
 ---
 name: cmux
-description: Use this skill when the user asks about cmux, sending cmux notifications, managing workspaces, splitting panes, inspecting surfaces, updating status, or controlling the cmux browser; also use it when Codex / Claude Code running inside cmux needs to control cmux itself. It explains how to operate the manaflow-ai/cmux native macOS terminal through the cmux CLI and JSON-RPC socket API.
+description: Use this skill when the user asks about cmux, sending cmux notifications, managing workspaces, splitting panes, inspecting surfaces, updating status, or controlling the cmux browser; also use it when Codex / Claude Code / Devin CLI running inside cmux needs to control cmux itself. It explains how to operate the manaflow-ai/cmux native macOS terminal through the cmux CLI and JSON-RPC socket API.
 ---
 
 # cmux
@@ -75,7 +75,7 @@ See `references/cli-commands.md` for detailed command options.
 
 ### 1. Identify the current context
 
-Codex / Claude Code running inside cmux should first call `identify` to locate itself.
+Codex / Claude Code / Devin CLI running inside cmux should first call `identify` to locate itself.
 
 ```bash
 cmux identify --json
@@ -135,7 +135,7 @@ See `references/agent-browser.md` for detailed browser operations and form input
 
 ## AI agent integration patterns
 
-cmux is designed to be called by other CLI coding agents, including Claude Code, Codex, and Copilot CLI. A typical integration using `hooks`:
+cmux is designed to be called by other CLI coding agents, including Claude Code, Codex, Devin CLI, and Copilot CLI. A typical integration using `hooks`:
 
 ```bash
 # Notify when the agent stops

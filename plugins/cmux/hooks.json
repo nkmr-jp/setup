@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c 'hook=\"./hooks/scripts/claude-status-hook.sh\"; [ -x \"$hook\" ] && \"$hook\" running; echo \"{}\"'",
+            "command": "sh -c 'hook=\"./hooks/scripts/claude-status-hook.sh\"; if [ -x \"$hook\" ]; then \"$hook\" running || :; fi; echo \"{\\\"decision\\\": \\\"allow\\\"}\"'",
             "timeout": 5
           }
         ]

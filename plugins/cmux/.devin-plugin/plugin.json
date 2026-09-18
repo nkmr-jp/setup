@@ -1,6 +1,6 @@
 {
   "name": "cmux",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A skill for controlling the native macOS terminal CLI cmux (manaflow-ai/cmux), including workspaces, panes, surfaces, notifications, and agent-browser",
   "author": {
     "name": "nkmr-jp"

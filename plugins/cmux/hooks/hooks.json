@@ -1,5 +1,5 @@
 {
-  "description": "Synchronize the cmux sidebar cwd pill icon with Devin CLI state (running/awaiting/idle/clear), and maintain sessionId -> cmux surface/workspace UUID mappings in ~/.claude/cmux/hook-sessions.json (SETUP-3). Claude Code uses hooks/claude.json instead, because Devin rejects the whole file when it contains event names it does not support (Notification).",
+  "description": "Synchronize the cmux sidebar cwd pill icon with Devin CLI state (running/awaiting/idle/clear), append a status line (dir, branch, session, model, elapsed, context tokens, diff) to the cmux workspace title via devin-statusline-hook.sh, and maintain sessionId -> cmux surface/workspace UUID mappings in ~/.claude/cmux/hook-sessions.json (SETUP-3). Claude Code uses hooks/claude.json instead, because Devin rejects the whole file when it contains event names it does not support (Notification).",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -7,6 +7,10 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh running"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
           }
         ]
       }
@@ -27,6 +31,10 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh running"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
           }
         ]
       }
@@ -37,6 +45,10 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh awaiting"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
           }
         ]
       }
@@ -47,6 +59,10 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh idle"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
           }
         ]
       }
@@ -57,6 +73,10 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh clear"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
           }
         ]
       }
@@ -67,6 +87,20 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh clear"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
+          }
+        ]
+      }
+    ],
+    "PostCompaction": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
           }
         ]
       }

@@ -45,7 +45,8 @@ class SecurityTest(unittest.TestCase):
 
     def test_inputs_are_private_unique_and_removed(self):
         scripts = [("session-monitor", "update-session.sh", "session-monitor-input.*"),
-                   ("cmux", "claude-status-hook.sh", "cmux-pane-state/hook-input.*")]
+                   ("cmux", "claude-status-hook.sh", "cmux-pane-state/hook-input.*"),
+                   ("cmux", "devin-statusline-hook.sh", "devin-statusline/hook-input.*")]
         for plugin, name, pattern in scripts:
             with self.subTest(plugin=plugin):
                 script = ROOT / "plugins" / plugin / "hooks/scripts" / name

@@ -66,6 +66,20 @@ The skill is available as `/cmux:cmux`. Verify the loaded skills and hooks with
 | `SessionStart` | [`hooks/scripts/claude-status-hook.sh clear`](hooks/scripts/claude-status-hook.sh) | Clear stale state left by a missed SessionEnd and restore the `folder` icon |
 | `SessionEnd` | [`hooks/scripts/claude-status-hook.sh clear`](hooks/scripts/claude-status-hook.sh) | Delete the state file and restore the `folder` icon |
 
+Devin CLI only, the workspace title gets a Claude Code-style status line
+appended after a ` ▸ ` marker, because Devin has no native statusLine feature
+and sidebar pills truncate long labels.
+[`hooks/scripts/devin-statusline-hook.sh`](hooks/scripts/devin-statusline-hook.sh)
+renames the workspace to `<base title> ▸ <dir> · <branch> · <session> · <model> · <elapsed> · <ctx tokens> · <diff>`
+on `SessionStart` / `UserPromptSubmit` / `PermissionRequest` / `PostCompaction` /
+`Stop`, refreshes it on `PostToolUse` at most every 15 seconds, and strips the
+marker on `SessionEnd` (leaving the base title). Each refresh strips the existing marker
+suffix first, so title rewrites by ccdash's autotitle just fall back to the
+base title until the next update. Session data (model, created_at, context
+tokens) comes from `~/.local/share/devin/cli/sessions.db`; the workspace
+mapping comes from `~/.claude/cmux/hook-sessions.json`, so the status only
+appears for Devin sessions running inside cmux.
+
 Each agent reads a different hooks file:
 
 | Agent | File | Notes |

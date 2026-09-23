@@ -21,4 +21,6 @@ Agent-specific user settings live in agent-settings; cmux, xbar, and plugin impl
 
 `iterm-run <command>` remains defined in `zsh/init.zsh`.
 
+`zsh/orca.zsh` starts `orca/workspace-name-watch.zsh` only in interactive shells with `TERM_PROGRAM=Orca`; keep that gate so other terminals are unaffected. Validate with `bats tests/orca.bats` (fake `orca`/`perl`, no real Orca calls).
+
 Git settings were restored to the original `gitconfig` at the user's request. Separation through a local Git include is deferred.

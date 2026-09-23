@@ -68,6 +68,7 @@ source "$SETUP_DIR/zsh/aliases.zsh"
 source "$SETUP_DIR/zsh/functions.zsh"
 source "$SETUP_DIR/zsh/keybindings.zsh"
 source "$SETUP_DIR/zsh/iterm2.zsh"
+source "$SETUP_DIR/zsh/orca.zsh"
 # test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh" # Official iTerm integration
 
 # Display cwd in the cmux sidebar (inside cmux only).

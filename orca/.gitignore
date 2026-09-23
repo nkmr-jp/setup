@@ -1,7 +1,8 @@
 # Ignore state generated automatically by Orca in this directory (~/.orca).
-# Only keybindings.json is managed as configuration; ignore all other state.
+# Only the files listed below are managed; ignore all other state.
 *
 !.gitignore
 !README.md
 !keybindings.json
 !check-keybindings.py
+!workspace-name-watch.zsh

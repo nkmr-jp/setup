@@ -146,6 +146,22 @@ scopes such as `global` and `tabs`. This configuration explicitly disables
 `worktree.history.forward` with `null` because it shares the key used by
 `tab.nextSameType`, even though the validator does not flag that overlap.
 
+## Workspace name reset
+
+When the last terminal in a workspace closes, the sidebar name returns to the
+branch name. `zsh/orca.zsh` starts `workspace-name-watch.zsh` from each
+interactive Orca shell. It starts only when `TERM_PROGRAM=Orca`, so other terminals are unaffected.
+
+- Orca force-kills terminal shells, so `zshexit` and signal traps never run.
+  The watcher detaches (fork + `setsid`), polls the shell PID, and then checks
+  `orca terminal list`. If no terminals remain and the name is pinned, it runs
+  `orca worktree set --display-name " "`. A whitespace-only name unpins the label;
+  the CLI ignores an empty string.
+- Workspace Sleep and orcad restarts also end the shells, so they reset the name too.
+- The first-work rename renames the workspace again when the next agent session starts.
+- Set `ORCA_NAME_WATCH_LOG=<file>` before the shell starts to log decisions.
+  Run tests with `bats tests/orca.bats`.
+
 ## Mapping to cmux
 
 ### Matching defaults (no override needed)

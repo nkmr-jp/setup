@@ -244,7 +244,8 @@ setup/
 │   ├── goenv.zsh     # GOROOT / GOPATH resolution
 │   ├── prompt-line.zsh # Background PromptLine cache refresh
 │   ├── ai.zsh        # AI tools
-│   └── iterm2.zsh    # iTerm2 shell integration
+│   ├── iterm2.zsh    # iTerm2 shell integration
+│   └── orca.zsh      # Orca workspace name reset (see orca/README.md)
 ├── tools/            # Tool-specific configurations
 ├── bin/              # Local executables (symlinked into ~/bin)
 ├── gitconfig         # Git configuration

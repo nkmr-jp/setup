@@ -7,7 +7,7 @@
 # and signal traps never run; this process polls the shell PID instead.
 # Optional environment:
 #   ORCA_NAME_WATCH_POLL_CS  PID poll interval in centiseconds (default 200)
-#   ORCA_NAME_WATCH_SETTLE   seconds to wait after the shell exits (default 3)
+#   ORCA_NAME_WATCH_SETTLE   seconds to wait after the shell exits (default 1)
 #   ORCA_NAME_WATCH_LOG      append decisions to this file
 
 emulate -L zsh
@@ -28,7 +28,7 @@ while kill -0 "$shell_pid" 2>/dev/null; do
   zselect -t "${ORCA_NAME_WATCH_POLL_CS:-200}"
 done
 _log "shell $shell_pid exited"
-zselect -t $(( ${ORCA_NAME_WATCH_SETTLE:-3} * 100 ))
+zselect -t $(( ${ORCA_NAME_WATCH_SETTLE:-1} * 100 ))
 
 local selector="id:$worktree_id" list mode
 if ! list=$(orca terminal list --worktree "$selector" --json 2>/dev/null); then

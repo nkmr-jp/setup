@@ -22,9 +22,28 @@ gh_last_login() {
     fi
 }
 
-# Check if gh is installed
+# Function to revoke the current token and re-authenticate GitHub CLI
+gh_token_update() {
+    local revoke_url="https://github.com/settings/connections/applications/178c6fc778ccc68e1d6a"
+
+    echo "Opening GitHub CLI application settings..."
+    echo "${revoke_url}"
+    echo ""
+    echo "Please follow these steps:"
+    echo "  1. Click 'Revoke access' button in the top right"
+    echo "  2. Confirm the revocation"
+    echo ""
+    open "${revoke_url}"
+    echo "After revoking, press Enter to re-authenticate..."
+    read
+    gh auth login -p ssh --web --skip-ssh-key || return
+
+    # Record new login time after successful authentication
+    date +%s > "${GH_LOGIN_TIME_FILE}"
+}
+
+# Warn on shell startup if the token is expired (does not block startup)
 if command -v gh &> /dev/null; then
-    # Check login time file
     if [[ -f "${GH_LOGIN_TIME_FILE}" ]]; then
         last_login=$(cat "${GH_LOGIN_TIME_FILE}")
         current_time=$(date +%s)
@@ -34,23 +53,8 @@ if command -v gh &> /dev/null; then
         elapsed_hours=${GH_TOKEN_EXPIRATION_HOURS}
     fi
 
-    # Check if token is expired or about to expire
     if [[ ${elapsed_hours} -ge ${GH_TOKEN_EXPIRATION_HOURS} ]]; then
         echo "⚠️  WARNING: GitHub CLI token is ${elapsed_hours} hours old (>= ${GH_TOKEN_EXPIRATION_HOURS} hours)"
-        echo ""
-        echo "Opening GitHub CLI application settings..."
-        echo "https://github.com/settings/connections/applications/178c6fc778ccc68e1d6a"
-        echo ""
-        echo "Please follow these steps:"
-        echo "  1. Click 'Revoke access' button in the top right"
-        echo "  2. Confirm the revocation"
-        echo ""
-        open https://github.com/settings/connections/applications/178c6fc778ccc68e1d6a
-        echo "After revoking, press Enter to re-authenticate..."
-        read
-        gh auth login -p ssh --web --skip-ssh-key
-
-        # Record new login time after successful authentication
-        date +%s > "${GH_LOGIN_TIME_FILE}"
+        echo "    Run 'gh_token_update' to revoke and re-authenticate."
     fi
 fi

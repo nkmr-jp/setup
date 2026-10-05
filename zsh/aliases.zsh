@@ -41,3 +41,6 @@ alias drawio='/Applications/draw.io.app/Contents/MacOS/draw.io'
 
 # Disable globbing because restish queries contain ? and [].
 alias restish='noglob restish'
+
+# dbt Fusion (installed to ~/.local/bin by the dbt installer; PATH is set in zsh/env.zsh)
+alias dbtf="$HOME/.local/bin/dbt"

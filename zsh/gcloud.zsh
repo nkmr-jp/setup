@@ -27,7 +27,7 @@ gcp_last_login() {
 }
 
 # Show the active gcloud account/project and the ADC account
-gcp_whoami() {
+gcp-whoami() {
     echo "gcloud account: $(gcloud config get-value account 2>/dev/null)"
     echo "gcloud project: $(gcloud config get-value project 2>/dev/null)"
 
@@ -49,14 +49,14 @@ gcp_whoami() {
         if [[ -n "${token}" ]]; then
             adc_account=$(curl -s "https://oauth2.googleapis.com/tokeninfo?access_token=${token}" | jq -r '.email // empty')
         fi
-        adc_account=${adc_account:-"(token unavailable; run gcp_login)"}
+        adc_account=${adc_account:-"(token unavailable; run gcp-login)"}
     fi
     echo "ADC account:    ${adc_account}"
     echo "ADC quota:      $(jq -r '.quota_project_id // "-"' "${adc_file}")"
 }
 
 # Log in to gcloud and update ADC in a single browser flow
-gcp_login() {
+gcp-login() {
     gcloud auth login --update-adc "$@" || return
 
     # Record new login time after successful authentication
@@ -67,7 +67,7 @@ gcp_login() {
 gcp_token_update() {
     gcloud auth revoke --all --quiet 2>/dev/null
     gcloud auth application-default revoke --quiet 2>/dev/null
-    gcp_login
+    gcp-login
 }
 
 # Warn on shell startup if the token is expired (does not block startup)

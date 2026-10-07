@@ -169,17 +169,21 @@ refuses to remove a worktree with initialized submodules
 (`working trees containing submodules cannot be moved or removed`). Orca offers
 a force delete only for dirty or unregistered worktrees, so the button stops there.
 
-Register this as a global quick command (tab bar command button > Add quick command).
-Orca stores it in its own settings, not in this repository.
+`worktree-remove.sh` checks that nothing would be lost, then runs
+`orca worktree rm --worktree current --force`. Register it once as a global
+quick command (tab bar command button > Add quick command, scope: global).
+Orca stores quick commands in its own settings, so only this one line lives there:
 
 ```sh
-if [ "$(git rev-parse --path-format=absolute --git-dir)" = "$(git rev-parse --path-format=absolute --git-common-dir)" ]; then echo "メインの作業ツリーなので中止しました"; elif [ -n "$(git status --porcelain --ignore-submodules=dirty)" ]; then echo "未コミットの変更があるため中止しました"; else orca worktree rm --worktree current --force; fi
+~/ghq/github.com/nkmr-jp/setup/orca/worktree-remove.sh
 ```
 
-- It refuses the main worktree and worktrees with uncommitted or untracked
-  changes. Changes inside submodules are not checked.
-- `orca worktree rm` keeps the branch unless it can prove the branch is merged.
+- It refuses the main worktree, worktrees with uncommitted or untracked changes,
+  and branches not merged into `origin/HEAD`. Changes inside submodules are not checked.
+- The merge check is required: despite its help text, `orca worktree rm --force`
+  deleted a branch with an unmerged commit in testing.
 - The terminal that runs it closes with the worktree, so no output remains.
+- Run tests with `bats tests/orca-worktree-remove.bats`.
 
 ## Mapping to cmux
 

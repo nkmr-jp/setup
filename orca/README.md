@@ -162,6 +162,25 @@ interactive Orca shell. It starts only when `TERM_PROGRAM=Orca`, so other termin
 - Set `ORCA_NAME_WATCH_LOG=<file>` before the shell starts to log decisions.
   Run tests with `bats tests/orca.bats`.
 
+## Deleting worktrees that contain submodules
+
+The sidebar delete button runs `git worktree remove` without `--force`, and Git
+refuses to remove a worktree with initialized submodules
+(`working trees containing submodules cannot be moved or removed`). Orca offers
+a force delete only for dirty or unregistered worktrees, so the button stops there.
+
+Register this as a global quick command (tab bar command button > Add quick command).
+Orca stores it in its own settings, not in this repository.
+
+```sh
+if [ "$(git rev-parse --path-format=absolute --git-dir)" = "$(git rev-parse --path-format=absolute --git-common-dir)" ]; then echo "メインの作業ツリーなので中止しました"; elif [ -n "$(git status --porcelain --ignore-submodules=dirty)" ]; then echo "未コミットの変更があるため中止しました"; else orca worktree rm --worktree current --force; fi
+```
+
+- It refuses the main worktree and worktrees with uncommitted or untracked
+  changes. Changes inside submodules are not checked.
+- `orca worktree rm` keeps the branch unless it can prove the branch is merged.
+- The terminal that runs it closes with the worktree, so no output remains.
+
 ## Mapping to cmux
 
 ### Matching defaults (no override needed)

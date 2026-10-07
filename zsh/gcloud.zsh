@@ -59,6 +59,12 @@ gcp-whoami() {
 gcp-login() {
     gcloud auth login --update-adc "$@" || return
 
+    # --update-adc does not write a quota project, so reuse the gcloud project for ADC
+    local project=$(gcloud config get-value project 2>/dev/null)
+    if [[ -n "${project}" ]]; then
+        gcloud auth application-default set-quota-project "${project}"
+    fi
+
     # Record new login time after successful authentication
     date +%s > "${GCP_LOGIN_TIME_FILE}"
 }

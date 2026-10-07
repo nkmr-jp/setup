@@ -25,7 +25,7 @@ yolo() {
     cmux claude-teams --dangerously-skip-permissions "$@"
   fi
 }
-alias h='claude --setting-sources "" --model haiku -p'
+alias h='claude --setting-sources "" --model haiku --effort low -p'
 alias ccusage='bunx ccusage'
 
 # Text-to-speech

@@ -115,14 +115,6 @@ _gwt_run_post_create_hook() {
 # ========================================
 # Create the .agentsws/issues symlink.
 # ========================================
-# Create .agentsws/issues in the worktree and link it to
-# the matching project directory in the issues repository ($GWT_ISSUES_REPO_DIR).
-# The project name is the main repository's directory name (see _gwt_main_repo_name).
-# - Do nothing if GWT_ISSUES_REPO_DIR is unset.
-# - Skip without an error if the issues repository does not exist.
-# - If the issues repository has projects/, use it as the parent of project directories.
-# - Warn and skip if the project directory does not exist. Creating it would leave
-#   unregistered folders behind, and issues-site stops its build on them.
 # Print the main repository's directory name for the current checkout.
 # Linked worktrees may live in folders of any name (e.g. Orca's
 # ~/orca/workspaces/<repo>/<branch>), so derive it from the common git dir.
@@ -137,6 +129,14 @@ _gwt_main_repo_name() {
     fi
 }
 
+# Create .agentsws/issues in the worktree and link it to
+# the matching project directory in the issues repository ($GWT_ISSUES_REPO_DIR).
+# The project name is the main repository's directory name (see _gwt_main_repo_name).
+# - Do nothing if GWT_ISSUES_REPO_DIR is unset.
+# - Skip without an error if the issues repository does not exist.
+# - If the issues repository has projects/, use it as the parent of project directories.
+# - Warn and skip if the project directory does not exist. Creating it would leave
+#   unregistered folders behind, and issues-site stops its build on them.
 _gwt_setup_agentsws_issues_link() {
     local worktree_path="$1"
     local project_name="$2"

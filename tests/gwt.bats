@@ -220,7 +220,7 @@ teardown() {
 }
 
 @test "new: creates the .agentsws/issues symlink" {
-    mkdir -p "$GWT_ISSUES_REPO_DIR"
+    mkdir -p "$GWT_ISSUES_REPO_DIR/repo"
 
     run_gwt _gwt_new "link-test"
     [ "$status" -eq 0 ]
@@ -230,13 +230,42 @@ teardown() {
     [ -L "$wt/.agentsws/issues" ]
     # Verify that it targets the base repository's project directory (repo).
     [ "$(readlink "$wt/.agentsws/issues")" = "$GWT_ISSUES_REPO_DIR/repo" ]
-    # Verify that the target project directory was created automatically.
-    [ -d "$GWT_ISSUES_REPO_DIR/repo" ]
+}
+
+@test "new: warns and creates no link or project directory when the project is missing" {
+    mkdir -p "$GWT_ISSUES_REPO_DIR"
+
+    run_gwt _gwt_new "missing-project-test"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Worktreeを作成しました"* ]]
+    [[ "$output" == *"issues プロジェクトフォルダが無いため"* ]]
+
+    local wt="$BATS_TEST_TMPDIR/repo-wt-missing-project-test"
+    [ -d "$wt" ]
+    [ ! -e "$wt/.agentsws/issues" ]
+    [ ! -e "$GWT_ISSUES_REPO_DIR/repo" ]
+}
+
+@test "new: links to the main repository's project from a checkout without -wt-" {
+    mkdir -p "$GWT_ISSUES_REPO_DIR/projects/repo"
+    # Orca places linked worktrees at <workspaces>/<repo>/<branch>.
+    local orca_wt="$BATS_TEST_TMPDIR/workspaces/repo/ORCA-1-release"
+    mkdir -p "$(dirname "$orca_wt")"
+    git -C "$TEST_REPO" worktree add -q -b "ORCA-1-release" "$orca_wt" main
+
+    run_gwt_from "$orca_wt" _gwt_new "issue/1-orca"
+    [ "$status" -eq 0 ]
+
+    local wt="$BATS_TEST_TMPDIR/workspaces/repo/ORCA-1-release-wt-issue/1-orca"
+    [ "$(readlink "$wt/.agentsws/issues")" = "$GWT_ISSUES_REPO_DIR/projects/repo" ]
+    # The checkout's folder name must not become a project directory.
+    [ ! -e "$GWT_ISSUES_REPO_DIR/projects/ORCA-1-release" ]
+    [ "$(ls "$GWT_ISSUES_REPO_DIR/projects")" = "repo" ]
 }
 
 @test "new: links under projects/ when the issues repository uses that layout" {
     # The projects/ layout stores each project at <repo>/projects/<project>.
-    mkdir -p "$GWT_ISSUES_REPO_DIR/projects"
+    mkdir -p "$GWT_ISSUES_REPO_DIR/projects/repo"
 
     run_gwt _gwt_new "projects-layout-test"
     [ "$status" -eq 0 ]
@@ -252,7 +281,7 @@ teardown() {
 
 @test "new: does not append projects twice when GWT_ISSUES_REPO_DIR already points there" {
     GWT_ISSUES_REPO_DIR="$GWT_ISSUES_REPO_DIR/projects"
-    mkdir -p "$GWT_ISSUES_REPO_DIR"
+    mkdir -p "$GWT_ISSUES_REPO_DIR/repo"
 
     run_gwt _gwt_new "projects-idempotent-test"
     [ "$status" -eq 0 ]

@@ -117,11 +117,26 @@ _gwt_run_post_create_hook() {
 # ========================================
 # Create .agentsws/issues in the worktree and link it to
 # the matching project directory in the issues repository ($GWT_ISSUES_REPO_DIR).
-# The project name is the base repository name with the -wt- suffix removed.
+# The project name is the main repository's directory name (see _gwt_main_repo_name).
 # - Do nothing if GWT_ISSUES_REPO_DIR is unset.
 # - Skip without an error if the issues repository does not exist.
 # - If the issues repository has projects/, use it as the parent of project directories.
-# - Create the target project directory first if it does not exist.
+# - Warn and skip if the project directory does not exist. Creating it would leave
+#   unregistered folders behind, and issues-site stops its build on them.
+# Print the main repository's directory name for the current checkout.
+# Linked worktrees may live in folders of any name (e.g. Orca's
+# ~/orca/workspaces/<repo>/<branch>), so derive it from the common git dir.
+# Fall back to the checkout name without -wt- when the common dir is not
+# <repo>/.git (bare repositories, submodules).
+_gwt_main_repo_name() {
+    local common_dir=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+    if [[ "${common_dir:t}" == ".git" ]]; then
+        echo "${common_dir:h:t}"
+    else
+        basename "$(git rev-parse --show-toplevel)" | sed 's/-wt-.*$//'
+    fi
+}
+
 _gwt_setup_agentsws_issues_link() {
     local worktree_path="$1"
     local project_name="$2"
@@ -148,10 +163,9 @@ _gwt_setup_agentsws_issues_link() {
     # Skip if a link or file already exists.
     [[ -e "$link_path" || -L "$link_path" ]] && return 0
 
-    # Create the project directory in the issues repository.
     if [[ ! -d "$issues_project_dir" ]]; then
-        mkdir -p "$issues_project_dir"
-        echo -e "${CYAN}→ issues プロジェクトフォルダを作成: ${issues_project_dir}${RESET}"
+        echo -e "${YELLOW}⚠ issues プロジェクトフォルダが無いため .agentsws/issues を作りません: ${issues_project_dir}${RESET}"
+        return 0
     fi
 
     # Create the .agentsws directory and symlink.
@@ -410,7 +424,7 @@ _gwt_new() {
         echo -e "${BLUE}→ 移動しました: $(pwd)${RESET}"
 
         # Create the .agentsws/issues symlink.
-        _gwt_setup_agentsws_issues_link "$worktree_path" "$repo_name"
+        _gwt_setup_agentsws_issues_link "$worktree_path" "$(_gwt_main_repo_name)"
 
         # Run the post-create hook.
         _gwt_run_post_create_hook "$worktree_path" "$branch_name" "$base_branch" "$base_path"
@@ -1080,7 +1094,9 @@ ${YELLOW}Post-create Hook:${RESET}
 ${YELLOW}.agentsws/issues シンボリックリンク:${RESET}
   環境変数 GWT_ISSUES_REPO_DIR を設定すると、worktree作成時に
   .agentsws/issues を \$GWT_ISSUES_REPO_DIR/<project> へリンクします。
-  <project> はベースリポジトリ名で、リンク先フォルダが無ければ自動作成します。
+  <project> はメインリポジトリのフォルダ名です（git-common-dir から求めるので
+  Orca の checkout など任意の名前の worktree でも同じ）。リンク先フォルダが
+  無ければ作成せず、警告を出してリンクを作りません。
   \$GWT_ISSUES_REPO_DIR/projects/ が存在する場合はそちらを親として
   \$GWT_ISSUES_REPO_DIR/projects/<project> へリンクします。
   GWT_ISSUES_REPO_DIR が未設定、またはディレクトリが存在しない場合は

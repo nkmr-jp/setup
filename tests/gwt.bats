@@ -404,10 +404,11 @@ teardown() {
 }
 
 @test "dispatch: shows help with no arguments" {
-    run_gwt gwt ""
+    run_gwt gwt
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"Git Worktree Manager"* ]]
+    [[ "$output" != *"shift count"* ]]
 }
 
 @test "dispatch: rejects unknown commands" {

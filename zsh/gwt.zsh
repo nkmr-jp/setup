@@ -246,7 +246,7 @@ _gwt_process_jetbrains_pending() {
 # ========================================
 gwt() {
     local cmd="$1"
-    shift
+    (( $# )) && shift
 
     case "$cmd" in
         new|n)
@@ -983,7 +983,7 @@ _gwt_prune() {
 # ========================================
 _gwt_claude() {
     local prefix="$1"
-    shift
+    (( $# )) && shift
 
     if [[ -z "$prefix" ]]; then
         echo -e "${RED}Error: プレフィックスを指定してください${RESET}"

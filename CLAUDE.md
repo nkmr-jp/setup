@@ -21,7 +21,7 @@ Agent-specific user settings live in agent-settings; cmux, xbar, and plugin impl
 
 `iterm-run <command>` remains defined in `zsh/init.zsh`.
 
-`zsh/redact-env.zsh` (interactive shells only) wraps `env`, `printenv`, `ps`, and `pgrep` as functions and rewrites typed `export`/`set`/`typeset`/`declare` listing lines in the accept-line widget, piping their output through `redact` (agent-settings' `claude/bin/redact-bash-output.py --filter`). Never wrap those builtins as functions or aliases: a wrapper makes `typeset` local and `set --` act on the wrapper. `redact` fails closed when the filter is missing. Validate with `bats tests/redact-env.bats` (env -i, dummy token only; never run the wrappers against the real environment from an agent session).
+`zsh/redact-env.zsh` (interactive shells, plus shells with `CLAUDECODE` set so the Claude Code Bash snapshot gets the function wrappers; the accept-line rewrite stays interactive-only) wraps `env`, `printenv`, `ps`, and `pgrep` as functions and rewrites typed `export`/`set`/`typeset`/`declare` listing lines in the accept-line widget, piping their output through `redact` (agent-settings' `claude/bin/redact-bash-output.py --filter`). Never wrap those builtins as functions or aliases: a wrapper makes `typeset` local and `set --` act on the wrapper. `redact` fails closed when the filter is missing. Validate with `bats tests/redact-env.bats` (env -i, dummy token only; never run the wrappers against the real environment from an agent session).
 
 `zsh/orca.zsh` starts `orca/workspace-name-watch.zsh` only in interactive shells with `TERM_PROGRAM=Orca`; keep that gate so other terminals are unaffected. Validate with `bats tests/orca.bats` (fake `orca`/`perl`, no real Orca calls).
 

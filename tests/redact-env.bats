@@ -117,6 +117,17 @@ filtered() { [ -f "$BATS_TEST_TMPDIR/filtered" ]; }
     [[ "$output" == *"redact: none"* ]]
 }
 
+@test "Claude Code shells get the wrappers but not the accept-line widget" {
+    run /usr/bin/env -i HOME="$TEST_HOME" PATH=/usr/bin:/bin ROOT="$ROOT" CLAUDECODE=1 \
+        MY_SERVICE_TOKEN="$DUMMY" REDACT_ENV_FILTER="$FILTER" \
+        zsh -f -c 'source "$ROOT/zsh/redact-env.zsh"; whence -w env redact _redact_env_accept_line; env'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"env: function"* ]]
+    [[ "$output" == *"_redact_env_accept_line: none"* ]]
+    [[ "$output" == *"MY_SERVICE_TOKEN=[REDACTED]"* ]]
+    [[ "$output" != *"$DUMMY"* ]]
+}
+
 @test "real filter masks the dummy token" {
     [ -f "$REAL_FILTER" ] || skip "agent-settings is not cloned"
     FILTER="$REAL_FILTER"

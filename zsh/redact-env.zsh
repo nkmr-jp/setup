@@ -16,20 +16,24 @@
 #   listing form (`set`, `export -p`, `typeset -x | grep FOO`) to pipe through
 #   `redact`. Scripts and functions are never affected.
 # - Raw output: `command env`, `command ps eww`, `builtin set`.
+# - Claude Code (CLAUDECODE set): its Bash tool restores functions from a
+#   snapshot of a non-interactive shell, so the function wrappers are defined
+#   there too. The accept-line rewrite stays interactive-only.
 # ============================================================
 
-[[ -o interactive ]] || return 0
-
-: ${REDACT_ENV_FILTER:=$HOME/ghq/github.com/nkmr-jp/agent-settings/claude/bin/redact-bash-output.py}
+[[ -o interactive || -n $CLAUDECODE ]] || return 0
 
 # Filter stdin. Fails closed: if the filter is missing or fails, print nothing.
+# The path is resolved here because Claude Code's snapshot keeps functions but
+# not unexported variables.
 redact() {
-  if [[ ! -f $REDACT_ENV_FILTER ]]; then
-    print -u2 "redact: filter not found: $REDACT_ENV_FILTER (output suppressed)"
+  local f=${REDACT_ENV_FILTER:-$HOME/ghq/github.com/nkmr-jp/agent-settings/claude/bin/redact-bash-output.py}
+  if [[ ! -f $f ]]; then
+    print -u2 "redact: filter not found: $f (output suppressed)"
     cat >/dev/null
     return 1
   fi
-  /usr/bin/python3 "$REDACT_ENV_FILTER" --filter
+  /usr/bin/python3 "$f" --filter
 }
 
 # Run "$@" through redact, returning the command's status (or redact's on failure).
@@ -88,6 +92,8 @@ _redact_env_rewrite_line() {
   local head=$match[1]
   REPLY="${head%"${head##*[! ]}"} | redact${match[6]:+ $match[6]}"
 }
+
+[[ -o interactive ]] || return 0
 
 _redact_env_accept_line() {
   local REPLY

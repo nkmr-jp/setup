@@ -5,6 +5,10 @@
 
 # Aikido safe-chain: npm, npx, yarn, pnpm, bun, ... scan packages before install.
 # See: https://github.com/AikidoSec/safe-chain
-if [ -f "$HOME/.safe-chain/scripts/init-posix.sh" ]; then
+# Skipped inside Codex's sandbox (CODEX_SANDBOX): safe-chain starts a local
+# registry proxy, the sandbox denies listen(), and every wrapped command
+# (python3 included) would fail. The sandbox has no network to install with
+# anyway; commands Codex reruns outside it get safe-chain again.
+if [ -z "${CODEX_SANDBOX:-}" ] && [ -f "$HOME/.safe-chain/scripts/init-posix.sh" ]; then
   . "$HOME/.safe-chain/scripts/init-posix.sh"
 fi

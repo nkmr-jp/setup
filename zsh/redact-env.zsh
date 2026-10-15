@@ -16,12 +16,14 @@
 #   listing form (`set`, `export -p`, `typeset -x | grep FOO`) to pipe through
 #   `redact`. Scripts and functions are never affected.
 # - Raw output: `command env`, `command ps eww`, `builtin set`.
-# - Claude Code (CLAUDECODE set): its Bash tool restores functions from a
-#   snapshot of a non-interactive shell, so the function wrappers are defined
-#   there too. The accept-line rewrite stays interactive-only.
+# - Coding agents run commands in non-interactive shells, so the function
+#   wrappers are also defined when an agent's variable is set: Claude Code
+#   (CLAUDECODE; its Bash tool snapshots functions from ~/.zshrc), Codex
+#   (CODEX_THREAD_ID) and AGY (ANTIGRAVITY_AGENT), whose `zsh -c` reads only
+#   ~/.zshenv. The accept-line rewrite stays interactive-only.
 # ============================================================
 
-[[ -o interactive || -n $CLAUDECODE ]] || return 0
+[[ -o interactive || -n $CLAUDECODE$CODEX_THREAD_ID$ANTIGRAVITY_AGENT ]] || return 0
 
 # Filter stdin. Fails closed: if the filter is missing or fails, print nothing.
 # The path is resolved here because Claude Code's snapshot keeps functions but

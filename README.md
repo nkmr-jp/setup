@@ -227,6 +227,7 @@ This repository uses a modular approach for Zsh configuration:
 ```
 setup/
 ├── .zshrc            # Main Zsh configuration (symlinked to ~/.zshrc)
+├── .zshenv           # Read by every zsh; loads redact-env.zsh for agent shells (symlinked to ~/.zshenv)
 ├── zsh/              # Modular Zsh configurations
 │   ├── init.zsh      # Entry point; controls module loading order
 │   ├── env.zsh       # Environment variables and PATH
@@ -314,10 +315,11 @@ Get plugin
 ghq get -p Aloxaf/fzf-tab
 ```
 
-Create a symlink from this repository's `.zshrc` to your home directory:
+Create symlinks from this repository's `.zshrc` and `.zshenv` to your home directory:
 
 ```shell
 ln -s "$HOME/ghq/github.com/nkmr-jp/setup/.zshrc" ~/.zshrc
+ln -s "$HOME/ghq/github.com/nkmr-jp/setup/.zshenv" ~/.zshenv
 source ~/.zshrc
 ```
 

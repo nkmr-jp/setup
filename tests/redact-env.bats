@@ -110,36 +110,55 @@ filtered() { [ -f "$BATS_TEST_TMPDIR/filtered" ]; }
     [ "$output" = "1 a b unset" ]
 }
 
-@test "the module does nothing in non-interactive shells" {
+@test "non-interactive zsh gets the wrappers but not the accept-line widget" {
     run /usr/bin/env -i HOME="$TEST_HOME" PATH=/usr/bin:/bin ROOT="$ROOT" \
-        zsh -f -c 'source "$ROOT/zsh/redact-env.zsh"; whence -w env redact'
-    [[ "$output" == *"env: command"* ]]
-    [[ "$output" == *"redact: none"* ]]
+        MY_SERVICE_TOKEN="$DUMMY" REDACT_ENV_FILTER="$FILTER" \
+        zsh -f -c 'source "$ROOT/zsh/redact-env.zsh"; whence -w env redact _redact_env_accept_line; env'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"env: function"* ]]
+    [[ "$output" == *"_redact_env_accept_line: none"* ]]
+    [[ "$output" == *"MY_SERVICE_TOKEN=[REDACTED]"* ]]
+    [[ "$output" != *"$DUMMY"* ]]
 }
 
-@test "agent shells get the wrappers but not the accept-line widget" {
-    local var
-    for var in CLAUDECODE CODEX_THREAD_ID ANTIGRAVITY_AGENT; do
-        run /usr/bin/env -i HOME="$TEST_HOME" PATH=/usr/bin:/bin ROOT="$ROOT" "$var=1" \
-            MY_SERVICE_TOKEN="$DUMMY" REDACT_ENV_FILTER="$FILTER" \
-            zsh -f -c 'source "$ROOT/zsh/redact-env.zsh"; whence -w env redact _redact_env_accept_line; env'
-        [ "$status" -eq 0 ]
-        [[ "$output" == *"env: function"* ]]
-        [[ "$output" == *"_redact_env_accept_line: none"* ]]
-        [[ "$output" == *"MY_SERVICE_TOKEN=[REDACTED]"* ]]
-        [[ "$output" != *"$DUMMY"* ]]
-    done
+# Runs $1 in a non-interactive /bin/bash (3.2 on macOS) with set -u, loading the
+# wrappers through BASH_ENV as agents' bash does.
+brun() {
+    run /usr/bin/env -i HOME="$TEST_HOME" PATH=/usr/bin:/bin:/usr/sbin:/sbin \
+        MY_SERVICE_TOKEN="$DUMMY" REDACT_ENV_FILTER="$FILTER" BASH_ENV="$ROOT/shell/redact-env.sh" \
+        /bin/bash -uc "$1"
 }
 
-@test ".zshenv loads the wrappers only for non-interactive agent shells" {
-    mkdir -p "$TEST_HOME/ghq/github.com/nkmr-jp"
+@test "bash wrappers filter the same forms and keep exit statuses" {
+    brun 'env'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MY_SERVICE_TOKEN=[REDACTED]"* ]]
+    [[ "$output" != *"$DUMMY"* ]]
+    brun 'printenv NO_SUCH_VAR'
+    [ "$status" -eq 1 ]
+    rm -f "$BATS_TEST_TMPDIR/filtered"
+    brun 'env FOO=1 sh -c '\''echo "$FOO"; exit 3'\'''
+    [ "$status" -eq 3 ]
+    [ "$output" = "1" ]
+    brun 'ps -o pid= -p $$ >/dev/null; pgrep -x no-such-process-xyz'
+    [ "$status" -eq 1 ]
+    ! filtered
+    brun 'pgrep -fl no-such-process-xyz'
+    [ "$status" -eq 1 ]
+    filtered
+}
+
+@test ".zshenv loads the wrappers and safe-chain into non-interactive zsh and bash" {
+    mkdir -p "$TEST_HOME/ghq/github.com/nkmr-jp" "$TEST_HOME/.safe-chain/scripts"
     ln -s "$ROOT" "$TEST_HOME/ghq/github.com/nkmr-jp/setup"
-    run /usr/bin/env -i HOME="$TEST_HOME" PATH=/usr/bin:/bin ZDOTDIR="$ROOT" CODEX_THREAD_ID=1 \
-        zsh -c 'whence -w pgrep'
-    [ "$output" = "pgrep: function" ]
+    echo 'npm() { echo fake-safe-chain; }' > "$TEST_HOME/.safe-chain/scripts/init-posix.sh"
     run /usr/bin/env -i HOME="$TEST_HOME" PATH=/usr/bin:/bin ZDOTDIR="$ROOT" \
-        zsh -c 'whence -w pgrep'
-    [ "$output" = "pgrep: command" ]
+        zsh -c 'whence -w pgrep npm; bash -c "type -t pgrep npm"'
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "pgrep: function" ]
+    [ "${lines[1]}" = "npm: function" ]
+    [ "${lines[2]}" = "function" ]
+    [ "${lines[3]}" = "function" ]
 }
 
 @test "real filter masks the dummy token" {

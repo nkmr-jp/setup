@@ -227,7 +227,10 @@ This repository uses a modular approach for Zsh configuration:
 ```
 setup/
 ├── .zshrc            # Main Zsh configuration (symlinked to ~/.zshrc)
-├── .zshenv           # Read by every zsh; loads redact-env.zsh for agent shells (symlinked to ~/.zshenv)
+├── .zshenv           # Read by every zsh; sets BASH_ENV and loads shell/env.sh for non-interactive shells (symlinked to ~/.zshenv)
+├── shell/            # Shared by bash and zsh
+│   ├── env.sh        # Wrappers for non-interactive shells: redact-env.sh and Aikido safe-chain
+│   └── redact-env.sh # env / printenv / ps / pgrep wrappers that mask secrets
 ├── zsh/              # Modular Zsh configurations
 │   ├── init.zsh      # Entry point; controls module loading order
 │   ├── env.zsh       # Environment variables and PATH

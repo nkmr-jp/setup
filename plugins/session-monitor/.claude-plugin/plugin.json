@@ -1,6 +1,6 @@
 {
   "name": "session-monitor",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Monitor all Claude Code sessions through hooks and aggregate active/awaiting/idle states in sessions.jsonl for a SwiftBar menu bar overview",
   "author": {
     "name": "nkmr-jp"

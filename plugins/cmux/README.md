@@ -55,6 +55,8 @@ The skill is available as `/cmux:cmux`. Verify the loaded skills and hooks with
 
 ## Included hooks
 
+Hook script paths are quoted so installation directories containing spaces, such as Orca's `Application Support`, work correctly.
+
 | Event | Script | Purpose |
 |----|----|----|
 | `UserPromptSubmit` | [`hooks/scripts/claude-status-hook.sh running`](hooks/scripts/claude-status-hook.sh) | Set the sidebar pill to `bolt.fill` (#4C8DFF) |

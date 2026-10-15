@@ -6,11 +6,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh running"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh\" running"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh\""
           }
         ]
       }
@@ -20,7 +20,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh running"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh\" running"
           }
         ]
       }
@@ -30,11 +30,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh running"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh\" running"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh\""
           }
         ]
       }
@@ -44,11 +44,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh awaiting"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh\" awaiting"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh\""
           }
         ]
       }
@@ -58,11 +58,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh idle"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh\" idle"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh\""
           }
         ]
       }
@@ -72,11 +72,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh clear"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh\" clear"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh\""
           }
         ]
       }
@@ -86,11 +86,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh clear"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/claude-status-hook.sh\" clear"
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh\""
           }
         ]
       }
@@ -100,7 +100,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/devin-statusline-hook.sh\""
           }
         ]
       }

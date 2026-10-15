@@ -10,6 +10,8 @@ The dropdown shows each session's cwd, git branch, model, latest prompt excerpt,
 
 ## How it works
 
+Hook script paths are quoted so installation directories containing spaces, such as Orca's `Application Support`, work correctly.
+
 1. Each hook event (`SessionStart` / `UserPromptSubmit` / `PreToolUse` / `PostToolUse` / `Notification` / `PermissionRequest` / `Stop` / `SessionEnd`) invokes `hooks/scripts/update-session.sh`.
 2. The script extracts `session_id` / `transcript_path` / `cwd` / `hook_event_name` from JSON on stdin.
 3. It scans the transcript JSONL backward with `tail -r` to find `gitBranch`, `model`, the latest user prompt, and `usage`, limiting the scan to the last 400 lines for large sessions.

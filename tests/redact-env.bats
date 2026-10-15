@@ -151,14 +151,26 @@ brun() {
 @test ".zshenv loads the wrappers and safe-chain into non-interactive zsh and bash" {
     mkdir -p "$TEST_HOME/ghq/github.com/nkmr-jp" "$TEST_HOME/.safe-chain/scripts"
     ln -s "$ROOT" "$TEST_HOME/ghq/github.com/nkmr-jp/setup"
-    echo 'npm() { echo fake-safe-chain; }' > "$TEST_HOME/.safe-chain/scripts/init-posix.sh"
+    echo 'npm() { :; }; python3() { :; }' > "$TEST_HOME/.safe-chain/scripts/init-posix.sh"
     run /usr/bin/env -i HOME="$TEST_HOME" PATH=/usr/bin:/bin ZDOTDIR="$ROOT" \
-        zsh -c 'whence -w pgrep npm; bash -c "type -t pgrep npm"'
+        zsh -c 'whence -w pgrep npm python3; bash -c "type -t pgrep npm python3"'
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "pgrep: function" ]
     [ "${lines[1]}" = "npm: function" ]
-    [ "${lines[2]}" = "function" ]
+    [ "${lines[2]}" = "python3: command" ]
     [ "${lines[3]}" = "function" ]
+    [ "${lines[4]}" = "function" ]
+    [ "${lines[5]}" = "file" ]
+}
+
+@test "safe-chain is skipped inside Codex's sandbox" {
+    mkdir -p "$TEST_HOME/ghq/github.com/nkmr-jp" "$TEST_HOME/.safe-chain/scripts"
+    ln -s "$ROOT" "$TEST_HOME/ghq/github.com/nkmr-jp/setup"
+    echo 'npm() { :; }' > "$TEST_HOME/.safe-chain/scripts/init-posix.sh"
+    run /usr/bin/env -i HOME="$TEST_HOME" PATH=/usr/bin:/bin ZDOTDIR="$ROOT" CODEX_SANDBOX=seatbelt \
+        zsh -c 'whence -w pgrep npm'
+    [ "${lines[0]}" = "pgrep: function" ]
+    [ "${lines[1]}" = "npm: none" ]
 }
 
 @test "real filter masks the dummy token" {

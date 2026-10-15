@@ -11,4 +11,8 @@
 # anyway; commands Codex reruns outside it get safe-chain again.
 if [ -z "${CODEX_SANDBOX:-}" ] && [ -f "$HOME/.safe-chain/scripts/init-posix.sh" ]; then
   . "$HOME/.safe-chain/scripts/init-posix.sh"
+  # python / python3 only guard `python -m pip`, but every call would start
+  # safe-chain (node, about +0.23s), and scripts call python3 often. pip, pip3,
+  # uv, and pipx stay wrapped; interactive shells keep all wrappers.
+  unset -f python python3 2>/dev/null
 fi

@@ -234,6 +234,7 @@ setup/
 │   ├── completion.zsh # Completions, plugins, and prompt
 │   ├── aliases.zsh   # Shell aliases
 │   ├── functions.zsh # Utility functions
+│   ├── redact-env.zsh # Mask secrets printed by env, ps, set, etc.
 │   ├── keybindings.zsh # Key bindings
 │   ├── gwt.zsh       # Git worktree utilities
 │   ├── ghu.zsh       # ghq + GitHub utilities

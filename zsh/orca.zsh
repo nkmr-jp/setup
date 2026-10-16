@@ -4,6 +4,7 @@
 # ============================================================
 # Reset the Orca sidebar workspace name to the branch name after the last
 # terminal in the workspace closes. See orca/workspace-name-watch.zsh.
+# Let Claude Code's fullscreen renderer use scroll regions in Orca.
 # ============================================================
 
 # Returns 0 only for a top-level interactive shell in an Orca terminal.
@@ -27,5 +28,11 @@ _orca_start_workspace_name_watch() {
     zsh -f "$SETUP_DIR/orca/workspace-name-watch.zsh" "$$" "$ORCA_WORKTREE_ID" \
     </dev/null >/dev/null 2>&1
 }
+
+# Claude Code uses scroll regions only in terminals it knows support
+# synchronized output, and Orca is not one: without them each scroll step
+# redraws the whole screen (stablyai/orca#21960). settings.json's env is read
+# too late for that check, so it is exported here.
+[[ ${TERM_PROGRAM-} == Orca ]] && export CLAUDE_CODE_FORCE_SYNC_OUTPUT=1
 
 _orca_start_workspace_name_watch

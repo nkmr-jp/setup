@@ -12,7 +12,10 @@ source "${GHQ_ROOT:-$HOME/ghq}/github.com/Aloxaf/fzf-tab/fzf-tab.plugin.zsh"
 source "${HOMEBREW_PREFIX:-/opt/homebrew}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # fzf
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# Skip without a TTY: fzf restores the zle option via eval and zsh warns
+# "can't change option: zle"; its widgets are useless there anyway.
+# Not `[[ -o zle ]]`: it still reads "on" without a TTY.
+[[ -t 0 && -t 1 && -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
 
 # Starship prompt theme
 eval "$(starship init zsh)"

@@ -11,8 +11,8 @@ alias ope='open https://console.cloud.google.com/eventarc/triggers'
 # File to store last login time
 GCP_LOGIN_TIME_FILE="${HOME}/.gcp_last_login"
 
-# Token expiration threshold in hours (2 days = 48 hours)
-GCP_TOKEN_EXPIRATION_HOURS=48
+# Token expiration threshold in hours (7 days = 168 hours)
+GCP_TOKEN_EXPIRATION_HOURS=168
 
 # Function to display last login time
 gcp_last_login() {

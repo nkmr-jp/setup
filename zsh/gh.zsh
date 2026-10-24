@@ -36,7 +36,7 @@ gh_token_update() {
     open "${revoke_url}"
     echo "After revoking, press Enter to re-authenticate..."
     read
-    gh auth login -p ssh --web --skip-ssh-key || return
+    gh auth login -p ssh --web --skip-ssh-key -s workflow || return
 
     # Record new login time after successful authentication
     date +%s > "${GH_LOGIN_TIME_FILE}"

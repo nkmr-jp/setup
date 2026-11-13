@@ -6,6 +6,9 @@
 #
 # --force alone is unsafe: `orca worktree rm` deleted an unmerged branch in
 # testing despite its help text, so merge state is checked here.
+#
+# `--worktree current` is refused since Orca 1.4.x, so the path is passed
+# explicitly.
 
 if [ "$(git rev-parse --path-format=absolute --git-dir)" = "$(git rev-parse --path-format=absolute --git-common-dir)" ]; then
   echo "メインの作業ツリーなので中止しました"
@@ -19,4 +22,4 @@ if ! git merge-base --is-ancestor HEAD origin/HEAD 2>/dev/null; then
   echo "origin のデフォルトブランチにマージされていないため中止しました"
   exit 1
 fi
-exec orca worktree rm --worktree current --force
+exec orca worktree rm --worktree "path:$(git rev-parse --show-toplevel)" --force

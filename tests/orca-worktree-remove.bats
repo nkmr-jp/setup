@@ -26,7 +26,7 @@ setup() {
 @test "removes a clean, merged worktree" {
     run sh "$SCRIPT"
     [ "$status" -eq 0 ]
-    grep -qx 'orca worktree rm --worktree current --force' "$CALLS"
+    grep -qx "orca worktree rm --worktree path:$(git rev-parse --show-toplevel) --force" "$CALLS"
 }
 
 @test "refuses the main worktree" {

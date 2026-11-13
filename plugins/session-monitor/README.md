@@ -93,7 +93,7 @@ Each line represents one session and contains a snapshot of its latest state.
   "cwd": "/Users/your-user/ghq/github.com/nkmr-jp/setup",
   "git_branch": "master",
   "status": "running",                 // running | awaiting | idle
-  "model": "claude-opus-4-7",
+  "model": "claude-opus-5-5",
   "last_prompt": "Create a plugin to monitor the current session...",
   "updated_at": "2026-05-10T20:11:42Z",
   "last_event": "PostToolUse",

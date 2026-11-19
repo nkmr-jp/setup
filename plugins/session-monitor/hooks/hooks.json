@@ -1,5 +1,5 @@
 {
-  "description": "Aggregate all session statuses in sessions.jsonl for monitoring through SwiftBar",
+  "description": "Aggregate all session statuses in sessions.jsonl for monitoring through xbar",
   "hooks": {
     "SessionStart": [
       {

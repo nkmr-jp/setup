@@ -1,8 +1,8 @@
 # cmux
 
-A skill plugin for controlling the [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux) native macOS terminal from Codex / Claude Code / Devin CLI.
+A skill plugin for controlling the [manaflow-ai/cmux](https://github.com/manaflow-ai/cmux) native macOS terminal from Codex / Claude Code / Devin CLI / Antigravity (AGY).
 
-cmux is a macOS-only terminal that groups multiple AI coding agent CLIs with vertical tabs, split panes, and a notification panel. It supports external control through the `cmux` CLI and UNIX socket API (`/tmp/cmux.sock`). This plugin teaches Codex / Claude Code / Devin CLI how to use them.
+cmux is a macOS-only terminal that groups multiple AI coding agent CLIs with vertical tabs, split panes, and a notification panel. It supports external control through the `cmux` CLI and UNIX socket API (`/tmp/cmux.sock`). This plugin teaches Codex / Claude Code / Devin CLI / Antigravity (AGY) how to use them.
 
 ## Prerequisites
 
@@ -47,6 +47,14 @@ devin plugins install --local ~/ghq/github.com/nkmr-jp/setup/plugins/cmux
 The skill is available as `/cmux:cmux`. Verify the loaded skills and hooks with
 `devin plugins info cmux`.
 
+## Install in Antigravity (AGY)
+
+Install the plugin with the AGY CLI native importer:
+
+```bash
+agy plugin install ~/ghq/github.com/nkmr-jp/setup/plugins/cmux
+```
+
 ## Included skills
 
 | Skill | Purpose |
@@ -87,12 +95,12 @@ Each agent reads a different hooks file:
 | Agent | File | Notes |
 |----|----|----|
 | Claude Code | [`hooks/claude.json`](hooks/claude.json) | All events above, referenced through the `hooks` field of `.claude-plugin/plugin.json` |
-| Devin CLI | [`hooks/hooks.json`](hooks/hooks.json) | Same events except `Notification`, which Devin does not support. Devin rejects the entire file if it contains an unknown event, so the Claude version lives in a separate file. Devin also reads the root `hooks.json`, which stays in AGY format and simply registers no Devin events |
-| AGY / Codex | [`hooks.json`](hooks.json) (plugin root) | `PreInvocation` / `PostInvocation` / `PreToolUse` / `PostToolUse` / `Stop` |
+| Devin CLI / Codex | [`hooks/hooks.json`](hooks/hooks.json) | Same events except `Notification`, which Devin does not support. Devin rejects the entire file if it contains an unknown event, so the Claude version lives in a separate file. Devin also reads the root `hooks.json`, which stays in AGY format and simply registers no Devin events |
+| Antigravity (AGY) | [`hooks.json`](hooks.json) (plugin root) | AGY hook format (`PreInvocation` / `PostInvocation` / `PreToolUse` / `PostToolUse` / `Stop`) |
 
-Without `CMUX_PANEL_ID` (for Claude Code started outside cmux), the hook exits immediately without effects. zsh renders the pill through `~/.config/cmux/sidebar-cwd.zsh`, sharing state through `${TMPDIR}/cmux-pane-state/<panel-id>`.
+Without `CMUX_PANEL_ID` (for sessions started outside cmux), the hook exits immediately without effects. zsh renders the pill through `~/.config/cmux/sidebar-cwd.zsh`, sharing state through `${TMPDIR}/cmux-pane-state/<panel-id>`.
 
-The skill (`SKILL.md`) covers the overview and common workflows. Detailed references are split into these files:
+The skill (`SKILL.md`) covers the overview and quick reference. Detailed references are split into these files:
 
 | Reference | Contents |
 |----|----|
@@ -103,8 +111,8 @@ The skill (`SKILL.md`) covers the overview and common workflows. Detailed refere
 
 ## Intended uses
 
-- **Let Claude Code running inside cmux control cmux itself**: split panes, send notifications, and update status.
-- **Answer cmux questions from a regular Claude Code session**: command usage and troubleshooting.
+- **Let coding agents running inside cmux control cmux itself**: split panes, send notifications, and update status.
+- **Answer cmux questions from any agent session**: command usage and troubleshooting.
 
 ## Example triggers
 

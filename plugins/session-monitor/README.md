@@ -14,7 +14,7 @@ Hook script paths are quoted so installation directories containing spaces, such
 
 1. Each hook event (`SessionStart` / `UserPromptSubmit` / `PreToolUse` / `PostToolUse` / `Notification` / `PermissionRequest` / `Stop` / `SessionEnd`) invokes `hooks/scripts/update-session.sh`.
 2. The script extracts `session_id` / `transcript_path` / `cwd` / `hook_event_name` from JSON on stdin.
-3. It scans the transcript JSONL backward with `tail -r` to find `gitBranch`, `model`, the latest user prompt, and `usage`, limiting the scan to the last 400 lines for large sessions.
+3. It reads the last 400 lines of the transcript JSONL (`tail -n 400`) to find the latest `gitBranch`, `model`, user prompt, and `usage`.
 4. It maps events to statuses as follows and upserts `$CLAUDE_PLUGIN_DATA/sessions.jsonl`:
    - `SessionStart` → `idle`
    - `UserPromptSubmit` / `PreToolUse` / `PostToolUse` → `running`
@@ -28,7 +28,8 @@ Hook script paths are quoted so installation directories containing spaces, such
 ```
 setup/
 ├── plugins/session-monitor/
-│   ├── .claude-plugin/plugin.json       # Manifest
+│   ├── .claude-plugin/plugin.json       # Claude Code manifest
+│   ├── .codex-plugin/plugin.json        # Codex manifest
 │   ├── hooks/
 │   │   ├── hooks.json                   # Register update-session.sh for all hook events
 │   │   └── scripts/update-session.sh    # Hook that upserts sessions.jsonl
@@ -64,8 +65,14 @@ To enable it in Claude Code, use this repository's marketplace:
 
 ```bash
 /plugin marketplace add nkmr-jp/setup
-/plugin install session-monitor
+/plugin install session-monitor@setup
 /reload-plugins
+```
+
+To enable it in Antigravity (AGY), use the AGY CLI native importer:
+
+```bash
+agy plugin install ~/ghq/github.com/nkmr-jp/setup/plugins/session-monitor
 ```
 
 ### 2. Connect xbar
@@ -97,7 +104,7 @@ Each line represents one session and contains a snapshot of its latest state.
   "last_prompt": "Create a plugin to monitor the current session...",
   "updated_at": "2026-05-10T20:11:42Z",
   "last_event": "PostToolUse",
-  "transcript_path": "/Users/nkmr/.claude/projects/.../session.jsonl",
+  "transcript_path": "/Users/your-user/.claude/projects/.../session.jsonl",
   "last_assistant_at": "2026-05-10T20:11:40Z",
   "input_tokens": 1234,
   "output_tokens": 567,

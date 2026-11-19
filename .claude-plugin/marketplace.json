@@ -13,7 +13,7 @@
     {
       "name": "session-monitor",
       "source": "./plugins/session-monitor",
-      "description": "Monitor active Claude Code sessions through hooks and list running, awaiting, and idle states in the SwiftBar menu bar"
+      "description": "Monitor active Claude Code sessions through hooks and list running, awaiting, and idle states in the xbar menu bar"
     }
   ]
 }

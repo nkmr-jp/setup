@@ -242,7 +242,8 @@ mv "$tmp_file" "$sessions_file"
 # bringing the application to the foreground, preserving input focus in the current
 # foreground application, such as the terminal. Without `-g`, xbar becomes active
 # and steals input focus every time a hook fires.
-# Ignore errors if xbar is not running or is not installed.
-/usr/bin/open -g "xbar://app.xbarapp.com/refreshPlugin?path=claude-sessions.5s.sh" >/dev/null 2>&1 &
+# Skip when xbar is not running: opening an xbar:// URL launches the app via its
+# URL handler, which would restart xbar after the user quit it.
+/usr/bin/pgrep -xq xbar && /usr/bin/open -g "xbar://app.xbarapp.com/refreshPlugin?path=claude-sessions.5s.sh" >/dev/null 2>&1 &
 
 exit 0

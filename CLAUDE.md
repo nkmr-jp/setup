@@ -25,7 +25,7 @@ Agent-specific user settings live in agent-settings; cmux, xbar, and plugin impl
 
 `zsh/orca.zsh` starts `orca/workspace-name-watch.zsh` only in interactive shells with `TERM_PROGRAM=Orca`; keep that gate so other terminals are unaffected. It also exports `CLAUDE_CODE_FORCE_SYNC_OUTPUT=1` under the same `TERM_PROGRAM=Orca` gate, so Claude Code's fullscreen renderer uses scroll regions there (stablyai/orca#21960); `settings.json`'s `env` is applied too late for that check. Validate with `bats tests/orca.bats` (fake `orca`/`perl`, no real Orca calls).
 
-`herdr-app/keys.json` (Herdr desktop app) is symlinked into `~/.config/herdr-app` and keeps cmux's keys; the app does not see edits through the link until `touch -h ~/.config/herdr-app/keys.json`. `herdr-app/mods/pane-equalize` (files linked into a real folder; the app ignores a symlinked mod folder) equalizes split sizes from a hidden block in `herdr-app/layouts/main-custom.json`, a clone of the read-only `main` layout; validate with `herdr-app check ~/.config/herdr-app/mods/pane-equalize`. See `herdr-app/README.md`.
+The Herdr desktop app's settings (`herdr-app`: keys, layouts, mods, Keyboard Maestro macros) live in nkmr-jp/herdr-config (`~/ghq/github.com/nkmr-jp/herdr-config`); only the herdr TUI's `herdr/config.toml` stays here.
 
 `orca/worktree-remove.sh` is registered as an Orca global quick command; Orca keeps only the script path in its settings. Validate with `bats tests/orca-worktree-remove.bats` and `shellcheck orca/worktree-remove.sh`.
 

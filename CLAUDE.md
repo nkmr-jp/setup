@@ -30,3 +30,5 @@ The Herdr desktop app's settings (`herdr-app`: keys, layouts, mods, Keyboard Mae
 `orca/worktree-remove.sh` is registered as an Orca global quick command; Orca keeps only the script path in its settings. Validate with `bats tests/orca-worktree-remove.bats` and `shellcheck orca/worktree-remove.sh`.
 
 Git settings were restored to the original `gitconfig` at the user's request. Separation through a local Git include is deferred.
+
+`zed/` holds Zed's `keymap.json` and `settings.json`, symlinked individually into `~/.config/zed/` (Zed canonicalizes the path before writing, so the links survive).

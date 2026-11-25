@@ -118,18 +118,22 @@ menu -> Install Shell Integration
 
 ### Terminal app configs
 
-Ghostty, iTerm2 scripts, cmux, and Orca settings live in this repository. See their READMEs for details and installation:
+Ghostty, iTerm2 scripts, cmux, Orca, and Zed settings live in this repository. See their READMEs for details and installation:
 
 - [ghostty/README.md](ghostty/README.md)
 - [cmux/README.md](cmux/README.md) — User settings, sidebar integration, and plugins are managed in setup.
 - [orca/README.md](orca/README.md)
 - [iterm2/README.md](iterm2/README.md)
+- [zed/README.md](zed/README.md) — Zed keymap and settings.
 
 ```sh
 mkdir -p ~/.config/ghostty ~/.config/cmux ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch
 ln -sf "$HOME/ghq/github.com/nkmr-jp/setup/ghostty/config" ~/.config/ghostty/config
 ./cmux/link.sh --install # Run from the setup repository root
 ln -sf "$HOME/ghq/github.com/nkmr-jp/setup/iterm2/PaneCount.py" ~/Library/Application\ Support/iTerm2/Scripts/AutoLaunch/PaneCount.py
+mkdir -p ~/.config/zed
+ln -sf "$HOME/ghq/github.com/nkmr-jp/setup/zed/keymap.json" ~/.config/zed/keymap.json
+ln -sf "$HOME/ghq/github.com/nkmr-jp/setup/zed/settings.json" ~/.config/zed/settings.json
 ```
 
 For Orca, symlink the **entire directory**: atomic writes silently replace individual file symlinks.

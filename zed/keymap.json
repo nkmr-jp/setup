@@ -1,0 +1,87 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: open default keymap`yolp
+// from the command palette.
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+      "alt-3": "diagnostics::Deploy",
+      "alt-f12": "terminal_panel::ToggleFocus",
+      "alt-1": "terminal_panel::ToggleFocus",
+      "cmd-[": "pane::GoBack",
+      "ctrl-left": "pane::GoBack",
+      // "shift-cmd-w": "pane::CloseInactiveItems",
+      "ctrl-right": "pane::GoForward",
+      "shift-cmd-p": "command_palette::Toggle",
+      "cmd-p": "file_finder::Toggle",
+      "cmd-s": "workspace::Save",
+      "shift-cmd-t": "pane::ReopenClosedItem",
+      "cmd-d": "pane::SplitRight",
+      "shift-cmd-d": "pane::SplitDown",
+      "cmd-alt-right": "pane::ActivateNextItem",
+      // "cmd-alt-left": "pane::ActivatePrevItem",
+      "alt-cmd-/": "workspace::ActivateNextPane",
+      "cmd-k": "git_panel::ToggleFocus",
+      "cmd-1": "project_panel::ToggleFocus",
+      "cmd-2": "workspace::ToggleLeftDock",
+      "shift-cmd-0": "zed::ResetBufferFontSize",
+    },
+  },
+  {
+    "context": "Editor",
+    "bindings": {
+      "ctrl-b": "editor::MoveLeft",
+      "ctrl-h": "editor::MoveLeft",
+      "ctrl-f": "editor::MoveRight",
+      "ctrl-l": "editor::MoveRight",
+      "cmd-b": "editor::GoToDefinition",
+      "cmd-down": "editor::GoToDefinition",
+      "alt-cmd-down": "editor::MoveLineDown",
+      "alt-cmd-up": "editor::MoveLineUp",
+      "ctrl-k": "editor::MoveLineUp",
+      "alt-up": "editor::SelectLargerSyntaxNode",
+      "alt-down": "editor::SelectSmallerSyntaxNode",
+      // "alt-cmd-z": "editor::RevertSelectedHunks",
+      // "alt-enter": "editor::RunAtPoint",
+      "alt-d": "editor::SelectNext",
+      // "cmd-i": "editor::ShowInlineCompletion",
+    },
+  },
+  {
+    "context": "Editor && mode == diff",
+    "bindings": {
+      "ctrl-right": "editor::GoToHunk",
+      "cmd-alt-right": "editor::GoToHunk",
+      // "ctrl-left": "editor::GoToPrevHunk",
+      // "cmd-alt-left": "editor::GoToPrevHunk",
+      "f7": "editor::GoToHunk",
+      "ctrl-down": "editor::GoToHunk",
+      // "shift-f7": "editor::GoToPrevHunk",
+      // "ctrl-up": "editor::GoToPrevHunk",
+    },
+  },
+  {
+    "context": "Pane",
+    "bindings": {
+      // "ctrl-alt-up": "pane::IncreaseSize",
+      // "ctrl-alt-down": "pane::DecreaseSize",
+    },
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "shift-enter": ["terminal::SendText", "\\\\\\n"],
+    },
+  },
+  {
+    "context": "ProjectPanel",
+    "bindings": {
+      "enter": "project_panel::Open",
+      "f2": "project_panel::Rename",
+    },
+  },
+]

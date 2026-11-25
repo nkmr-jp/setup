@@ -31,4 +31,6 @@ The Herdr desktop app's settings (`herdr-app`: keys, layouts, mods, Keyboard Mae
 
 Git settings were restored to the original `gitconfig` at the user's request. Separation through a local Git include is deferred.
 
+`t3code/` holds T3 Code's `keybindings.json` and `settings.json`, symlinked individually into `~/.t3/userdata/` (T3 Code's atomic writes resolve symlinks first). `client-settings.json` stays local: it contains machine-specific device IDs and window state.
+
 `zed/` holds Zed's `keymap.json` and `settings.json`, symlinked individually into `~/.config/zed/` (Zed canonicalizes the path before writing, so the links survive).

@@ -1,0 +1,74 @@
+{
+  "favorites": [
+    {
+      "provider": "antigravity",
+      "model": "gemini-4-neon"
+    },
+    {
+      "provider": "antigravity",
+      "model": "gemini-4-hydrogen"
+    },
+    {
+      "provider": "claudeAgent",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "provider": "claudeAgent",
+      "model": "claude-fable-5-2"
+    },
+    {
+      "provider": "codex",
+      "model": "gpt-6.2-sol"
+    }
+  ],
+  "storageCleanup": {
+    "worktreeAfterDays": 8,
+    "worktreeSettledAfterDays": 8,
+    "worktreeOnMerge": true,
+    "worktreeOnDelete": true,
+    "worktreeUnchanged": true
+  },
+  "speechModelId": "handy-computer/Fun-ASR-MLT-Nano-2512-gguf",
+  "projectScriptOverrides": {
+    "ae9ccc60-ef79-4726-8f6c-0fc2fbc8938f": []
+  },
+  "defaultModelSelection": {
+    "instanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "defaultRuntimeMode": "auto",
+  "projectSettingsOverrides": {
+    "ae9ccc60-ef79-4726-8f6c-0fc2fbc8938f": {
+      "defaultProjectScripts": []
+    }
+  },
+  "projectSettingsFolded": true,
+  "enableDeviceSupport": true,
+  "idleCompaction": "onReturn",
+  "autoResumeLimitedThreads": true,
+  "sidebarAutoSettleOnMerge": false,
+  "providerInstances": {
+    "antigravity": {
+      "driver": "antigravity",
+      "enabled": true
+    },
+    "claudeAgent": {
+      "driver": "claudeAgent",
+      "enabled": true
+    },
+    "codex": {
+      "driver": "codex",
+      "enabled": true
+    },
+    "acpRegistry_devin": {
+      "driver": "acpRegistry",
+      "displayName": "Devin",
+      "enabled": true,
+      "config": {
+        "agentId": "devin",
+        "distribution": "auto",
+        "registryIconUrl": "https://cdn.agentclientprotocol.com/registry/v1/latest/devin.svg"
+      }
+    }
+  }
+}
